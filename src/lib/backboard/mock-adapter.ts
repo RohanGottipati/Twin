@@ -84,10 +84,40 @@ export class MockBackboardAdapter implements BackboardAdapter {
   private assistants = new Map<string, AssistantRecord>();
   private threads = new Map<string, ThreadState>();
   private memories = new Map<string, MemoryRecord[]>();
+  private scriptedResponsesByAssistant = new Map<string, MockSendMessageHints[]>();
   private streamingDelayMs: number;
 
   constructor(options: { streamingDelayMs?: number } = {}) {
     this.streamingDelayMs = options.streamingDelayMs ?? 0;
+  }
+
+  /**
+   * Test-only: queue the response(s) a given assistantId will give on its
+   * next call(s) to sendMessage, used by orchestrator-level tests that call
+   * runGridTwinOrchestration (which has no per-call metadata hook of its
+   * own, unlike direct runToolLoop tests). Responses are consumed in order;
+   * the last one repeats indefinitely once the queue is down to one, so a
+   * stage that only needs a single scripted turn does not have to guess how
+   * many times it will be called.
+   */
+  scriptAssistantResponses(assistantId: string, responses: MockSendMessageHints[]): void {
+    this.scriptedResponsesByAssistant.set(assistantId, [...responses]);
+  }
+
+  private resolveHints(options: SendMessageOptions): MockSendMessageHints {
+    const metadataHints = (options.metadata ?? {}) as MockSendMessageHints;
+    if (
+      metadataHints.mockToolPlan !== undefined ||
+      metadataHints.mockJsonResponse !== undefined ||
+      metadataHints.mockContent !== undefined
+    ) {
+      return metadataHints;
+    }
+    const queue = this.scriptedResponsesByAssistant.get(options.assistantId);
+    if (queue && queue.length > 0) {
+      return queue.length > 1 ? queue.shift()! : queue[0];
+    }
+    return {};
   }
 
   private toolRoundResult(threadId: string, round: MockToolCallSpec[]): ChatRunResult {
@@ -143,7 +173,7 @@ export class MockBackboardAdapter implements BackboardAdapter {
 
   async sendMessage(options: SendMessageOptions, onEvent?: StreamEventHandler): Promise<ChatRunResult> {
     const threadId = options.threadId ?? generateId("mock-thread");
-    const hints = (options.metadata ?? {}) as MockSendMessageHints;
+    const hints = this.resolveHints(options);
     const toolPlan = hints.mockToolPlan ?? [];
 
     if (toolPlan.length > 0) {

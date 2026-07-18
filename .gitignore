@@ -34,3 +34,6 @@ yarn-error.log*
 .vscode
 tsconfig.tsbuildinfo
 next-env.d.ts
+
+# Backboard local manifests (contain assistant IDs; never commit)
+.backboard/

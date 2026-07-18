@@ -31,7 +31,7 @@ export const dispatchPlanSchema = z
     scenarioId: z.string().min(1),
     horizonStart: z.string().min(1),
     intervalMinutes: z.number().int().positive(),
-    strategy: z.string().min(1).max(120),
+    strategy: z.string().min(1).max(220),
     modelId: z.string().optional(),
     assumptions: z.array(z.string().max(300)).max(20).default([]),
     warnings: z.array(z.string().max(300)).max(20).default([]),
