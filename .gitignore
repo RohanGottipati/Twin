@@ -12,3 +12,17 @@ __pycache__/
 # Data: raw citywide downloads are bounded-slice inputs, not outputs.
 # Only data/processed/ (the clipped, reprojected twin inputs) is tracked.
 data/raw/
+
+# Local model serving (vLLM, isolated from the twin project's own venv to
+# avoid dependency conflicts) and HF model cache -- large, host-specific,
+# regenerable via `pip install vllm` + `vllm serve <model>`.
+.vllm-env/
+.hf_cache/
+
+# Per-run Phase 1 eval outputs (heatmap PNG, persona-level CSVs) are
+# regenerable via `uv run python -m eval.heatmap_phase1`; not committed so
+# stale runs don't silently look authoritative. The one exception is
+# eval/output/phase1_gate_evidence/, a deliberately-committed snapshot of
+# the specific run cited as gate evidence in OVERNIGHT_LOG.md.
+eval/output/*
+!eval/output/phase1_gate_evidence/
