@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createSseResponse, createSseStream, encodeSseEvent, toGridRunEventEnvelope } from "@/lib/backboard/sse";
+import { createSseResponse, createSseStream, encodeSseEvent, toTwinTORunEventEnvelope } from "@/lib/backboard/sse";
 import { createRunStreamClient, parseSseChunk } from "@/lib/backboard/stream-parser";
-import type { GridRunEvent } from "@/lib/backboard/orchestrator";
-import { backboardRunEventEnvelopeSchema } from "@/lib/grid/schemas";
+import type { TwinTORunEvent } from "@/lib/backboard/orchestrator";
+import { twinTORunEventEnvelopeSchema } from "@/lib/transit/schemas";
 
 async function readAllText(stream: ReadableStream<Uint8Array>): Promise<string> {
   const reader = stream.getReader();
@@ -45,47 +45,56 @@ describe("createSseResponse", () => {
   });
 });
 
-describe("toGridRunEventEnvelope", () => {
-  it("hoists type and runId to the envelope and carries the full event verbatim as payload", () => {
-    const event: GridRunEvent = {
-      type: "candidate.simulated",
+describe("toTwinTORunEventEnvelope", () => {
+  it("hoists type and runId to the envelope and carries the full TwinTO event verbatim as payload", () => {
+    const event: TwinTORunEvent = {
+      type: "simulation.completed",
       runId: "run-123",
-      candidateId: "balanced",
-      valid: true,
-      netValueCad: 42.5,
-      source: "agent",
+      candidateId: "balanced-retime",
+      summary: "meanWaitMinutes=3.20, deniedBoardings=0, valid=true",
     };
-    const envelope = toGridRunEventEnvelope(event, 3);
+    const envelope = toTwinTORunEventEnvelope(event, 3);
     expect(envelope).toEqual({
       eventId: "run-123:3",
       runId: "run-123",
       sequence: 3,
-      type: "candidate.simulated",
+      type: "simulation.completed",
       timestamp: expect.any(String),
       payload: {
-        type: "candidate.simulated",
+        type: "simulation.completed",
         runId: "run-123",
-        candidateId: "balanced",
-        valid: true,
-        netValueCad: 42.5,
-        source: "agent",
+        candidateId: "balanced-retime",
+        summary: "meanWaitMinutes=3.20, deniedBoardings=0, valid=true",
       },
     });
-    expect(backboardRunEventEnvelopeSchema.safeParse(envelope).success).toBe(true);
+    expect(twinTORunEventEnvelopeSchema.safeParse(envelope).success).toBe(true);
   });
 
-  it("never carries a reasoning or thinking field in the payload", () => {
-    const event: GridRunEvent = { type: "run.failed", runId: "run-456", error: "boom" };
-    const envelope = toGridRunEventEnvelope(event, 1);
+  it("never carries a reasoning or thinking field in the payload for any TwinTO event", () => {
+    const event: TwinTORunEvent = { type: "run.failed", runId: "run-456", error: "boom" };
+    const envelope = toTwinTORunEventEnvelope(event, 1);
     expect(envelope.payload).not.toHaveProperty("reasoning");
     expect(envelope.payload).not.toHaveProperty("thinking");
+    expect(twinTORunEventEnvelopeSchema.safeParse(envelope).success).toBe(true);
+  });
+
+  it("rejects an envelope whose payload smuggles a reasoning field, via the schema's own refinement", () => {
+    const contaminated = {
+      eventId: "r1:1",
+      runId: "r1",
+      sequence: 1,
+      type: "agent.completed",
+      timestamp: new Date().toISOString(),
+      payload: { type: "agent.completed", runId: "r1", role: "safety", name: "Safety Agent", summary: "ok", reasoning: "leaked chain of thought" },
+    };
+    expect(twinTORunEventEnvelopeSchema.safeParse(contaminated).success).toBe(false);
   });
 });
 
 describe("createSseStream", () => {
   it("streams every writer.send call and closes when the producer resolves", async () => {
     const stream = createSseStream(async (writer) => {
-      writer.send({ type: "run.created", runId: "r1", assetId: "a1", scenarioId: "s1" });
+      writer.send({ type: "run.started", runId: "r1", scenarioId: "departure-406-412" });
       writer.send({ type: "run.completed", runId: "r1" });
     });
 
@@ -93,10 +102,9 @@ describe("createSseStream", () => {
     const blocks = text.split("\n\n").filter((block) => block.length > 0);
     expect(blocks).toHaveLength(2);
     expect(JSON.parse(blocks[0].replace("data: ", ""))).toEqual({
-      type: "run.created",
+      type: "run.started",
       runId: "r1",
-      assetId: "a1",
-      scenarioId: "s1",
+      scenarioId: "departure-406-412",
     });
   });
 
@@ -132,9 +140,9 @@ describe("parseSseChunk", () => {
       eventId: "r1:1",
       runId: "r1",
       sequence: 1,
-      type: "run.created",
+      type: "run.started",
       timestamp: new Date().toISOString(),
-      payload: { assetId: "a1", scenarioId: "s1" },
+      payload: { scenarioId: "departure-406-412" },
     };
     const chunk = encodeSseEvent(1, envelope);
     const { events, remainder } = parseSseChunk("", chunk);
@@ -148,7 +156,7 @@ describe("parseSseChunk", () => {
       eventId: "r1:1",
       runId: "r1",
       sequence: 1,
-      type: "run.created",
+      type: "run.started",
       timestamp: new Date().toISOString(),
       payload: {},
     };
@@ -169,7 +177,7 @@ describe("parseSseChunk", () => {
       eventId: "r1:1",
       runId: "r1",
       sequence: 1,
-      type: "run.created",
+      type: "run.started",
       timestamp: new Date().toISOString(),
       payload: {},
     };
@@ -188,9 +196,22 @@ describe("parseSseChunk", () => {
     const { events } = parseSseChunk("", malformed);
     expect(events).toHaveLength(0);
 
-    const missingFields = `data: ${JSON.stringify({ type: "run.created" })}\n\n`;
+    const missingFields = `data: ${JSON.stringify({ type: "run.started" })}\n\n`;
     const { events: events2 } = parseSseChunk("", missingFields);
     expect(events2).toHaveLength(0);
+  });
+
+  it("drops a block whose payload carries a raw reasoning field", () => {
+    const contaminated = {
+      eventId: "r1:1",
+      runId: "r1",
+      sequence: 1,
+      type: "agent.completed",
+      timestamp: new Date().toISOString(),
+      payload: { reasoning: "leaked" },
+    };
+    const { events } = parseSseChunk("", encodeSseEvent(1, contaminated));
+    expect(events).toHaveLength(0);
   });
 });
 
@@ -212,7 +233,7 @@ describe("createRunStreamClient", () => {
 
   it("streams validated events to onEvent and calls onDone once the body ends", async () => {
     const chunks = [
-      encodeSseEvent(1, envelopeFor(1, "run.created")),
+      encodeSseEvent(1, envelopeFor(1, "run.started")),
       encodeSseEvent(2, envelopeFor(2, "run.completed")),
     ];
     const body = new ReadableStream<Uint8Array>({
@@ -230,7 +251,7 @@ describe("createRunStreamClient", () => {
     const done = new Promise<void>((resolve) => {
       createRunStreamClient({
         url: "http://localhost/api/backboard/run",
-        body: { assetId: "a1", scenarioId: "s1" },
+        body: { scenarioId: "departure-406-412" },
         onEvent: (event) => received.push(event),
         onDone: resolve,
         onError: (error) => {
@@ -242,7 +263,7 @@ describe("createRunStreamClient", () => {
     await done;
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(received).toHaveLength(2);
-    expect((received[0] as { type: string }).type).toBe("run.created");
+    expect((received[0] as { type: string }).type).toBe("run.started");
     expect((received[1] as { type: string }).type).toBe("run.completed");
   });
 
@@ -265,11 +286,6 @@ describe("createRunStreamClient", () => {
 
   it("calls onDone, not onError, when aborted", async () => {
     const controller = new AbortController();
-    const body = new ReadableStream<Uint8Array>({
-      start() {
-        // Never enqueues or closes; the abort should short-circuit the read loop.
-      },
-    });
     const fetchMock = vi.fn().mockImplementation((_url: string, init: RequestInit) => {
       return new Promise((_resolve, reject) => {
         init.signal?.addEventListener("abort", () => {
@@ -280,7 +296,6 @@ describe("createRunStreamClient", () => {
       });
     });
     vi.stubGlobal("fetch", fetchMock);
-    void body;
 
     const done = new Promise<void>((resolve) => {
       createRunStreamClient({

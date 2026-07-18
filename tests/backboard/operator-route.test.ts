@@ -3,29 +3,28 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { ASSISTANT_ROSTER } from "@/lib/backboard/assistants";
 import { mockAssistantId, type MockBackboardAdapter } from "@/lib/backboard/mock-adapter";
 import { parseSseChunk } from "@/lib/backboard/stream-parser";
-import type { BackboardRunEventEnvelope } from "@/lib/grid/schemas";
-
-const ASSET_ID = "ontario-bess-01";
+import type { TwinTORunEventEnvelope } from "@/lib/transit/schemas";
+import { FLAGSHIP_SCENARIO_ID } from "@/data/transit/scenarios";
 
 function roleAssistantId(role: keyof typeof ASSISTANT_ROSTER): string {
   return mockAssistantId(ASSISTANT_ROSTER[role].name);
 }
 
-function jsonRequest(url: string, body: unknown): Request {
-  return new Request(url, {
+function jsonRequest(body: unknown): Request {
+  return new Request("http://localhost/api/backboard/operator-question", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
 }
 
-async function collectEnvelopes(response: Response): Promise<BackboardRunEventEnvelope[]> {
+async function collectEnvelopes(response: Response): Promise<TwinTORunEventEnvelope[]> {
   if (!response.body) return [];
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = "";
   const seen = new Set<number>();
-  const events: BackboardRunEventEnvelope[] = [];
+  const events: TwinTORunEventEnvelope[] = [];
 
   while (true) {
     const { done, value } = await reader.read();
@@ -50,10 +49,7 @@ describe("POST /api/backboard/operator-question", () => {
   it("streams operator.delta events followed by one operator.completed event with the structured answer", async () => {
     const { POST } = await import("@/app/api/backboard/operator-question/route");
     const response = await POST(
-      jsonRequest("http://localhost/api/backboard/operator-question", {
-        assetId: ASSET_ID,
-        question: "Why did we choose the balanced candidate?",
-      }),
+      jsonRequest({ scenarioId: FLAGSHIP_SCENARIO_ID, question: "Why did we choose the balanced candidate?" }),
     );
 
     expect(response.status).toBe(200);
@@ -68,8 +64,8 @@ describe("POST /api/backboard/operator-question", () => {
 
     const completed = events.find((event) => event.type === "operator.completed");
     const payload = completed?.payload as { answer: { answer: string; citedEvidence: string[] }; threadId: string };
-    expect(payload.answer.answer).toContain("balanced candidate");
-    expect(payload.answer.citedEvidence).toContain("candidate:balanced");
+    expect(payload.answer.answer).toContain("Mock Backboard Mode");
+    expect(payload.answer.citedEvidence.length).toBeGreaterThan(0);
     expect(payload.threadId).toBeTruthy();
 
     for (const event of events) {
@@ -83,23 +79,14 @@ describe("POST /api/backboard/operator-question", () => {
 
   it("continues an existing thread when threadId is supplied", async () => {
     const { POST } = await import("@/app/api/backboard/operator-question/route");
-    const first = await POST(
-      jsonRequest("http://localhost/api/backboard/operator-question", {
-        assetId: ASSET_ID,
-        question: "What happened on this run?",
-      }),
-    );
+    const first = await POST(jsonRequest({ scenarioId: FLAGSHIP_SCENARIO_ID, question: "What happened on this run?" }));
     const firstEvents = await collectEnvelopes(first);
     const firstCompleted = firstEvents.find((event) => event.type === "operator.completed");
     const firstThreadId = (firstCompleted?.payload as { threadId: string }).threadId;
     expect(firstThreadId).toBeTruthy();
 
     const second = await POST(
-      jsonRequest("http://localhost/api/backboard/operator-question", {
-        assetId: ASSET_ID,
-        threadId: firstThreadId,
-        question: "And what about the risk review?",
-      }),
+      jsonRequest({ scenarioId: FLAGSHIP_SCENARIO_ID, threadId: firstThreadId, question: "And what about the risk review?" }),
     );
     const secondEvents = await collectEnvelopes(second);
     const secondCompleted = secondEvents.find((event) => event.type === "operator.completed");
@@ -110,31 +97,19 @@ describe("POST /api/backboard/operator-question", () => {
 
   it("rejects a question longer than 1000 characters with 400", async () => {
     const { POST } = await import("@/app/api/backboard/operator-question/route");
-    const response = await POST(
-      jsonRequest("http://localhost/api/backboard/operator-question", {
-        assetId: ASSET_ID,
-        question: "a".repeat(1001),
-      }),
-    );
+    const response = await POST(jsonRequest({ scenarioId: FLAGSHIP_SCENARIO_ID, question: "a".repeat(1001) }));
     expect(response.status).toBe(400);
   });
 
   it("rejects a request missing the question field with 400", async () => {
     const { POST } = await import("@/app/api/backboard/operator-question/route");
-    const response = await POST(
-      jsonRequest("http://localhost/api/backboard/operator-question", { assetId: ASSET_ID }),
-    );
+    const response = await POST(jsonRequest({ scenarioId: FLAGSHIP_SCENARIO_ID }));
     expect(response.status).toBe(400);
   });
 
-  it("rejects an unknown assetId with 404", async () => {
+  it("rejects an unknown scenarioId with 404", async () => {
     const { POST } = await import("@/app/api/backboard/operator-question/route");
-    const response = await POST(
-      jsonRequest("http://localhost/api/backboard/operator-question", {
-        assetId: "not-a-real-asset",
-        question: "Is this asset online?",
-      }),
-    );
+    const response = await POST(jsonRequest({ scenarioId: "not-a-real-scenario", question: "Is this scenario active?" }));
     expect(response.status).toBe(404);
   });
 
@@ -156,14 +131,14 @@ describe("POST /api/backboard/operator-question", () => {
     const { getBackboardAdapter } = await import("@/lib/backboard/adapter");
     const { askOperatorQuestion } = await import("@/lib/backboard/operator");
     const adapter = getBackboardAdapter() as MockBackboardAdapter;
-    adapter.scriptAssistantResponses(roleAssistantId("chief-dispatch-officer"), [
+    adapter.scriptAssistantResponses(roleAssistantId("operator-explanation"), [
       { mockContent: "not json at all" },
       { mockContent: "still not json" },
     ]);
 
     await expect(
       askOperatorQuestion({
-        assetId: ASSET_ID,
+        scenarioId: FLAGSHIP_SCENARIO_ID,
         question: "Why did we choose the balanced candidate?",
         adapter,
       }),

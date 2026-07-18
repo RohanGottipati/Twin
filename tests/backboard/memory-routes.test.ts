@@ -17,12 +17,12 @@ describe("Backboard memory routes", () => {
     resetAssistantManifestForTests();
   });
 
-  it("lists an empty memory set for a fresh assistant", async () => {
+  it("lists an empty memory set for the default assistant role (memory-curator)", async () => {
     const { GET } = await import("@/app/api/backboard/memories/route");
     const response = await GET(new Request("http://localhost/api/backboard/memories"));
     expect(response.status).toBe(200);
     const body = await response.json();
-    expect(body.assistantRole).toBe("chief-dispatch-officer");
+    expect(body.assistantRole).toBe("memory-curator");
     expect(body.memories).toEqual([]);
   });
 
@@ -37,13 +37,13 @@ describe("Backboard memory routes", () => {
 
     const addResponse = await POST(
       jsonRequest("http://localhost/api/backboard/memories", "POST", {
-        assistantRole: "chief-dispatch-officer",
-        content: "Operator approved conservative reserve margins for evening peaks.",
+        assistantRole: "memory-curator",
+        content: "Operator approved retiming both flagship departures for this scenario.",
       }),
     );
     expect(addResponse.status).toBe(201);
     const addBody = await addResponse.json();
-    expect(addBody.memory.content).toContain("conservative reserve margins");
+    expect(addBody.memory.content).toContain("retiming both flagship departures");
 
     const listResponse = await GET(new Request("http://localhost/api/backboard/memories"));
     const listBody = await listResponse.json();
@@ -57,28 +57,36 @@ describe("Backboard memory routes", () => {
     expect(response.status).toBe(400);
   });
 
+  it("rejects an unknown assistantRole in the POST body with 400", async () => {
+    const { POST } = await import("@/app/api/backboard/memories/route");
+    const response = await POST(
+      jsonRequest("http://localhost/api/backboard/memories", "POST", { assistantRole: "not-a-role", content: "note" }),
+    );
+    expect(response.status).toBe(400);
+  });
+
   it("searches memories by query via the search route", async () => {
     const { POST: addMemory } = await import("@/app/api/backboard/memories/route");
     const { POST: search } = await import("@/app/api/backboard/memories/search/route");
 
     await addMemory(
       jsonRequest("http://localhost/api/backboard/memories", "POST", {
-        content: "Operator prefers a 25 MW reserve floor overnight.",
+        content: "Operators prefer retiming over capacity boosts at Union station.",
       }),
     );
     await addMemory(
       jsonRequest("http://localhost/api/backboard/memories", "POST", {
-        content: "Unrelated note about maintenance scheduling.",
+        content: "Unrelated note about elevator maintenance scheduling.",
       }),
     );
 
     const searchResponse = await search(
-      jsonRequest("http://localhost/api/backboard/memories/search", "POST", { query: "reserve floor" }),
+      jsonRequest("http://localhost/api/backboard/memories/search", "POST", { query: "retiming over capacity" }),
     );
     expect(searchResponse.status).toBe(200);
     const searchBody = await searchResponse.json();
     expect(searchBody.memories).toHaveLength(1);
-    expect(searchBody.memories[0].content).toContain("reserve floor");
+    expect(searchBody.memories[0].content).toContain("retiming over capacity");
   });
 
   it("updates and deletes a single memory by id", async () => {
