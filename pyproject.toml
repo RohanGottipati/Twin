@@ -1,0 +1,24 @@
+[project]
+name = "torontwin"
+version = "0.1.0"
+description = "ToronTwin: census-weighted LM-persona population conditioned on a Toronto digital twin, for planner decision support."
+requires-python = ">=3.12"
+dependencies = [
+    "geopandas>=1.0",
+    "shapely>=2.0",
+    "pyproj>=3.6",
+    "pyogrio>=0.9",
+    "pydantic>=2.7",
+    "requests>=2.32",
+    "pandas>=2.2",
+    "networkx>=3.6.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]

@@ -1,0 +1,14 @@
+.env
+*.md
+!README.md
+!OVERNIGHT_LOG.md
+
+# Python / uv
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Data: raw citywide downloads are bounded-slice inputs, not outputs.
+# Only data/processed/ (the clipped, reprojected twin inputs) is tracked.
+data/raw/
