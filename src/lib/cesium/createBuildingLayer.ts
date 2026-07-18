@@ -10,7 +10,7 @@ export async function createBuildingLayer({
   Cesium,
   viewer,
 }: CreateBuildingLayerOptions): Promise<Cesium3DTileset> {
-  const tileset = await Cesium.createOsmBuildingsAsync();
+  const tileset = await Cesium.Cesium3DTileset.fromIonAssetId(2275207);
 
   // Reasonable performance/quality balance for city viewing.
   tileset.maximumScreenSpaceError = 16;
