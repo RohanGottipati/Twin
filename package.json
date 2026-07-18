@@ -1,0 +1,52 @@
+{
+  "name": "skyline-world-explorer",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "cesium:copy": "node scripts/copy-cesium-assets.mjs",
+    "postinstall": "npm run cesium:copy",
+    "predev": "npm run cesium:copy",
+    "prebuild": "npm run cesium:copy",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build"
+  },
+  "overrides": {
+    "@cesium/engine": "11.0.0",
+    "@cesium/widgets": "8.0.0",
+    "@zip.js/zip.js": "2.7.62"
+  },
+  "dependencies": {
+    "cesium": "1.121.0",
+    "framer-motion": "11.5.4",
+    "lucide-react": "0.441.0",
+    "next": "^14.2.35",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "zustand": "4.5.5"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.47.2",
+    "@testing-library/jest-dom": "6.5.0",
+    "@testing-library/react": "16.0.1",
+    "@testing-library/user-event": "14.5.2",
+    "@types/node": "20.16.5",
+    "@types/react": "18.3.8",
+    "@types/react-dom": "18.3.0",
+    "@vitejs/plugin-react": "4.3.1",
+    "autoprefixer": "10.4.20",
+    "eslint": "8.57.1",
+    "eslint-config-next": "^14.2.35",
+    "jsdom": "25.0.1",
+    "postcss": "8.4.47",
+    "tailwindcss": "3.4.13",
+    "typescript": "5.6.2",
+    "vitest": "2.1.1"
+  }
+}
