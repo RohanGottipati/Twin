@@ -8,7 +8,7 @@ import { operatorExplanationSchema, type OperatorExplanation } from "@/lib/trans
 
 export class OperatorQuestionError extends Error {}
 
-const OPERATOR_ROLE = "operator-explanation" as const;
+const OPERATOR_ROLE = "explanation-map-action-agent" as const;
 
 export interface AskOperatorQuestionInput {
   /** The scenario the operator's question concerns; used to give tool calls a real target. */

@@ -614,7 +614,7 @@ export async function runTwinTOOrchestration(input: RunOrchestrationInput): Prom
   const scenario = requireScenario(input.scenarioId);
   const context = createRunContext(input.scenarioId, adapter);
   const declaredBundle = selectAssistantBundle(input.scenarioId);
-  const includesConcertBundle = declaredBundle.includes("concert-event");
+  const includesConcertBundle = declaredBundle.includes("events-incidents-agent");
 
   emit({ type: "run.started", runId, scenarioId: input.scenarioId });
 
@@ -632,7 +632,7 @@ export async function runTwinTOOrchestration(input: RunOrchestrationInput): Prom
     const problemOutcome = await runFindingAgent({
       adapter,
       context,
-      role: "problem-definition",
+      role: "planning-orchestrator",
       runId,
       emit,
       prompt: `${scenarioContextBlock(scenario)}\n\nCall your tools to read the network snapshot, this scenario's passenger arrivals, and any active event context. Write a precise, falsifiable statement of what is going wrong: which departure, which station, which window, what fails and by how much.\n\n${findingResponseInstruction()}`,
@@ -646,7 +646,7 @@ export async function runTwinTOOrchestration(input: RunOrchestrationInput): Prom
     const baselineOutcome = await runFindingAgent({
       adapter,
       context,
-      role: "baseline-analyst",
+      role: "evidence-auditor",
       runId,
       emit,
       prompt: `${scenarioContextBlock(scenario)}\n\nCall get_route_schedule (routeId "${scenario.routeId}"), get_departure_loads (no interventionId), and get_passenger_arrivals to establish the no-intervention baseline. Report the baseline numbers plainly.\n\n${findingResponseInstruction()}`,
@@ -657,7 +657,14 @@ export async function runTwinTOOrchestration(input: RunOrchestrationInput): Prom
 
     // -- Parallel context gathering -------------------------------------------
     emit({ type: "context.started", runId });
-    const contextRoles: AssistantRoleKey[] = ["passenger-arrival", "origin-destination", "platform-crowding"];
+    const contextRoles: AssistantRoleKey[] = [
+      "demand-mobility-analyst",
+      "transit-network-planner",
+      "reliability-safety-agent",
+      "accessibility-equity-agent",
+      "cost-infrastructure-agent",
+      "carbon-traffic-agent",
+    ];
     const contextOutcomes = await Promise.all(
       contextRoles.map((role) =>
         runFindingAgent({
@@ -679,8 +686,8 @@ export async function runTwinTOOrchestration(input: RunOrchestrationInput): Prom
     });
 
     // -- Policy candidate generation -------------------------------------------
-    const policyResolved = await resolveAssistant("intervention-generator", adapter);
-    emit({ type: "agent.started", runId, role: "intervention-generator", name: policyResolved.role.name });
+    const policyResolved = await resolveAssistant("transit-network-planner", adapter);
+    emit({ type: "agent.started", runId, role: "transit-network-planner", name: policyResolved.role.name });
     let candidates: TransitIntervention[];
     try {
       const policyTurn = await runStructuredTurn({
@@ -701,12 +708,12 @@ export async function runTwinTOOrchestration(input: RunOrchestrationInput): Prom
         context,
         schema: policyCandidatesSchema,
         onToolCallStart: (call) =>
-          emit({ type: "tool.requested", runId, role: "intervention-generator", toolName: call.name }),
+          emit({ type: "tool.requested", runId, role: "transit-network-planner", toolName: call.name }),
         onToolCallEnd: (outcome) =>
           emit({
             type: "tool.completed",
             runId,
-            role: "intervention-generator",
+            role: "transit-network-planner",
             toolName: outcome.toolName,
             ok: outcome.ok,
           }),
@@ -715,23 +722,23 @@ export async function runTwinTOOrchestration(input: RunOrchestrationInput): Prom
       emit({
         type: "agent.completed",
         runId,
-        role: "intervention-generator",
+        role: "transit-network-planner",
         name: policyResolved.role.name,
         summary: `Proposed ${candidates.length} candidate(s).`,
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      emit({ type: "agent.failed", runId, role: "intervention-generator", name: policyResolved.role.name, error: message });
+      emit({ type: "agent.failed", runId, role: "transit-network-planner", name: policyResolved.role.name, error: message });
       candidates = synthesizeFallbackCandidates(scenario);
       emit({
         type: "agent.completed",
         runId,
-        role: "intervention-generator",
+        role: "transit-network-planner",
         name: policyResolved.role.name,
         summary: `Fell back to ${candidates.length} deterministic candidate(s) after a structured-output failure.`,
       });
     }
-    recordParticipant("intervention-generator");
+    recordParticipant("transit-network-planner");
     for (const candidate of candidates) {
       const state = context.simulationsByCandidateId.get(candidate.id) ?? { intervention: candidate };
       state.intervention = candidate;
@@ -742,7 +749,7 @@ export async function runTwinTOOrchestration(input: RunOrchestrationInput): Prom
     // -- Simulation (deterministic authority; agent turns add narration) -----
     emit({ type: "simulation.started", runId });
     const simulationNarrationOutcomes = await Promise.all(
-      (["subway-scheduling", "counterfactual"] as AssistantRoleKey[]).map((role) =>
+      (["transit-network-planner", "adversarial-reviewer"] as AssistantRoleKey[]).map((role) =>
         runFindingAgent({
           adapter,
           context,
@@ -818,11 +825,11 @@ Respond with ONLY JSON matching:
 {"summary": string, "processedCandidateIds": string[]}
 `.trim();
 
-    const citizenRoles: AssistantRoleKey[] = ["citizen-response", "mode-shift", "waiting-behaviour"];
+    const citizenRoles: AssistantRoleKey[] = ["citizen-response-agent", "accessibility-equity-agent"];
     const [citizenCoordinatorOutcome, ...citizenAuxOutcomes] = await Promise.all([
       (async () => {
-        const resolved = await resolveAssistant("citizen-response", adapter);
-        emit({ type: "agent.started", runId, role: "citizen-response", name: resolved.role.name });
+        const resolved = await resolveAssistant("citizen-response-agent", adapter);
+        emit({ type: "agent.started", runId, role: "citizen-response-agent", name: resolved.role.name });
         try {
           const turn = await runStructuredTurn({
             adapter,
@@ -837,25 +844,25 @@ Respond with ONLY JSON matching:
             context,
             schema: citizenResponseSchema,
             maxRounds: 10,
-            onToolCallStart: (call) => emit({ type: "tool.requested", runId, role: "citizen-response", toolName: call.name }),
+            onToolCallStart: (call) => emit({ type: "tool.requested", runId, role: "citizen-response-agent", toolName: call.name }),
             onToolCallEnd: (outcome) =>
-              emit({ type: "tool.completed", runId, role: "citizen-response", toolName: outcome.toolName, ok: outcome.ok }),
+              emit({ type: "tool.completed", runId, role: "citizen-response-agent", toolName: outcome.toolName, ok: outcome.ok }),
           });
-          emit({ type: "agent.completed", runId, role: "citizen-response", name: resolved.role.name, summary: turn.value.summary });
+          emit({ type: "agent.completed", runId, role: "citizen-response-agent", name: resolved.role.name, summary: turn.value.summary });
         } catch (error) {
           const message = error instanceof Error ? error.message : String(error);
-          emit({ type: "agent.failed", runId, role: "citizen-response", name: resolved.role.name, error: message });
+          emit({ type: "agent.failed", runId, role: "citizen-response-agent", name: resolved.role.name, error: message });
           emit({
             type: "agent.completed",
             runId,
-            role: "citizen-response",
+            role: "citizen-response-agent",
             name: resolved.role.name,
             summary: "Citizen reactions computed via local deterministic fallback.",
           });
         }
       })(),
       ...citizenRoles
-        .filter((role) => role !== "citizen-response")
+        .filter((role) => role !== "citizen-response-agent")
         .map((role) =>
           runFindingAgent({
             adapter,
@@ -869,7 +876,7 @@ Respond with ONLY JSON matching:
         ),
     ]);
     void citizenCoordinatorOutcome;
-    recordParticipant("citizen-response");
+    recordParticipant("citizen-response-agent");
     for (const outcome of citizenAuxOutcomes) recordParticipant(outcome.role);
 
     const citizenProvider = getCitizenReactionProvider();
@@ -905,12 +912,11 @@ Respond with ONLY JSON matching:
       ranking.find((entry) => !entry.disqualified)?.interventionId ?? ranking[0]?.interventionId ?? evaluations[0]?.candidateId;
     const topEvaluation = evaluations.find((evaluation) => evaluation.candidateId === topCandidateId) ?? evaluations[0];
     const impactRoles: AssistantRoleKey[] = [
-      "vehicle-crowding",
-      "reliability-bunching",
-      "accessibility",
-      "equity",
-      "operating-cost",
-      "carbon-impact",
+      "reliability-safety-agent",
+      "simulation-optimization-agent",
+      "accessibility-equity-agent",
+      "cost-infrastructure-agent",
+      "carbon-traffic-agent",
     ];
     const impactOutcomes = await Promise.all(
       impactRoles.map((role) =>
@@ -960,8 +966,8 @@ Respond with ONLY JSON matching:
     }
 
     const stressAgentRoles: AssistantRoleKey[] = includesConcertBundle
-      ? ["adversarial-stress", "evidence-auditor", "concert-event", "night-service", "safety", "emergency-rerouting", "traffic-impact"]
-      : ["adversarial-stress", "evidence-auditor"];
+      ? ["adversarial-reviewer", "evidence-auditor", "events-incidents-agent", "reliability-safety-agent", "carbon-traffic-agent"]
+      : ["adversarial-reviewer", "evidence-auditor"];
     const stressOutcomes = await Promise.all(
       stressAgentRoles.map((role) =>
         runFindingAgent({
@@ -990,8 +996,8 @@ Respond with ONLY JSON matching:
     const debateSchema = z
       .object({ summary: z.string().min(1).max(2000), disagreements: z.array(z.string().max(300)).max(10).default([]) })
       .strict();
-    const debateResolved = await resolveAssistant("debate-moderator", adapter);
-    emit({ type: "agent.started", runId, role: "debate-moderator", name: debateResolved.role.name });
+    const debateResolved = await resolveAssistant("final-policy-judge", adapter);
+    emit({ type: "agent.started", runId, role: "final-policy-judge", name: debateResolved.role.name });
     let debateSummary: string;
     try {
       const debateTurn = await runStructuredTurn({
@@ -1006,19 +1012,19 @@ Respond with ONLY JSON matching:
         memory: debateResolved.role.memory,
         context,
         schema: debateSchema,
-        onToolCallStart: (call) => emit({ type: "tool.requested", runId, role: "debate-moderator", toolName: call.name }),
+        onToolCallStart: (call) => emit({ type: "tool.requested", runId, role: "final-policy-judge", toolName: call.name }),
         onToolCallEnd: (outcome) =>
-          emit({ type: "tool.completed", runId, role: "debate-moderator", toolName: outcome.toolName, ok: outcome.ok }),
+          emit({ type: "tool.completed", runId, role: "final-policy-judge", toolName: outcome.toolName, ok: outcome.ok }),
       });
       debateSummary = debateTurn.value.summary;
-      emit({ type: "agent.completed", runId, role: "debate-moderator", name: debateResolved.role.name, summary: debateSummary });
+      emit({ type: "agent.completed", runId, role: "final-policy-judge", name: debateResolved.role.name, summary: debateSummary });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      emit({ type: "agent.failed", runId, role: "debate-moderator", name: debateResolved.role.name, error: message });
+      emit({ type: "agent.failed", runId, role: "final-policy-judge", name: debateResolved.role.name, error: message });
       debateSummary = `Deterministic ranking stands: ${ranking.map((entry) => `${entry.interventionId} (rank ${entry.rank}${entry.disqualified ? ", disqualified" : ""})`).join(", ")}.`;
-      emit({ type: "agent.completed", runId, role: "debate-moderator", name: debateResolved.role.name, summary: debateSummary });
+      emit({ type: "agent.completed", runId, role: "final-policy-judge", name: debateResolved.role.name, summary: debateSummary });
     }
-    recordParticipant("debate-moderator");
+    recordParticipant("final-policy-judge");
     emit({ type: "debate.completed", runId, summary: debateSummary });
 
     // -- Final judgment --------------------------------------------------------------

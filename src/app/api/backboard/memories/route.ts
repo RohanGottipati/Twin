@@ -8,7 +8,7 @@ import { errorMessage, isAssistantRoleKey, jsonError } from "@/lib/backboard/rou
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const DEFAULT_ROLE = "memory-curator";
+const DEFAULT_ROLE = "explanation-map-action-agent";
 
 /** List an assistant's curated long-term memories. */
 export async function GET(request: Request) {

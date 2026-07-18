@@ -118,20 +118,20 @@ function citizenModelToolCall(scenarioId: string, candidate: TransitIntervention
 export function prepareMockDemoRun(adapter: MockBackboardAdapter, scenarioId: string): void {
   const scenario = requireScenario(scenarioId);
 
-  adapter.scriptAssistantResponses(roleAssistantId("problem-definition"), [
+  adapter.scriptAssistantResponses(roleAssistantId("planning-orchestrator"), [
     {
       mockJsonResponse: finding(
-        "problem-definition",
+        "planning-orchestrator",
         `${scenario.baselineDepartures[0] ?? "the first departure"} leaves underused while the following departure is overcrowded`,
         `Passenger arrivals concentrate in the minutes before ${scenario.baselineDepartures[0] ?? "the first departure"}, denying boardings, while the following departure absorbs the overflow and runs comparatively underused at ${scenario.stationId}.`,
       ),
     },
   ]);
 
-  adapter.scriptAssistantResponses(roleAssistantId("baseline-analyst"), [
+  adapter.scriptAssistantResponses(roleAssistantId("evidence-auditor"), [
     {
       mockJsonResponse: finding(
-        "baseline-analyst",
+        "evidence-auditor",
         "Baseline shows a clear load imbalance between the two flagship departures",
         `No-intervention baseline for ${scenario.id}: passenger arrivals peak just before the first scheduled departure, producing denied boardings there and an underloaded following departure.`,
       ),
@@ -139,12 +139,12 @@ export function prepareMockDemoRun(adapter: MockBackboardAdapter, scenarioId: st
   ]);
 
   const candidates = buildCandidates(scenario.baselineDepartures);
-  adapter.scriptAssistantResponses(roleAssistantId("intervention-generator"), [
+  adapter.scriptAssistantResponses(roleAssistantId("transit-network-planner"), [
     { mockJsonResponse: { candidates } },
   ]);
 
   const [balanced, boost, unsafe] = candidates;
-  adapter.scriptAssistantResponses(roleAssistantId("citizen-response"), [
+  adapter.scriptAssistantResponses(roleAssistantId("citizen-response-agent"), [
     {
       mockToolPlan: [
         [
@@ -184,7 +184,7 @@ export function prepareMockDemoRun(adapter: MockBackboardAdapter, scenarioId: st
  * script left over from prepareMockDemoRun does not poison the Q&A turn.
  */
 export function prepareMockOperatorAnswer(adapter: MockBackboardAdapter, question: string): void {
-  adapter.scriptAssistantResponses(roleAssistantId("operator-explanation"), [
+  adapter.scriptAssistantResponses(roleAssistantId("explanation-map-action-agent"), [
     {
       mockJsonResponse: {
         answer:

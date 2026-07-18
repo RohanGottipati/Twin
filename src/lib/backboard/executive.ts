@@ -157,7 +157,7 @@ export async function buildExecutiveSummary(input: BuildExecutiveSummaryInput): 
   }
 
   try {
-    const resolved = await resolveAssistant("executive-summary", adapter);
+    const resolved = await resolveAssistant("explanation-map-action-agent", adapter);
     const context = createRunContext(result.scenarioId, adapter);
     const loop = await runToolLoop({
       adapter,
