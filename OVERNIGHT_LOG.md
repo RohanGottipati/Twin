@@ -549,3 +549,216 @@ census substitution got). Neither is something to guess at unattended.
    simulator/heatmap; Phase 0 connectivity-gap closure; manifest dedup;
    ruff lint pass. All on the `worktree-agent-a63ea32e8f7a9d057` branch,
    nothing pushed, no PR opened, per the standing constraints.
+
+---
+
+## 2026-07-18 -- overnight-builder session 3 (Phase 2 unblocked by user)
+
+The user manually downloaded both datasets blocking Phase 2 and dropped
+them at `/home/acreo/tw/OpinionQA/` and `/home/acreo/tw/ANES/` (outside
+this worktree). Verified both before use rather than trusting the
+directory names:
+
+- **OpinionQA**: `model_input.tar` + `human_resp.tar`, extracted and
+  spot-checked -- exactly the structure the paper's own repo describes
+  (`human_resp/<wave>/{metadata,info,responses}.csv` per Pew American
+  Trends Panel wave). Wave W92 alone: ~10,000 real respondents, real
+  question text, real demographic fields.
+- **ANES**: 2020 Time Series Study (main CSV, 8,280 respondents x 1,771
+  variables -- matches the real public release size) plus 2024 (downloaded
+  "just in case," not used this session), codebooks, and redacted
+  open-ended response files.
+
+Staged into `data/raw/opinionqa/` and `data/raw/anes/` (git-ignored --
+both datasets carry redistribution-restricted terms of use; verified
+`git check-ignore` before doing anything else).
+
+**Sequencing note**: mid-session the user asked for real Toronto
+consultation open-end text (Phase 4 material). Per the coordinator's
+explicit redirect, did a bounded, time-boxed check only: confirmed
+`core-service-review-qualitative-data` (13k open-ended 2011 consultation
+responses -- exactly what AGENTS.md's data table names) is sitting on the
+same Toronto CKAN portal already integrated, no auth wall, 3.2MB XLSX.
+**Not downloaded or ingested** -- logging its existence and exact package
+id here for a future Phase 4 session, per the coordinator's instruction not
+to let this pull effort off Phase 2.
+
+### What was built
+
+**`eval/calibration.py`** (OpinionQA distributional-alignment check)
+- Scope: one wave (W92), one subgroup axis (`POLPARTY`:
+  Republican/Democrat/Independent/Other -- the axis most directly relevant
+  to policy attitudes and the one the OpinionQA paper itself emphasizes),
+  6 held-out questions selected by a fixed random seed rather than
+  hand-picked (guards against subconsciously choosing favourable
+  questions).
+- For each (question, subgroup) cell: REAL distribution = actual Pew
+  respondents' answer frequencies; MODEL distribution = 20 independent
+  zero-shot LM samples, tallied. Metric: Jensen-Shannon divergence --
+  reused rather than inventing a second metric, since AGENTS.md 5.2
+  already establishes JS divergence as this codebase's metric for
+  population-vs-real distributional matching.
+- One real bug caught before trusting any numbers: `responses.csv` stores
+  each answer as the already-decoded label text, not the raw numeric code
+  `info.csv`'s `option_mapping` uses -- an initial `.map(option_mapping)`
+  call silently produced empty distributions for every cell. Caught by
+  eyeballing a dry run before spending model calls on it, not by a test
+  (worth a regression test if this module gets touched again).
+
+**`eval/retrodiction.py`** (ANES 2020 individual-level retrodiction)
+- Target: `V202339`, "favor/oppose/neither background checks for gun
+  purchases at gun shows or other private sales" -- a clean, well-covered
+  (6,696 valid respondents after filtering), 3-class policy-attitude item,
+  not a demographic covariate masquerading as an opinion.
+- Persona covariates: age, education, race, sex, party ID, ideology,
+  income -- all from ANES's own demographic summary variables, decoded
+  from raw codes via the actual codebook PDF (`pdftotext`), not guessed.
+- RF baseline (class-balanced, macro-F1) and LM zero-shot predictions
+  compared on the *identical* held-out subset (not independently-reported
+  numbers on different splits), plus JS divergence between each predicted
+  distribution and the real one.
+- One bug caught by a crash, not silently: ideology code `99` ("haven't
+  thought much about this") is a real, meaningful survey response, not a
+  refusal code, but wasn't in the label dict -- `KeyError: 99` on the
+  first full run. Fixed by adding the real label rather than filtering
+  those respondents out.
+
+**Tests**: `tests/test_calibration.py`, `tests/test_retrodiction.py` --
+offline unit tests for the pure logic (JS divergence properties: zero for
+identical distributions, near-ln(2) for disjoint, symmetric; question-
+selection determinism and closed-endedness; RF baseline clears a
+trivial-majority-classifier floor) plus live-model integration tests that
+skip cleanly when no LLM backend is reachable, matching the Phase 0/1
+pattern. 12 new tests, all passing.
+
+### Gate verification (Phase 2, actual numbers, not assumed)
+
+**Calibration** (`--n-questions 6 --n-samples-per-cell 20`, saved at
+`eval/output/phase2_gate_evidence/phase2_calibration_summary.json`):
+
+```json
+{
+  "mean_js_divergence": 0.190,
+  "median_js_divergence": 0.182,
+  "max_js_divergence": 0.480,
+  "total_unparsed_replies": 0
+}
+```
+
+More telling than the mean: **24 of 24 (question, subgroup) cells were
+100% unanimous** in the model's sampled answers -- zero within-cell
+variance -- while real human subgroups split anywhere from 40/60 to
+55/45 on several of these questions. This is JS divergence's actual
+driver here: not that the model's modal answer disagrees with the human
+majority (it mostly doesn't), but that it has no spread at all where real
+opinion does.
+
+Before accepting this as a real finding rather than a fixable prompt
+issue, tried two interventions AGENTS.md 5.4 explicitly licenses as the
+first thing to check ("fix temperature or prompt design first"):
+raising sampling temperature from 1.0 to 1.3, and adding an explicit
+"there is a real range of opinion even among people who share your
+political identification -- answer as one individual, not necessarily the
+most common view for your group" instruction. Spot-checked on
+`BUSPROFIT_W92` across all 4 subgroups (60 more real LM calls): **still
+100% unanimous in every subgroup, both times.** This is a legitimately
+bounded, two-attempt diagnostic (matching the level of iteration Phase 1's
+scorer got), not under-investigated -- concluding this is structural
+(low predictive entropy on forced-choice tasks at this model's scale),
+which is exactly the "populations come out too centrist, too
+low-variance" OpinionQA finding AGENTS.md already names as a design
+assumption.
+
+**Retrodiction** (`--lm-sample-size 300 --seed 0`, saved at
+`eval/output/phase2_gate_evidence/phase2_retrodiction_summary.json`),
+RF and LM compared on the identical 300-respondent held-out subset:
+
+| | accuracy | macro-F1 |
+|---|---|---|
+| RF baseline | 0.807 | 0.403 |
+| LM zero-shot | 0.767 | 0.370 |
+
+JS divergence to the real subset distribution: RF 0.0002, LM 0.039 (RF is
+~170x closer -- expected, since RF is directly fit to approximate this
+exact distribution, while the LM has never seen ANES's response
+distribution and predicts per-individual from persona text alone). Ran
+twice at different sample sizes (n=60 and n=300) with the same direction
+both times -- not a small-sample artifact like Phase 1's near/far flip
+was: **the LM consistently does not beat the RF baseline** on this item.
+
+**Phase 2 gate status: measured, not met.** `implementation_plan.md`
+itself names this exact outcome as a live possibility, not a failure mode
+to hide: *"Expect it to be off out of the box"* (calibration) and *"If
+prompting alone cannot get here, that is the signal that SFT (Phase 4) is
+required, not optional"* (retrodiction). Both evaluations ran cleanly,
+produced stable numbers across repeated runs, and returned a real,
+informative negative result rather than an ambiguous one. This is Phase
+2's evaluation infrastructure doing its job -- it will be the thing that
+verifies Phase 4's SFT actually closes this gap, once that phase happens.
+
+Per the standing gate-discipline rule (do not advance past a gate that
+doesn't hold), **did not start Phase 3** on the strength of this. The
+correct reading of `implementation_plan.md`'s own dependency chain
+(`0 -> 1 -> 2 -> 3 -> 4 -> 5 -> 6`) is that Phase 3 stays gated until
+Phase 2 genuinely passes, which per the plan's own text now requires
+Phase 4 (SFT) to exist first -- an ordering tension the plan anticipates
+("that is the signal SFT is required") but doesn't fully resolve into
+"skip 3, go straight to 4." Not resolving that ordering question myself;
+flagging it as a legitimate next-session decision, not a AGENTS.md
+section 9 item, but also not mine to silently decide by just picking
+whichever phase number is smaller.
+
+### Full test suite after this session
+
+```
+$ uv run pytest --ignore=tests/test_phase1_gate.py -q
+.......................................................................  [100%]
+71 passed in ~20s
+
+$ uv run pytest tests/test_phase1_gate.py tests/test_calibration.py::test_calibration_pipeline_runs_end_to_end_and_produces_real_numbers tests/test_retrodiction.py::test_retrodiction_pipeline_runs_end_to_end_and_produces_real_numbers -v
+(all live-model tests, with vLLM server up) -- all PASSED
+```
+
+### Blockers
+
+None new. Phase 2's original data-access blocker (logged in session 2) is
+resolved -- both datasets are staged and working. The only open item is
+the sequencing question above (Phase 3 vs. Phase 4 vs. neither, given
+Phase 2's measured-not-met status), which is a legitimate design/priority
+call for a human or a future session with more context on appetite for
+Phase 4's cost (SFT training run), not something to resolve by guessing.
+
+### Suggested next queue
+
+1. **Decide Phase 3 vs. Phase 4 sequencing** given Phase 2's real,
+   evidenced "not met by prompting alone" result -- this is the one
+   genuinely open call from tonight. Phase 3 (`twin/features/`, exact
+   spatial feature extraction) has no data-access blocker of its own and
+   is pure computation; Phase 4 (SFT) is what the evidence says is
+   actually needed to close Phase 2's gap, but costs a real training run
+   (`flash train`, needs a `--cost` preview per the standing constraints)
+   and needs the two SFT gold sources (ANES likes/dislikes -- have it
+   already; Toronto consultation open-ends -- confirmed downloadable
+   tonight, not yet ingested).
+2. If Phase 4 is greenlit: ingest `core-service-review-qualitative-data`
+   (Toronto Open Data, package id confirmed above, no auth wall) alongside
+   the ANES open-ends already staged at
+   `data/raw/anes/anes_timeseries_2020_redactedopenends_excel_20211118.xlsx`,
+   build SFT rows (`input` = persona + policy + spatial features, `output`
+   = real human opinion text, matching AGENTS.md 5.1's exact schema), then
+   preview training cost before spending anything.
+3. If Phase 3 is preferred first (de-risking the exact-feature computation
+   while a human decides on the Phase 4 training spend): `twin/features/`
+   per implementation_plan.md Phase 3 -- distance-to-change, commute-time
+   delta via shortest-path recompute on the street network, tax/fare
+   applicability -- all pure computation against the existing twin, no new
+   data-access dependency.
+4. Broaden calibration.py's coverage if a future session wants a stronger
+   Phase 2 read before committing to Phase 4: more waves, more subgroup
+   axes (AGE, IDEOLOGY, RACE), more questions per wave. The current 6
+   questions x 4 subgroups is enough to establish the mode-collapse
+   finding robustly but is not exhaustive.
+5. `.vllm-env/` + local vLLM server still set up and working, same restart
+   command as logged in session 2.
+6. Commits this session (local only): Phase 2 calibration + retrodiction.
+   All on `worktree-agent-a63ea32e8f7a9d057`, nothing pushed, no PR opened.
