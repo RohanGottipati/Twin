@@ -15,6 +15,7 @@ dependencies = [
     "openpyxl>=3.1.5",
     "openai>=2.46.0",
     "matplotlib>=3.11.1",
+    "scikit-learn>=1.9.0",
 ]
 
 [dependency-groups]

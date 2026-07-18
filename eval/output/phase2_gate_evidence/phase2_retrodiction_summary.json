@@ -1,0 +1,41 @@
+{
+  "n_total_valid_respondents": 6696,
+  "n_train": 5691,
+  "n_test": 1005,
+  "n_lm_eval_sample": 300,
+  "target_distribution_full_data": {
+    "Favor": 0.8835125448028673,
+    "Neither": 0.07048984468339307,
+    "Oppose": 0.045997610513739545
+  },
+  "rf_baseline_full_test_set": {
+    "accuracy": 0.8099502487562189,
+    "macro_f1": 0.3927858995416069
+  },
+  "rf_baseline_on_lm_subset": {
+    "accuracy": 0.8066666666666666,
+    "macro_f1": 0.4029461279461279
+  },
+  "lm_zero_shot_on_same_subset": {
+    "accuracy": 0.7666666666666667,
+    "macro_f1": 0.3699353331959532,
+    "n_unparsed": 0
+  },
+  "js_divergence_lm_vs_real": 0.03892449319782713,
+  "js_divergence_rf_vs_real": 0.00022291436795893052,
+  "real_distribution_on_subset": {
+    "Favor": 0.8733333333333333,
+    "Neither": 0.08,
+    "Oppose": 0.04666666666666667
+  },
+  "lm_predicted_distribution": {
+    "Favor": 0.8166666666666667,
+    "Oppose": 0.17666666666666667,
+    "Neither": 0.006666666666666667
+  },
+  "rf_predicted_distribution": {
+    "Favor": 0.8866666666666667,
+    "Neither": 0.07,
+    "Oppose": 0.043333333333333335
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "wave": "American_Trends_Panel_W92",
+  "subgroup_key": "POLPARTY",
+  "n_questions": 6,
+  "n_samples_per_cell": 20,
+  "mean_js_divergence": 0.19009276734854164,
+  "median_js_divergence": 0.18184153414250495,
+  "max_js_divergence": 0.480337673877466,
+  "total_unparsed_replies": 0
+}

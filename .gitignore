@@ -26,3 +26,12 @@ data/raw/
 # the specific run cited as gate evidence in OVERNIGHT_LOG.md.
 eval/output/*
 !eval/output/phase1_gate_evidence/
+!eval/output/phase2_gate_evidence/
+
+# data/raw/opinionqa/ and data/raw/anes/ hold real Pew/ANES microdata the
+# user downloaded manually (CodaLab / ANES data center, both gated behind
+# accounts/ToS). Covered by the data/raw/ rule above already, called out
+# here explicitly: never commit this, even aggregated derivatives should be
+# double-checked for respondent-identifying content before committing
+# (eval/output/phase2_gate_evidence/ is aggregate statistics only, not
+# raw rows -- verified before staging).
