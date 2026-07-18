@@ -190,10 +190,30 @@ Two different models, do not conflate them:
 2. **Judge (frozen, not trained).** Inside `score_response`, call a **separate**
    model that is not in `[train]`: given the student's opinion text plus the MCQ
    stem and options, infer which option that opinion corresponds to
-   (`A`/`B`/`C`/`D`/`none`). Prefer Flash/OpenAI **structured outputs** (or an
-   equivalent constrained decode) on this judge call so parsing is reliable:
+   (`A`/`B`/`C`/`D`/`none`). Prefer **structured outputs** /
+   `response_format` on this judge call so parsing is reliable:
    https://freesolo.co/docs/guides/structured-outputs
    `none` = opinion does not entail any option (or is too vague to map).
+
+   **Judge serving (OpenRouter only, not FreeSolo):** reward inference in
+   `score_response` uses the same OpenAI-compatible client against
+   `https://openrouter.ai/api/v1`. Auth with `OPENROUTER_API_KEY` (declare
+   `secrets = ["OPENROUTER_API_KEY"]` so Flash injects it on the worker).
+   Pin a **small** instruct model to keep GRPO reward cost low (default
+   `google/gemma-3-4b-it`); never the student LoRA / FreeSolo serving.
+
+   ```python
+   from openai import OpenAI
+   client = OpenAI(
+       base_url="https://openrouter.ai/api/v1",
+       api_key=os.environ["OPENROUTER_API_KEY"],
+   )
+   r = client.chat.completions.create(
+       model="google/gemma-3-4b-it",
+       messages=[...],  # opinion + MCQ -> choose A|B|C|D|none
+       temperature=0.0,
+   )
+   ```
 
 Reward is binary on the judge's output:
 
@@ -206,12 +226,13 @@ only the student does (via GRPO on the sampled opinions).
 
 Anything the reward needs beyond `input`/`output` lives under `metadata`; Flash
 silently drops other top-level keys. Put at least `gold_choice`, question id,
-and option texts in `metadata`. Document the judge model id/revision in the env.
+and option texts in `metadata`.
 
-This is possible because Flash GRPO only requires that `score_response` return a
-scalar: it may call external APIs, load a frozen sidecar, etc. Cost and latency
-of the judge call are part of the GRPO spend; preview with `--cost` and keep the
-judge small/cheap when possible.
+Flash documents reward-time egress (judge via OpenAI-compatible client +
+`secrets`) in the env packaging guide:
+https://freesolo.co/docs/guides/environments/package.md
+Judge token cost is extra on top of student GRPO; preview with `--cost` and keep
+the judge small (4B-class).
 
 Planner-facing free-text opinions are exactly what the student learns to write.
 Novel twin edits still have no MCQ gold; they are evaluated by mechanism tests

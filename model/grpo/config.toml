@@ -1,0 +1,24 @@
+# Flash GRPO: free-text opinions scored by frozen OpenRouter MCQ judge (AGENTS.md 5.2).
+# Warm-start from finished SFT. Cost gate: flash train model/grpo/config.toml --cost
+
+model = "Qwen/Qwen3.5-9B"
+algorithm = "grpo"
+seed = 2262
+
+[environment]
+id = "acmc/mcq-judge-env"
+pip = ["openai>=1.0.0"]
+secrets = ["OPENROUTER_API_KEY", "WANDB_API_KEY"]
+
+[train]
+epochs = 1
+max_examples = 4000
+group_size = 4
+temperature = 1.0
+max_completion_tokens = 256
+# warm-start from finished SFT; omit lora_rank/alpha with warm-start
+init_from_adapter = "flash-1784401342-0d51be72"
+
+[wandb]
+project = "torontwin-grpo"
+run_name = "mcq-judge-opinionqa-w92-sft-warmstart"
