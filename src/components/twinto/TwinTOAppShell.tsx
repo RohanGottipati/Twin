@@ -239,7 +239,7 @@ export function TwinTOAppShell() {
               <PlaybackControls scenario={scenario} />
             </div>
             <div className="pointer-events-auto w-full">
-              <CityCopilotChat />
+              <CityCopilotChat run={run} includeWebSearch={includeWebSearch} />
             </div>
           </div>
         </>
@@ -249,7 +249,7 @@ export function TwinTOAppShell() {
         <>
           <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col items-center gap-2 p-3">
             <div className="pointer-events-auto w-full">
-              <CityCopilotChat />
+              <CityCopilotChat run={run} includeWebSearch={includeWebSearch} />
             </div>
             <div className="pointer-events-auto w-full">
               <PlaybackControls scenario={scenario} />

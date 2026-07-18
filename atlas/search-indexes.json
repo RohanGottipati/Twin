@@ -1,0 +1,45 @@
+{
+  "database": "twinto",
+  "indexes": [
+    {
+      "collectionName": "documents",
+      "name": "twinto-search",
+      "type": "search",
+      "definition": {
+        "mappings": {
+          "dynamic": false,
+          "fields": {
+            "title": { "type": "string" },
+            "body": { "type": "string" },
+            "tags": { "type": "string" },
+            "documentType": { "type": "token" }
+          }
+        }
+      }
+    },
+    {
+      "collectionName": "document_chunks",
+      "name": "twinto-memory-vector",
+      "type": "vectorSearch",
+      "definition": {
+        "fields": [
+          {
+            "type": "vector",
+            "path": "embedding",
+            "numDimensions": 1536,
+            "similarity": "cosine"
+          },
+          {
+            "type": "filter",
+            "path": "documentId"
+          }
+        ]
+      }
+    }
+  ],
+  "notes": [
+    "Create these in Atlas UI: Database → Search → Create Index, or via Atlas Admin API.",
+    "Core TwinTO search falls back to regex when Atlas Search is unavailable.",
+    "Vector index is reserved for FreeSolo / memory embeddings; not required for the fixture demo."
+  ]
+}

@@ -1,0 +1,15 @@
+# Placeholder FreeSolo GRPO config for TwinTO CitizenReactionLM.
+# Warm-start from SFT adapter. Freeze probe/discriminator. Split by policy/scenario.
+
+[model]
+alias = "twinto-citizen-reaction"
+base = "qwen"
+
+[train]
+group_size = 8
+temperature = 0.9
+max_steps = 200
+
+[reward]
+# Anything beyond input/output must live under metadata for Flash workers.
+metadata_keys = ["target_valence", "subgroup", "real_subgroup_dist"]

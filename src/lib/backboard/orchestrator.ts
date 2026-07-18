@@ -612,7 +612,7 @@ export async function runTwinTOOrchestration(input: RunOrchestrationInput): Prom
   };
 
   const scenario = requireScenario(input.scenarioId);
-  const context = createRunContext(input.scenarioId, adapter);
+  const context = createRunContext(input.scenarioId, adapter, undefined, runId);
   const declaredBundle = selectAssistantBundle(input.scenarioId);
   const includesConcertBundle = declaredBundle.includes("events-incidents-agent");
 

@@ -13,10 +13,14 @@ import {
 } from "@/lib/citizen-reaction/schemas";
 import { getCitizenReactionProvider } from "@/lib/citizen-reaction/provider";
 import type { CitizenReactionAggregate, CitizenReactionBatchResult } from "@/lib/citizen-reaction/schemas";
-import { listCohorts } from "@/data/transit/cohorts";
-import { getScenario, getStressOverlay, listStressOverlays } from "@/data/transit/scenarios";
-import { listNeighbourhoods, requireNeighbourhood, searchNeighbourhoods } from "@/data/transit/neighbourhoods";
 import { getTransitRepository, type TransitRepository } from "@/lib/transit/repository";
+import {
+  persistBackboardToolCall,
+  persistCitizenReactions,
+  persistPolicyIteration,
+  persistSimulationRun,
+  persistTrainingExamples,
+} from "@/lib/mongodb/operational-store";
 import { rankInterventions, type RankableIntervention } from "@/lib/transit/candidate-ranker";
 import { simulateTransit } from "@/lib/transit/simulator";
 import { stressTestIntervention, type StressTestOutcome } from "@/lib/transit/stress-tests";
@@ -62,6 +66,8 @@ export interface MapContextState {
 
 export interface RunContext {
   scenarioId: string;
+  /** Planning run id when inside orchestration; used for Mongo tool-call provenance. */
+  runId?: string;
   adapter: BackboardAdapter;
   simulationsByCandidateId: Map<string, CandidateSimulationState>;
   iterations: PolicyIterationRecord[];
@@ -89,9 +95,11 @@ export function createRunContext(
   scenarioId: string,
   adapter: BackboardAdapter,
   mapContext?: Partial<MapContextState>,
+  runId?: string,
 ): RunContext {
   return {
     scenarioId,
+    runId,
     adapter,
     simulationsByCandidateId: new Map(),
     iterations: [],
@@ -131,8 +139,9 @@ function ensureSimulated(
   context: RunContext,
   scenarioId: string,
   intervention: TransitIntervention,
+  repo: TransitRepository,
 ): TransitSimulationResult {
-  const scenario = getScenario(scenarioId);
+  const scenario = repo.getScenario(scenarioId);
   if (!scenario) {
     throw new ToolDispatchError(`Unknown transit scenario id: "${scenarioId}".`);
   }
@@ -264,11 +273,21 @@ function handleGetRouteSchedule(args: unknown, repo: TransitRepository) {
 function handleGetDepartureLoads(args: unknown, repo: TransitRepository, context: RunContext) {
   const { scenarioId, interventionId } = scenarioInterventionIdArgsSchema.parse(args);
   if (!interventionId) {
-    return { scenarioId, interventionId: null, departureLoads: repo.getDepartureLoads(scenarioId) };
+    return {
+      scenarioId,
+      interventionId: null,
+      departureLoads: repo.getDepartureLoads(scenarioId),
+      storageLayer: repo.getStorageLayer(),
+    };
   }
   const intervention = requireRegisteredIntervention(context, interventionId);
-  const result = ensureSimulated(context, scenarioId, intervention);
-  return { scenarioId, interventionId, departureLoads: result.departureLoads };
+  const result = ensureSimulated(context, scenarioId, intervention, repo);
+  return {
+    scenarioId,
+    interventionId,
+    departureLoads: result.departureLoads,
+    storageLayer: repo.getStorageLayer(),
+  };
 }
 
 function handleGetPassengerArrivals(args: unknown, repo: TransitRepository) {
@@ -283,15 +302,18 @@ function handleGetOdFlows(args: unknown, repo: TransitRepository) {
 
 function handleGetStopCrowding(args: unknown, repo: TransitRepository, context: RunContext) {
   const { scenarioId, interventionId } = scenarioInterventionIdArgsSchema.parse(args);
-  const scenario = getScenario(scenarioId);
+  const scenario = repo.getScenario(scenarioId);
   if (!scenario) {
     throw new ToolDispatchError(`Unknown transit scenario id: "${scenarioId}".`);
   }
   if (!interventionId) {
-    return repo.getStopCrowding(`${scenario.stationId}-platform`, scenarioId);
+    return {
+      ...repo.getStopCrowding(`${scenario.stationId}-platform`, scenarioId),
+      storageLayer: repo.getStorageLayer(),
+    };
   }
   const intervention = requireRegisteredIntervention(context, interventionId);
-  const result = ensureSimulated(context, scenarioId, intervention);
+  const result = ensureSimulated(context, scenarioId, intervention, repo);
   const peakQueueLength = result.queueTrace.reduce((max, point) => Math.max(max, point.queueLength), 0);
   const peakLoad = result.departureLoads.reduce((max, load) => Math.max(max, load.loadFactor), 0);
   return {
@@ -301,16 +323,17 @@ function handleGetStopCrowding(args: unknown, repo: TransitRepository, context: 
     peakQueueLength,
     loadFactorAtPeak: peakLoad,
     dataMode: "synthetic-fixture" as const,
+    storageLayer: repo.getStorageLayer(),
   };
 }
 
 function handleGetTransferDemand(args: unknown, repo: TransitRepository) {
   const { scenarioId } = scenarioIdArgsSchema.parse(args);
-  const scenario = getScenario(scenarioId);
+  const scenario = repo.getScenario(scenarioId);
   if (!scenario) {
     throw new ToolDispatchError(`Unknown transit scenario id: "${scenarioId}".`);
   }
-  return repo.getTransferDemand(scenario.routeId);
+  return { ...repo.getTransferDemand(scenario.routeId), storageLayer: repo.getStorageLayer() };
 }
 
 function handleGetDelayHistory(args: unknown, repo: TransitRepository) {
@@ -335,11 +358,14 @@ function handleGetDemographics(args: unknown, repo: TransitRepository) {
 
 function handleGetAccessibility(args: unknown, repo: TransitRepository) {
   const { scenarioId } = scenarioIdArgsSchema.parse(args);
-  const scenario = getScenario(scenarioId);
+  const scenario = repo.getScenario(scenarioId);
   if (!scenario) {
     throw new ToolDispatchError(`Unknown transit scenario id: "${scenarioId}".`);
   }
-  return repo.getAccessibilityConstraints(scenario.stationId);
+  return {
+    ...repo.getAccessibilityConstraints(scenario.stationId),
+    storageLayer: repo.getStorageLayer(),
+  };
 }
 
 function handleGetEventContext(repo: TransitRepository) {
@@ -374,9 +400,9 @@ function handleProposeVariants(args: unknown, context: RunContext) {
   return { scenarioId, registered: candidates.map((candidate) => candidate.id) };
 }
 
-function handleRunSimulation(args: unknown, context: RunContext) {
+async function handleRunSimulation(args: unknown, context: RunContext, repo: TransitRepository) {
   const { scenarioId, intervention } = interventionEvalArgsSchema.parse(args);
-  const scenario = getScenario(scenarioId);
+  const scenario = repo.getScenario(scenarioId);
   if (!scenario) {
     throw new ToolDispatchError(`Unknown transit scenario id: "${scenarioId}".`);
   }
@@ -390,84 +416,104 @@ function handleRunSimulation(args: unknown, context: RunContext) {
     seed: TOOL_DISPATCH_SEED,
   });
   state.visible = result;
-  return result;
+  const persisted = await persistSimulationRun({ scenarioId, intervention, result });
+  return {
+    ...result,
+    storageLayer: repo.getStorageLayer(),
+    mongo: persisted,
+  };
 }
 
-function handleCalculateWait(args: unknown, context: RunContext) {
+function handleCalculateWait(args: unknown, context: RunContext, repo: TransitRepository) {
   const { scenarioId, intervention } = interventionEvalArgsSchema.parse(args);
-  const result = ensureSimulated(context, scenarioId, intervention);
+  const result = ensureSimulated(context, scenarioId, intervention, repo);
   return {
     interventionId: intervention.id,
     valid: result.valid,
     meanWaitMinutes: result.metrics.meanWaitMinutes,
     p90WaitMinutes: result.metrics.p90WaitMinutes,
+    storageLayer: repo.getStorageLayer(),
   };
 }
 
-function handleCalculateLoad(args: unknown, context: RunContext) {
+function handleCalculateLoad(args: unknown, context: RunContext, repo: TransitRepository) {
   const { scenarioId, intervention } = interventionEvalArgsSchema.parse(args);
-  const result = ensureSimulated(context, scenarioId, intervention);
+  const result = ensureSimulated(context, scenarioId, intervention, repo);
   return {
     interventionId: intervention.id,
     valid: result.valid,
     loadImbalance: result.metrics.loadImbalance,
     deniedBoardings: result.metrics.deniedBoardings,
+    storageLayer: repo.getStorageLayer(),
   };
 }
 
 function handleCalculateReliability(args: unknown, context: RunContext, repo: TransitRepository) {
   const { scenarioId, intervention } = interventionEvalArgsSchema.parse(args);
-  const scenario = getScenario(scenarioId);
-  const result = ensureSimulated(context, scenarioId, intervention);
+  const scenario = repo.getScenario(scenarioId);
+  const result = ensureSimulated(context, scenarioId, intervention, repo);
   return {
     interventionId: intervention.id,
     valid: result.valid,
     missedTransfers: result.metrics.missedTransfers,
     recentDelayHistory: scenario ? repo.getDelayHistory(scenario.routeId) : [],
+    storageLayer: repo.getStorageLayer(),
   };
 }
 
-function handleCalculateEquity(args: unknown, context: RunContext) {
+function handleCalculateEquity(args: unknown, context: RunContext, repo: TransitRepository) {
   const { scenarioId, intervention } = interventionEvalArgsSchema.parse(args);
-  const result = ensureSimulated(context, scenarioId, intervention);
-  return { interventionId: intervention.id, valid: result.valid, equityGap: result.metrics.equityGap };
+  const result = ensureSimulated(context, scenarioId, intervention, repo);
+  return {
+    interventionId: intervention.id,
+    valid: result.valid,
+    equityGap: result.metrics.equityGap,
+    storageLayer: repo.getStorageLayer(),
+  };
 }
 
-function handleCalculateAccessibility(args: unknown, context: RunContext) {
+function handleCalculateAccessibility(args: unknown, context: RunContext, repo: TransitRepository) {
   const { scenarioId, intervention } = interventionEvalArgsSchema.parse(args);
-  const result = ensureSimulated(context, scenarioId, intervention);
+  const result = ensureSimulated(context, scenarioId, intervention, repo);
   return {
     interventionId: intervention.id,
     valid: result.valid,
     accessibilityFailures: result.metrics.accessibilityFailures,
     violations: result.violations.filter((violation) => violation.code.startsWith("accessibility")),
+    storageLayer: repo.getStorageLayer(),
   };
 }
 
-function handleCalculateCost(args: unknown, context: RunContext) {
+function handleCalculateCost(args: unknown, context: RunContext, repo: TransitRepository) {
   const { scenarioId, intervention } = interventionEvalArgsSchema.parse(args);
-  const result = ensureSimulated(context, scenarioId, intervention);
-  return { interventionId: intervention.id, valid: result.valid, operatingCostScore: result.metrics.operatingCostScore };
+  const result = ensureSimulated(context, scenarioId, intervention, repo);
+  return {
+    interventionId: intervention.id,
+    valid: result.valid,
+    operatingCostScore: result.metrics.operatingCostScore,
+    storageLayer: repo.getStorageLayer(),
+  };
 }
 
-function handleCalculateCarbon(args: unknown, context: RunContext) {
+function handleCalculateCarbon(args: unknown, context: RunContext, repo: TransitRepository) {
   const { scenarioId, intervention } = interventionEvalArgsSchema.parse(args);
-  const result = ensureSimulated(context, scenarioId, intervention);
+  const result = ensureSimulated(context, scenarioId, intervention, repo);
   return {
     interventionId: intervention.id,
     valid: result.valid,
     estimatedCarTrips: result.metrics.estimatedCarTrips,
     estimatedCarbonKg: result.metrics.estimatedCarbonKg,
+    storageLayer: repo.getStorageLayer(),
   };
 }
 
-function handleStressTest(args: unknown, context: RunContext) {
+function handleStressTest(args: unknown, context: RunContext, repo: TransitRepository) {
   const { scenarioId, intervention, stressOverlayId } = stressTestArgsSchema.parse(args);
-  const scenario = getScenario(scenarioId);
+  const scenario = repo.getScenario(scenarioId);
   if (!scenario) {
     throw new ToolDispatchError(`Unknown transit scenario id: "${scenarioId}".`);
   }
-  const overlay = stressOverlayId ? getStressOverlay(stressOverlayId) : listStressOverlays()[0];
+  const overlay = stressOverlayId ? repo.getStressOverlay(stressOverlayId) : repo.listStressOverlays()[0];
   if (!overlay) {
     throw new ToolDispatchError(
       stressOverlayId
@@ -480,7 +526,7 @@ function handleStressTest(args: unknown, context: RunContext) {
   const outcome = stressTestIntervention(scenario, intervention, overlay, TOOL_DISPATCH_SEED);
   state.visible = state.visible ?? outcome.baseline;
   state.stress = outcome;
-  return outcome;
+  return { ...outcome, storageLayer: repo.getStorageLayer() };
 }
 
 function handleComparePolicies(args: unknown, context: RunContext) {
@@ -497,7 +543,7 @@ function handleComparePolicies(args: unknown, context: RunContext) {
   return { ranked: rankInterventions(rankable) };
 }
 
-function handleSaveIteration(args: unknown, context: RunContext) {
+async function handleSaveIteration(args: unknown, context: RunContext, repo: TransitRepository) {
   const { scenarioId, intervention, iterationLabel, notes } = saveIterationArgsSchema.parse(args);
   const record: PolicyIterationRecord = {
     scenarioId,
@@ -509,27 +555,40 @@ function handleSaveIteration(args: unknown, context: RunContext) {
   context.iterations.push(record);
   const state = candidateState(context, intervention.id);
   state.intervention = intervention;
-  return { saved: true, iterationCount: context.iterations.length, record };
+  const persisted = await persistPolicyIteration({ scenarioId, intervention, iterationLabel, notes });
+  return {
+    saved: true,
+    iterationCount: context.iterations.length,
+    record,
+    storageLayer: repo.getStorageLayer(),
+    mongo: persisted,
+  };
 }
 
 // ---------------------------------------------------------------------------
 // Citizen reaction model
 // ---------------------------------------------------------------------------
 
-async function handleCallCitizenModel(args: unknown, context: RunContext) {
+async function handleCallCitizenModel(args: unknown, context: RunContext, repo: TransitRepository) {
   const parsed = callCitizenModelArgsSchema.parse(args);
   const provider = getCitizenReactionProvider();
   const result = await provider.predictBatch(parsed);
   const interventionId = parsed.intervention.id ?? parsed.intervention.title;
   const state = candidateState(context, interventionId);
   state.citizenReactions = result;
-  return result;
+  const persisted = await persistCitizenReactions({
+    scenarioId: context.scenarioId,
+    interventionId,
+    batch: result,
+  });
+  return { ...result, storageLayer: repo.getStorageLayer(), mongo: persisted };
 }
 
 function computeReactionAggregate(
   reactions: z.output<typeof citizenReactionSchema>[],
+  repo: TransitRepository,
 ): CitizenReactionAggregate {
-  const weightByCohortId = new Map(listCohorts().map((cohort) => [cohort.id, cohort.weight]));
+  const weightByCohortId = new Map(repo.listCohorts().map((cohort) => [cohort.id, cohort.weight]));
   const acceptances = reactions.map((reaction) => reaction.acceptance);
   const n = acceptances.length;
   const meanAcceptance = acceptances.reduce((sum, value) => sum + value, 0) / n;
@@ -577,9 +636,13 @@ function computeReactionAggregate(
   };
 }
 
-function handleAggregateReactions(args: unknown) {
+function handleAggregateReactions(args: unknown, repo: TransitRepository) {
   const { scenarioId, reactions } = aggregateReactionsArgsSchema.parse(args);
-  return { scenarioId, aggregate: computeReactionAggregate(reactions) };
+  return {
+    scenarioId,
+    aggregate: computeReactionAggregate(reactions, repo),
+    storageLayer: repo.getStorageLayer(),
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -649,7 +712,7 @@ async function handleWriteMemory(args: unknown, context: RunContext, assistantId
   return { saved: true, memoryId: record.id };
 }
 
-function handleCreateTraining(args: unknown, context: RunContext) {
+async function handleCreateTraining(args: unknown, context: RunContext, repo: TransitRepository) {
   const { scenarioId, interventionId, label } = createTrainingArgsSchema.parse(args);
   const state = context.simulationsByCandidateId.get(interventionId);
   if (!state?.intervention || !state.visible) {
@@ -657,19 +720,28 @@ function handleCreateTraining(args: unknown, context: RunContext) {
       `Intervention "${interventionId}" has not been simulated yet; nothing reviewed to package into training rows.`,
     );
   }
+  const rows = [
+    {
+      input: { scenarioId, intervention: state.intervention },
+      output: { metrics: state.visible.metrics, valid: state.visible.valid },
+      metadata: {
+        citizenReactions: state.citizenReactions ?? null,
+        stress: state.stress ? { invalidated: state.stress.invalidated } : null,
+      },
+    },
+  ];
+  const persisted = await persistTrainingExamples({
+    scenarioId,
+    interventionId,
+    label,
+    rows,
+  });
   return {
     label,
     rowCount: 1,
-    rows: [
-      {
-        input: { scenarioId, intervention: state.intervention },
-        output: { metrics: state.visible.metrics, valid: state.visible.valid },
-        metadata: {
-          citizenReactions: state.citizenReactions ?? null,
-          stress: state.stress ? { invalidated: state.stress.invalidated } : null,
-        },
-      },
-    ],
+    rows,
+    storageLayer: repo.getStorageLayer(),
+    mongo: persisted,
   };
 }
 
@@ -683,13 +755,14 @@ async function executeTool(
   context: RunContext,
   assistantId: string,
 ): Promise<unknown> {
-  const repo = getTransitRepository();
+  const repo = await getTransitRepository();
 
   switch (name as ToolName) {
     case TOOL_NAMES.GET_CURRENT_MAP_CONTEXT:
       return {
         dataMode: "synthetic-fixture",
         provenance: "run-context-map",
+        storageLayer: repo.getStorageLayer(),
         ...context.mapContext,
         scenarioId: context.scenarioId,
       };
@@ -704,41 +777,45 @@ async function executeTool(
         .parse(args ?? {});
       return {
         dataMode: "synthetic-fixture",
-        neighbourhoods: searchNeighbourhoods(parsed.query, parsed.tags, parsed.limit ?? 5),
+        storageLayer: repo.getStorageLayer(),
+        neighbourhoods: repo.searchNeighbourhoods(parsed.query, parsed.tags, parsed.limit ?? 5),
       };
     }
     case TOOL_NAMES.GET_NETWORK_SNAPSHOT:
-      return handleGetNetworkSnapshot(repo);
-    case TOOL_NAMES.GET_ROUTE_SCHEDULE:
-      return handleGetRouteSchedule(args, repo);
+      return { ...handleGetNetworkSnapshot(repo), storageLayer: repo.getStorageLayer() };
+    case TOOL_NAMES.GET_ROUTE_SCHEDULE: {
+      const schedule = handleGetRouteSchedule(args, repo);
+      return Object.assign(schedule, { storageLayer: repo.getStorageLayer() });
+    }
     case TOOL_NAMES.GET_DEPARTURE_LOADS:
       return handleGetDepartureLoads(args, repo, context);
     case TOOL_NAMES.GET_PASSENGER_ARRIVALS:
-      return handleGetPassengerArrivals(args, repo);
+      return { ...handleGetPassengerArrivals(args, repo), storageLayer: repo.getStorageLayer() };
     case TOOL_NAMES.GET_OD_FLOWS:
-      return handleGetOdFlows(args, repo);
+      return { ...handleGetOdFlows(args, repo), storageLayer: repo.getStorageLayer() };
     case TOOL_NAMES.GET_STOP_CROWDING:
       return handleGetStopCrowding(args, repo, context);
     case TOOL_NAMES.GET_TRANSFER_DEMAND:
       return handleGetTransferDemand(args, repo);
     case TOOL_NAMES.GET_DELAY_HISTORY:
-      return handleGetDelayHistory(args, repo);
+      return { ...handleGetDelayHistory(args, repo), storageLayer: repo.getStorageLayer() };
     case TOOL_NAMES.GET_VEHICLE_CAPACITY:
-      return handleGetVehicleCapacity(args, repo);
+      return { ...handleGetVehicleCapacity(args, repo), storageLayer: repo.getStorageLayer() };
     case TOOL_NAMES.GET_FLEET_AVAILABILITY:
-      return handleGetFleetAvailability(args, repo);
+      return { ...handleGetFleetAvailability(args, repo), storageLayer: repo.getStorageLayer() };
     case TOOL_NAMES.GET_DEMOGRAPHICS:
-      return handleGetDemographics(args, repo);
+      return { ...handleGetDemographics(args, repo), storageLayer: repo.getStorageLayer() };
     case TOOL_NAMES.GET_TRANSIT_ACCESSIBILITY: {
       const parsed = z
         .object({ neighbourhoodId: z.string().optional(), stationId: z.string().optional() })
         .strict()
         .parse(args ?? {});
       const neighbourhood = parsed.neighbourhoodId
-        ? requireNeighbourhood(parsed.neighbourhoodId)
-        : listNeighbourhoods()[0];
+        ? repo.requireNeighbourhood(parsed.neighbourhoodId)
+        : repo.listNeighbourhoods()[0];
       return {
         dataMode: "synthetic-fixture",
+        storageLayer: repo.getStorageLayer(),
         neighbourhoodId: neighbourhood.id,
         stationId: parsed.stationId ?? context.mapContext.selectedStationId,
         walkShedMinutes: 10,
@@ -748,30 +825,41 @@ async function executeTool(
     }
     case TOOL_NAMES.GET_POPULATION_EMPLOYMENT_GROWTH: {
       const { neighbourhoodId } = z.object({ neighbourhoodId: z.string().min(1) }).strict().parse(args);
-      const n = requireNeighbourhood(neighbourhoodId);
-      return { dataMode: "synthetic-fixture", neighbourhoodId: n.id, ...n.growthProxy };
+      const n = repo.requireNeighbourhood(neighbourhoodId);
+      return {
+        dataMode: "synthetic-fixture",
+        storageLayer: repo.getStorageLayer(),
+        neighbourhoodId: n.id,
+        ...n.growthProxy,
+      };
     }
     case TOOL_NAMES.GET_LAND_USE_CONTEXT: {
       const { neighbourhoodId } = z.object({ neighbourhoodId: z.string().min(1) }).strict().parse(args);
-      const n = requireNeighbourhood(neighbourhoodId);
-      return { dataMode: "synthetic-fixture", neighbourhoodId: n.id, landUse: n.landUse, tags: n.tags };
+      const n = repo.requireNeighbourhood(neighbourhoodId);
+      return {
+        dataMode: "synthetic-fixture",
+        storageLayer: repo.getStorageLayer(),
+        neighbourhoodId: n.id,
+        landUse: n.landUse,
+        tags: n.tags,
+      };
     }
     case TOOL_NAMES.GET_ACCESSIBILITY:
       return handleGetAccessibility(args, repo);
     case TOOL_NAMES.GET_EVENT_CONTEXT:
-      return handleGetEventContext(repo);
+      return { ...handleGetEventContext(repo), storageLayer: repo.getStorageLayer() };
     case TOOL_NAMES.GET_WEATHER_CONTEXT:
-      return handleGetWeatherContext(repo);
+      return { ...handleGetWeatherContext(repo), storageLayer: repo.getStorageLayer() };
     case TOOL_NAMES.GET_INCIDENTS:
-      return handleGetIncidents(args, repo);
+      return { ...handleGetIncidents(args, repo), storageLayer: repo.getStorageLayer() };
     case TOOL_NAMES.FIND_SIMILAR:
-      return handleFindSimilar(args, repo);
+      return { ...handleFindSimilar(args, repo), storageLayer: repo.getStorageLayer() };
     case TOOL_NAMES.GENERATE_STATION_CANDIDATES: {
       const parsed = z
         .object({ query: z.string().min(1), limit: z.number().int().positive().max(8).optional() })
         .strict()
         .parse(args);
-      const neighbourhoods = searchNeighbourhoods(parsed.query, undefined, parsed.limit ?? 5);
+      const neighbourhoods = repo.searchNeighbourhoods(parsed.query, undefined, parsed.limit ?? 5);
       const candidates = neighbourhoods.map((n, index) => ({
         candidateId: `station-${n.id}`,
         neighbourhoodId: n.id,
@@ -788,16 +876,16 @@ async function executeTool(
         coordinates: c.coordinates,
         rankHint: c.rankHint,
       }));
-      return { dataMode: "synthetic-fixture", candidates };
+      return { dataMode: "synthetic-fixture", storageLayer: repo.getStorageLayer(), candidates };
     }
     case TOOL_NAMES.PROPOSE_VARIANTS:
       return handleProposeVariants(args, context);
     case TOOL_NAMES.CALL_CITIZEN_MODEL:
-      return handleCallCitizenModel(args, context);
+      return handleCallCitizenModel(args, context, repo);
     case TOOL_NAMES.AGGREGATE_REACTIONS:
-      return handleAggregateReactions(args);
+      return handleAggregateReactions(args, repo);
     case TOOL_NAMES.RUN_SIMULATION:
-      return handleRunSimulation(args, context);
+      return handleRunSimulation(args, context, repo);
     case TOOL_NAMES.SIMULATE_STATION_CANDIDATE: {
       const parsed = z
         .object({
@@ -810,7 +898,7 @@ async function executeTool(
       const candidate =
         context.stationCandidates.find((c) => c.candidateId === parsed.candidateId) ??
         (() => {
-          const neighbourhoods = listNeighbourhoods();
+          const neighbourhoods = repo.listNeighbourhoods();
           const n = neighbourhoods[0];
           return {
             candidateId: parsed.candidateId,
@@ -821,9 +909,10 @@ async function executeTool(
           };
         })();
       const seed = parsed.seed ?? TOOL_DISPATCH_SEED;
-      const demandIndex = requireNeighbourhood(candidate.neighbourhoodId).growthProxy.populationIndex;
+      const demandIndex = repo.requireNeighbourhood(candidate.neighbourhoodId).growthProxy.populationIndex;
       return {
         dataMode: "synthetic-fixture",
+        storageLayer: repo.getStorageLayer(),
         candidateId: candidate.candidateId,
         seed,
         metrics: {
@@ -836,25 +925,25 @@ async function executeTool(
       };
     }
     case TOOL_NAMES.CALCULATE_WAIT:
-      return handleCalculateWait(args, context);
+      return handleCalculateWait(args, context, repo);
     case TOOL_NAMES.CALCULATE_LOAD:
-      return handleCalculateLoad(args, context);
+      return handleCalculateLoad(args, context, repo);
     case TOOL_NAMES.CALCULATE_RELIABILITY:
       return handleCalculateReliability(args, context, repo);
     case TOOL_NAMES.CALCULATE_EQUITY:
-      return handleCalculateEquity(args, context);
+      return handleCalculateEquity(args, context, repo);
     case TOOL_NAMES.CALCULATE_ACCESSIBILITY:
-      return handleCalculateAccessibility(args, context);
+      return handleCalculateAccessibility(args, context, repo);
     case TOOL_NAMES.CALCULATE_COST:
-      return handleCalculateCost(args, context);
+      return handleCalculateCost(args, context, repo);
     case TOOL_NAMES.CALCULATE_CARBON:
-      return handleCalculateCarbon(args, context);
+      return handleCalculateCarbon(args, context, repo);
     case TOOL_NAMES.STRESS_TEST:
-      return handleStressTest(args, context);
+      return handleStressTest(args, context, repo);
     case TOOL_NAMES.COMPARE_POLICIES:
       return handleComparePolicies(args, context);
     case TOOL_NAMES.SAVE_ITERATION:
-      return handleSaveIteration(args, context);
+      return handleSaveIteration(args, context, repo);
     case TOOL_NAMES.RETRIEVE_DOCUMENTS:
       return handleRetrieveDocuments(args);
     case TOOL_NAMES.COMPOSE_MAP_ACTIONS: {
@@ -873,7 +962,7 @@ async function executeTool(
     case TOOL_NAMES.WRITE_MEMORY:
       return handleWriteMemory(args, context, assistantId);
     case TOOL_NAMES.CREATE_TRAINING:
-      return handleCreateTraining(args, context);
+      return handleCreateTraining(args, context, repo);
     default:
       throw new ToolDispatchError(`Unknown tool: "${name}"`);
   }
@@ -900,8 +989,22 @@ export async function dispatchToolCall(
 ): Promise<ToolCallOutcome> {
   try {
     const output = await executeTool(call.name, call.arguments, context, assistantId);
+    void persistBackboardToolCall({
+      runId: context.runId,
+      assistantId,
+      toolName: call.name,
+      ok: true,
+      argsSummary: JSON.stringify(call.arguments ?? {}).slice(0, 500),
+    });
     return { toolCallId: call.id, toolName: call.name, ok: true, output };
   } catch (error) {
+    void persistBackboardToolCall({
+      runId: context.runId,
+      assistantId,
+      toolName: call.name,
+      ok: false,
+      argsSummary: formatError(error).slice(0, 500),
+    });
     return {
       toolCallId: call.id,
       toolName: call.name,

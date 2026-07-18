@@ -9,6 +9,7 @@ import { errorMessage, jsonError } from "@/lib/backboard/route-helpers";
 import { createSseResponse, createSseStream } from "@/lib/backboard/sse";
 import type { TwinTORunEventEnvelope } from "@/lib/transit/schemas";
 import { requireScenario } from "@/data/transit/scenarios";
+import { persistOperatorThreadTurn } from "@/lib/mongodb/planning-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -102,6 +103,13 @@ export async function POST(request: Request) {
       });
       if (aborted || writer.closed) return;
       sequence += 1;
+      void persistOperatorThreadTurn({
+        threadId: result.threadId,
+        scenarioId,
+        question,
+        answer: JSON.stringify(result.answer),
+        questionId,
+      });
       writer.send(
         envelope(questionId, sequence, "operator.completed", {
           answer: result.answer,

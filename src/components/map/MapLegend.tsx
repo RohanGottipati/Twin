@@ -19,7 +19,10 @@ export function MapLegend() {
   return (
     <GlassPanel className="pointer-events-auto w-[min(88vw,260px)] p-3">
       <p className="text-[10px] font-semibold uppercase tracking-widest text-twinto-muted">
-        Toronto network · synthetic-fixture
+        Toronto only · synthetic-fixture
+      </p>
+      <p className="mt-1 text-[10px] leading-snug text-twinto-muted">
+        All planning and agent suggestions stay inside the City of Toronto.
       </p>
       <ul className="mt-2 space-y-1">
         {ROUTE_SWATCHES.map(({ label, color, icon: Icon }) => (

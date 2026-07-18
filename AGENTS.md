@@ -24,6 +24,11 @@ or retrodiction requirements. GridTwin is archived under
 `docs/archive/gridtwin/`. See `docs/backboard/assistants.md` and
 `docs/twinto-implementation.md` for TwinTO's real design.
 
+**TwinTO geographic scope (hard):** City of Toronto only. Fixtures, map
+actions, chat assumptions, and every Backboard agent suggestion must stay
+inside Toronto (`src/lib/twinto/toronto-scope.ts`). Never propose locations,
+routes, or policies for other cities or regions.
+
 ---
 
 ## 1. What this project is

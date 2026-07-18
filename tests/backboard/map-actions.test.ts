@@ -24,4 +24,14 @@ describe("parseMapActions", () => {
     ]);
     expect(result.ok).toBe(false);
   });
+
+  it("rejects coordinates outside the City of Toronto", () => {
+    const result = parseMapActions([
+      { type: "fly_to_center", center: [-123.12, 49.28], zoom: 12, durationMs: 800 },
+    ]);
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.errors.some((error) => /outside the City of Toronto/i.test(error))).toBe(true);
+    }
+  });
 });

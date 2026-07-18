@@ -8,6 +8,7 @@ import { errorMessage, jsonError } from "@/lib/backboard/route-helpers";
 import { clientKeyFor, isRunRateLimited } from "@/lib/backboard/run-rate-limit";
 import { createSseResponse, createSseStream, toTwinTORunEventEnvelope } from "@/lib/backboard/sse";
 import { requireScenario } from "@/data/transit/scenarios";
+import { persistPlanningRunEvent } from "@/lib/mongodb/planning-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -83,6 +84,7 @@ export async function POST(request: Request) {
         if (aborted || writer.closed) return;
         sequence += 1;
         writer.send(toTwinTORunEventEnvelope(event, sequence));
+        void persistPlanningRunEvent({ event, sequence });
       },
     }).catch(() => {
       // runTwinTOOrchestration already emitted a run.failed event with the

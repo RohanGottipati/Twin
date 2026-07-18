@@ -1,3 +1,4 @@
+import { FreeSoloCitizenReactionProvider } from "@/lib/citizen-reaction/freesolo-provider";
 import { MockCitizenReactionProvider } from "@/lib/citizen-reaction/mock-provider";
 import type { CitizenReactionBatchInput, CitizenReactionBatchResult, ProviderStatus } from "@/lib/citizen-reaction/schemas";
 
@@ -21,10 +22,7 @@ export function getCitizenReactionProviderMode(): string {
 
 /**
  * Resolves the active provider from `TWINTO_CITIZEN_REACTION_PROVIDER`
- * (defaults to "mock"). Only "mock" exists today; anything else throws a
- * clear configuration error rather than silently falling back, so a
- * misconfigured live-provider deploy fails loudly instead of quietly serving
- * synthetic numbers as if they were real.
+ * (defaults to "mock"). Supported: mock | freesolo.
  */
 export function getCitizenReactionProvider(): CitizenReactionProvider {
   const mode = getCitizenReactionProviderMode();
@@ -33,8 +31,11 @@ export function getCitizenReactionProvider(): CitizenReactionProvider {
     return new MockCitizenReactionProvider();
   }
 
+  if (mode === "freesolo" || mode === "live") {
+    return new FreeSoloCitizenReactionProvider();
+  }
+
   throw new CitizenReactionProviderConfigError(
-    `Unknown TWINTO_CITIZEN_REACTION_PROVIDER "${mode}". Only "mock" is implemented; set ` +
-      `TWINTO_CITIZEN_REACTION_PROVIDER=mock or leave it unset.`,
+    `Unknown TWINTO_CITIZEN_REACTION_PROVIDER "${mode}". Supported: "mock", "freesolo".`,
   );
 }

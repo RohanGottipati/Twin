@@ -28,7 +28,7 @@ export function TopNavigation({ statusSlot, contextSlot, leadingSlot }: TopNavig
             TwinTO
           </p>
           <p className="text-[10px] uppercase tracking-widest text-twinto-muted">
-            Toronto Transit Digital Twin
+            Toronto only · Transit Digital Twin
           </p>
         </div>
       </div>

@@ -50,6 +50,13 @@ export async function GET() {
       mode: adapter.mode,
       citizenReactionProvider: process.env.TWINTO_CITIZEN_REACTION_PROVIDER?.trim() || "mock",
       repositoryProvider: process.env.TWINTO_REPOSITORY_PROVIDER?.trim() || "fixture",
+      mongoConfigured: Boolean(process.env.MONGODB_URI?.trim()),
+      mongoDatabase: process.env.MONGODB_DATABASE?.trim() || "twinto",
+      geographicScope: {
+        cityId: "toronto",
+        label: "City of Toronto only",
+        note: "All fixtures, map actions, and agent suggestions must stay inside Toronto.",
+      },
       modelCatalogSize: models.length,
       assistants,
     });

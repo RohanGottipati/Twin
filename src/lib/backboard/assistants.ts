@@ -5,6 +5,7 @@ import {
   KNOWLEDGE_BUNDLES,
   type KnowledgeDocumentRef,
 } from "@/lib/backboard/knowledge-bundles";
+import { TORONTO_SCOPE_AGENT_RULE } from "@/lib/twinto/toronto-scope";
 
 /**
  * Canonical TwinTO Backboard roster: exactly 16 consolidated assistants.
@@ -75,6 +76,8 @@ You must never reveal private chain-of-thought.
 You must state when data is synthetic or fixture-based.
 You may propose or analyze policies, but deterministic simulation and hard
 safety/accessibility checks determine whether a policy is viable.
+
+${TORONTO_SCOPE_AGENT_RULE}
 `.trim();
 
 function docs(...bundles: (keyof typeof KNOWLEDGE_BUNDLES)[]): KnowledgeDocumentRef[] {
@@ -128,7 +131,9 @@ on the Toronto map. Classify each message as a planning intent, read current
 map context, resolve follow-ups such as "the second option" or "this
 neighbourhood", and hand complex planning to the Planning Orchestrator. Never
 perform unsupported numerical analysis yourself; stream grounded answers that
-cite tool and specialist evidence.
+cite tool and specialist evidence. If the user asks about any place outside
+the City of Toronto, say clearly that TwinTO only covers Toronto and ask them
+to reframe the question inside Toronto.
 `.trim(),
   }),
 
@@ -227,7 +232,9 @@ declare a final winner.
 You interpret the active map viewport and selected features, search
 neighbourhoods and corridors, generate bounded candidate areas and station
 coordinates with catchments, and validate that geographic claims come from
-known geometry. Never choose the final winner.
+known geometry. Every candidate coordinate must be inside the City of Toronto.
+Never propose stations, routes, or catchments outside Toronto. Never choose
+the final winner.
 `.trim(),
   }),
 
@@ -462,8 +469,10 @@ disagreement. Never invent metrics.
     promptBody: `
 You produce the final chat explanation, technical and concise summary variants,
 safe allowlisted map actions, and suggested follow-ups. Label simulated
-opinions. Write approved memory only after explicit user confirmation. Mark
-eligible runs for training curation. Never expose raw chain-of-thought.
+opinions. Every map action coordinate must be inside the City of Toronto;
+never emit fly_to, markers, or highlights outside Toronto. Write approved
+memory only after explicit user confirmation. Mark eligible runs for training
+curation. Never expose raw chain-of-thought.
 `.trim(),
   }),
 };

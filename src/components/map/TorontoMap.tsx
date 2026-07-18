@@ -7,17 +7,14 @@ import { TransitLayers } from "@/components/map/TransitLayers";
 import { CitizenDensityLayer } from "@/components/map/CitizenDensityLayer";
 import { CrowdHeatmapLayer } from "@/components/map/CrowdHeatmapLayer";
 import { EventLayer } from "@/components/map/EventLayer";
+import { VehicleLayer } from "@/components/map/VehicleLayer";
+import { CandidateMarkerLayer } from "@/components/map/CandidateMarkerLayer";
+import { NeighbourhoodHighlightLayer } from "@/components/map/NeighbourhoodHighlightLayer";
+import { InterventionDiffLayer } from "@/components/map/InterventionDiffLayer";
 import { MapLegend } from "@/components/map/MapLegend";
+import { DEFAULT_MAP_STYLE_URL, TORONTO_VIEW } from "@/lib/map/map-config";
 
-export const DEFAULT_MAP_STYLE_URL = "https://tiles.openfreemap.org/styles/bright";
-
-/** Downtown Toronto, centered near Union Station; no 3D, no globe, no pitch. */
-export const TORONTO_VIEW = {
-  center: [-79.3832, 43.6532] as [number, number],
-  zoom: 12.8,
-  bearing: 0,
-  pitch: 0,
-};
+export { DEFAULT_MAP_STYLE_URL, TORONTO_VIEW };
 
 export interface StationCrowdLevel {
   stationId: string;
@@ -43,6 +40,7 @@ export function TorontoMap({ stationCrowd }: TorontoMapProps) {
 
   const setSelectedStation = useMapStore((s) => s.setSelectedStation);
   const layers = useMapStore((s) => s.layers);
+  const cameraTarget = useMapStore((s) => s.cameraTarget);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -77,13 +75,27 @@ export function TorontoMap({ stationCrowd }: TorontoMapProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!map || !cameraTarget) return;
+    map.flyTo({
+      center: cameraTarget.center,
+      zoom: cameraTarget.zoom,
+      duration: 1200,
+      essential: true,
+    });
+  }, [map, cameraTarget]);
+
   return (
     <div className="relative h-full w-full">
       <div ref={containerRef} data-testid="toronto-map" className="absolute inset-0" />
       {layers.transit && <TransitLayers map={map} />}
+      {layers.transit && <VehicleLayer map={map} />}
       {layers.parcels && <CitizenDensityLayer map={map} />}
       {layers.sentimentHeatmap && <CrowdHeatmapLayer map={map} stationCrowd={stationCrowd ?? []} />}
       {layers.policyOverlay && <EventLayer map={map} />}
+      <NeighbourhoodHighlightLayer map={map} />
+      <CandidateMarkerLayer map={map} />
+      <InterventionDiffLayer map={map} />
       <div className="pointer-events-none absolute bottom-4 left-4 z-10">
         <MapLegend />
       </div>

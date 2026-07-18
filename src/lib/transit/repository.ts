@@ -7,7 +7,13 @@ import {
   type TransitMode,
 } from "@/data/transit/network";
 import { listCohorts, type TransitCohortFixture } from "@/data/transit/cohorts";
-import { getScenario, listScenarios, requireScenario } from "@/data/transit/scenarios";
+import {
+  getScenario,
+  getStressOverlay,
+  listScenarios,
+  listStressOverlays,
+  requireScenario,
+} from "@/data/transit/scenarios";
 import {
   getConcertEvent,
   getServiceIncidents,
@@ -17,20 +23,24 @@ import {
   type WeatherEventFixture,
 } from "@/data/transit/events";
 import {
+  listNeighbourhoods,
+  requireNeighbourhood,
+  searchNeighbourhoods,
+  type NeighbourhoodFixture,
+} from "@/data/transit/neighbourhoods";
+import {
   findSimilarInterventions as findSimilarInterventionFixtures,
   type SimilarInterventionRecord,
 } from "@/data/transit/similar-policies";
 import { simulateTransit, TRANSFER_DEMAND_PER_ROUTE } from "@/lib/transit/simulator";
-import type { ArrivalPoint, DepartureLoad, TransitScenario } from "@/lib/transit/schemas";
+import type { ArrivalPoint, DepartureLoad, TransitScenario, TransitStressOverlay } from "@/lib/transit/schemas";
 
 /**
  * Read-side data access for the TwinTO transit domain (backs the
  * get_* Backboard tools in docs/twinto-implementation.md section 13.6).
- * `FixtureTransitRepository` is the only implementation today: every method
- * derives its answer from the synthetic fixtures in src/data/transit and
- * the deterministic simulator, never a live TTC or MongoDB source. A future
- * live-data implementation should satisfy the same interface so callers
- * never need to change.
+ * Implementations: `FixtureTransitRepository` (local TS modules) and
+ * `MongoTransitRepository` (Atlas-backed cache). Both serve synthetic demo
+ * data with provenance; neither is a live TTC feed.
  */
 
 const DEFAULT_REPOSITORY_SEED = 20260718;
@@ -96,9 +106,19 @@ export interface AccessibilityConstraintSummary {
   dataMode: "synthetic-fixture";
 }
 
+export type RepositoryStorageLayer = "fixture" | "mongodb";
+
 export interface TransitRepository {
+  getStorageLayer(): RepositoryStorageLayer;
   getNetworkSnapshot(): NetworkSnapshot;
   getScenario(scenarioId: string): TransitScenario | undefined;
+  listScenarios(): TransitScenario[];
+  getStressOverlay(overlayId: string): TransitStressOverlay | undefined;
+  listStressOverlays(): TransitStressOverlay[];
+  listCohorts(): TransitCohortFixture[];
+  listNeighbourhoods(): NeighbourhoodFixture[];
+  searchNeighbourhoods(query?: string, tags?: string[], limit?: number): NeighbourhoodFixture[];
+  requireNeighbourhood(neighbourhoodId: string): NeighbourhoodFixture;
   getRouteSchedule(routeId: string, scenarioId: string): RouteScheduleEntry[];
   getDepartureLoads(scenarioId: string, interventionId?: string | null): DepartureLoad[];
   getPassengerArrivals(scenarioId: string): ArrivalPoint[];
@@ -160,12 +180,44 @@ function mostCommon(values: string[]): string {
 }
 
 export class FixtureTransitRepository implements TransitRepository {
+  getStorageLayer(): RepositoryStorageLayer {
+    return "fixture";
+  }
+
   getNetworkSnapshot(): NetworkSnapshot {
     return getNetworkSnapshot();
   }
 
   getScenario(scenarioId: string): TransitScenario | undefined {
     return getScenario(scenarioId);
+  }
+
+  listScenarios(): TransitScenario[] {
+    return listScenarios();
+  }
+
+  getStressOverlay(overlayId: string): TransitStressOverlay | undefined {
+    return getStressOverlay(overlayId);
+  }
+
+  listStressOverlays(): TransitStressOverlay[] {
+    return listStressOverlays();
+  }
+
+  listCohorts(): TransitCohortFixture[] {
+    return listCohorts();
+  }
+
+  listNeighbourhoods(): NeighbourhoodFixture[] {
+    return listNeighbourhoods();
+  }
+
+  searchNeighbourhoods(query?: string, tags?: string[], limit = 5): NeighbourhoodFixture[] {
+    return searchNeighbourhoods(query, tags, limit);
+  }
+
+  requireNeighbourhood(neighbourhoodId: string): NeighbourhoodFixture {
+    return requireNeighbourhood(neighbourhoodId);
   }
 
   getRouteSchedule(routeId: string, scenarioId: string): RouteScheduleEntry[] {
@@ -355,31 +407,46 @@ export class FixtureTransitRepository implements TransitRepository {
 export class TransitRepositoryConfigError extends Error {}
 
 let cachedRepository: TransitRepository | null = null;
+let warmPromise: Promise<TransitRepository> | null = null;
 
 /**
- * Resolves the active repository from `TWINTO_REPOSITORY_PROVIDER` (defaults
- * to "fixture"). Only "fixture" exists today; a live MongoDB/GTFS-backed
- * provider is future work, and an unknown value throws rather than silently
- * falling back, so a misconfigured live deploy fails loudly instead of
- * quietly serving synthetic fixtures as if they were live TTC data.
+ * Resolves the active repository from `TWINTO_REPOSITORY_PROVIDER`
+ * (`fixture` | `mongo`). Unknown values throw rather than silently falling
+ * back, so a misconfigured live deploy fails loudly instead of quietly
+ * serving TypeScript modules as if they were Atlas state.
  */
-export function getTransitRepository(): TransitRepository {
-  const provider = process.env.TWINTO_REPOSITORY_PROVIDER?.trim().toLowerCase() || "fixture";
+export async function getTransitRepository(): Promise<TransitRepository> {
+  if (cachedRepository) return cachedRepository;
+  if (warmPromise) return warmPromise;
 
-  if (provider !== "fixture") {
+  warmPromise = (async () => {
+    const provider = process.env.TWINTO_REPOSITORY_PROVIDER?.trim().toLowerCase() || "fixture";
+
+    if (provider === "fixture") {
+      cachedRepository = new FixtureTransitRepository();
+      return cachedRepository;
+    }
+
+    if (provider === "mongo" || provider === "mongodb") {
+      const { MongoTransitRepository } = await import("@/lib/mongodb/mongo-transit-repository");
+      const repo = new MongoTransitRepository();
+      await repo.warm();
+      cachedRepository = repo;
+      return cachedRepository;
+    }
+
     throw new TransitRepositoryConfigError(
-      `Unknown TWINTO_REPOSITORY_PROVIDER "${provider}". Only "fixture" is implemented; set ` +
-        `TWINTO_REPOSITORY_PROVIDER=fixture or leave it unset.`,
+      `Unknown TWINTO_REPOSITORY_PROVIDER "${provider}". Supported: "fixture", "mongo".`,
     );
-  }
+  })().finally(() => {
+    warmPromise = null;
+  });
 
-  if (!cachedRepository) {
-    cachedRepository = new FixtureTransitRepository();
-  }
-  return cachedRepository;
+  return warmPromise;
 }
 
 /** Test-only hook to force a fresh repository instance on the next getTransitRepository() call. */
 export function resetTransitRepositoryCache(): void {
   cachedRepository = null;
+  warmPromise = null;
 }
