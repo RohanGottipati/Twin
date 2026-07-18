@@ -1,0 +1,32 @@
+{
+  "demoDate": "2026-01-15",
+  "market": "IESO",
+  "note": "Deterministic GridTwin demo fixture. Not live IESO market data.",
+  "intervalMinutes": 60,
+  "hours": [
+    { "hour": 0, "priceCadPerMwh": 12, "demandMw": 14500, "reservePriceCadPerMwh": 4.5, "marginalEmissionsKgPerMwh": 26 },
+    { "hour": 1, "priceCadPerMwh": 8, "demandMw": 13800, "reservePriceCadPerMwh": 4.0, "marginalEmissionsKgPerMwh": 24 },
+    { "hour": 2, "priceCadPerMwh": 6, "demandMw": 13300, "reservePriceCadPerMwh": 3.8, "marginalEmissionsKgPerMwh": 22 },
+    { "hour": 3, "priceCadPerMwh": 5, "demandMw": 13100, "reservePriceCadPerMwh": 3.6, "marginalEmissionsKgPerMwh": 21 },
+    { "hour": 4, "priceCadPerMwh": 5, "demandMw": 13200, "reservePriceCadPerMwh": 3.6, "marginalEmissionsKgPerMwh": 21 },
+    { "hour": 5, "priceCadPerMwh": 7, "demandMw": 13800, "reservePriceCadPerMwh": 3.9, "marginalEmissionsKgPerMwh": 23 },
+    { "hour": 6, "priceCadPerMwh": 18, "demandMw": 15200, "reservePriceCadPerMwh": 5.2, "marginalEmissionsKgPerMwh": 34 },
+    { "hour": 7, "priceCadPerMwh": 32, "demandMw": 16800, "reservePriceCadPerMwh": 6.4, "marginalEmissionsKgPerMwh": 48 },
+    { "hour": 8, "priceCadPerMwh": 45, "demandMw": 17600, "reservePriceCadPerMwh": 7.1, "marginalEmissionsKgPerMwh": 58 },
+    { "hour": 9, "priceCadPerMwh": 40, "demandMw": 17800, "reservePriceCadPerMwh": 6.9, "marginalEmissionsKgPerMwh": 55 },
+    { "hour": 10, "priceCadPerMwh": 35, "demandMw": 17500, "reservePriceCadPerMwh": 6.6, "marginalEmissionsKgPerMwh": 51 },
+    { "hour": 11, "priceCadPerMwh": 30, "demandMw": 17200, "reservePriceCadPerMwh": 6.2, "marginalEmissionsKgPerMwh": 47 },
+    { "hour": 12, "priceCadPerMwh": 28, "demandMw": 17000, "reservePriceCadPerMwh": 6.0, "marginalEmissionsKgPerMwh": 45 },
+    { "hour": 13, "priceCadPerMwh": 27, "demandMw": 16900, "reservePriceCadPerMwh": 5.9, "marginalEmissionsKgPerMwh": 44 },
+    { "hour": 14, "priceCadPerMwh": 29, "demandMw": 17100, "reservePriceCadPerMwh": 6.1, "marginalEmissionsKgPerMwh": 46 },
+    { "hour": 15, "priceCadPerMwh": 34, "demandMw": 17400, "reservePriceCadPerMwh": 6.5, "marginalEmissionsKgPerMwh": 50 },
+    { "hour": 16, "priceCadPerMwh": 42, "demandMw": 18000, "reservePriceCadPerMwh": 7.0, "marginalEmissionsKgPerMwh": 57 },
+    { "hour": 17, "priceCadPerMwh": 58, "demandMw": 18900, "reservePriceCadPerMwh": 8.4, "marginalEmissionsKgPerMwh": 74 },
+    { "hour": 18, "priceCadPerMwh": 72, "demandMw": 19200, "reservePriceCadPerMwh": 9.2, "marginalEmissionsKgPerMwh": 88 },
+    { "hour": 19, "priceCadPerMwh": 68, "demandMw": 18600, "reservePriceCadPerMwh": 8.9, "marginalEmissionsKgPerMwh": 84 },
+    { "hour": 20, "priceCadPerMwh": 52, "demandMw": 17400, "reservePriceCadPerMwh": 7.8, "marginalEmissionsKgPerMwh": 66 },
+    { "hour": 21, "priceCadPerMwh": 38, "demandMw": 16200, "reservePriceCadPerMwh": 6.7, "marginalEmissionsKgPerMwh": 52 },
+    { "hour": 22, "priceCadPerMwh": 24, "demandMw": 15200, "reservePriceCadPerMwh": 5.5, "marginalEmissionsKgPerMwh": 38 },
+    { "hour": 23, "priceCadPerMwh": 15, "demandMw": 14700, "reservePriceCadPerMwh": 4.7, "marginalEmissionsKgPerMwh": 29 }
+  ]
+}

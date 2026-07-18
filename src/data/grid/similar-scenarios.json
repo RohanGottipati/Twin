@@ -1,0 +1,58 @@
+{
+  "records": [
+    {
+      "id": "hist-2025-02-overnight-wind",
+      "title": "February 2025 overnight wind surplus",
+      "scenarioType": "renewable",
+      "tags": ["wind", "negative-price-risk", "overnight-charging"],
+      "summary": "A cold front pushed overnight wind output well above forecast. Operators that charged aggressively from 00:00-05:00 and held reserve through the morning ramp captured the widest spread of the month.",
+      "outcome": "Plans that pre-committed to a shallow overnight charge and waited for confirmation underperformed by roughly 15% versus plans that charged to the SOC ceiling early.",
+      "dateLabel": "2025-02-11"
+    },
+    {
+      "id": "hist-2025-04-evening-peak",
+      "title": "April 2025 evening demand peak",
+      "scenarioType": "market",
+      "tags": ["evening-peak", "ramp-limit", "discharge-timing"],
+      "summary": "An unseasonably warm evening drove air-conditioning demand and price up sharply between 17:00 and 20:00. Assets that started discharging exactly at the price inflection outperformed those that waited for the peak price hour.",
+      "outcome": "Early discharge captured more total value than waiting for the single highest-priced hour, because the ramp limit prevented a late plan from reaching full output before the peak passed.",
+      "dateLabel": "2025-04-22"
+    },
+    {
+      "id": "hist-2025-06-derating",
+      "title": "June 2025 thermal derating event",
+      "scenarioType": "asset",
+      "tags": ["derating", "thermal", "peak-window"],
+      "summary": "A known cooling-system restriction cut discharge capability by roughly a third during the evening peak. Plans that front-loaded reserve commitments before the derating window avoided violating reserve requirements once capability dropped.",
+      "outcome": "Plans that ignored the announced derating and scheduled full-power discharge into the restricted window were rejected by the validator; revised plans that respected the reduced ceiling still captured most of the peak value.",
+      "dateLabel": "2025-06-03"
+    },
+    {
+      "id": "hist-2025-08-demand-surprise",
+      "title": "August 2025 demand forecast miss",
+      "scenarioType": "stress",
+      "tags": ["forecast-error", "demand", "robustness"],
+      "summary": "Actual demand came in materially above the day-ahead forecast during a heat event. Plans with a larger untouched reserve margin adapted without violating constraints; plans that used nearly all headroom for arbitrage had to curtail discharge.",
+      "outcome": "The plans that kept at least 20% more reserve margin than the minimum requirement had zero constraint violations once actual demand exceeded forecast; tightly optimized plans needed a same-day revision.",
+      "dateLabel": "2025-08-14"
+    },
+    {
+      "id": "hist-2025-09-wind-miss",
+      "title": "September 2025 overnight wind shortfall",
+      "scenarioType": "stress",
+      "tags": ["forecast-error", "wind", "robustness"],
+      "summary": "An overnight wind forecast that looked like a clear surplus night undershot by roughly half once a ridge of high pressure moved in earlier than modeled. Operators who staged only a partial charge and re-evaluated at the top of each hour avoided over-committing to a surplus that never fully arrived.",
+      "outcome": "Plans that charged to the SOC ceiling in the first two hours based on the forecast alone finished the morning with less usable headroom than plans that staged the charge across the full overnight window.",
+      "dateLabel": "2025-09-05"
+    },
+    {
+      "id": "hist-2025-11-combined-event",
+      "title": "November 2025 combined adversarial event",
+      "scenarioType": "stress",
+      "tags": ["combined", "derating", "wind", "demand"],
+      "summary": "A rare overlap of an announced thermal derating, an overnight wind shortfall, and an evening demand surprise. This is the closest historical analog to the GridTwin 'Combined Adversarial Event' scenario.",
+      "outcome": "The only plans that avoided a constraint violation were ones that treated the announced derating as a hard ceiling from the start and kept reserve margin above the minimum throughout the horizon; net value for the day was roughly 40% below a normal day.",
+      "dateLabel": "2025-11-19"
+    }
+  ]
+}

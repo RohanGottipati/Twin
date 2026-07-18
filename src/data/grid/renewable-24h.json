@@ -1,0 +1,31 @@
+{
+  "demoDate": "2026-01-15",
+  "note": "Deterministic GridTwin demo fixture. Not live generation telemetry.",
+  "intervalMinutes": 60,
+  "hours": [
+    { "hour": 0, "windMw": 2200, "solarMw": 0, "ambientTemperatureC": 18 },
+    { "hour": 1, "windMw": 2400, "solarMw": 0, "ambientTemperatureC": 17 },
+    { "hour": 2, "windMw": 2600, "solarMw": 0, "ambientTemperatureC": 17 },
+    { "hour": 3, "windMw": 2700, "solarMw": 0, "ambientTemperatureC": 16 },
+    { "hour": 4, "windMw": 2800, "solarMw": 0, "ambientTemperatureC": 16 },
+    { "hour": 5, "windMw": 2750, "solarMw": 0, "ambientTemperatureC": 16 },
+    { "hour": 6, "windMw": 2600, "solarMw": 20, "ambientTemperatureC": 17 },
+    { "hour": 7, "windMw": 2300, "solarMw": 120, "ambientTemperatureC": 19 },
+    { "hour": 8, "windMw": 1900, "solarMw": 320, "ambientTemperatureC": 22 },
+    { "hour": 9, "windMw": 1500, "solarMw": 560, "ambientTemperatureC": 25 },
+    { "hour": 10, "windMw": 1200, "solarMw": 760, "ambientTemperatureC": 27 },
+    { "hour": 11, "windMw": 1000, "solarMw": 880, "ambientTemperatureC": 29 },
+    { "hour": 12, "windMw": 900, "solarMw": 920, "ambientTemperatureC": 31 },
+    { "hour": 13, "windMw": 850, "solarMw": 880, "ambientTemperatureC": 32 },
+    { "hour": 14, "windMw": 900, "solarMw": 780, "ambientTemperatureC": 33 },
+    { "hour": 15, "windMw": 1000, "solarMw": 600, "ambientTemperatureC": 33 },
+    { "hour": 16, "windMw": 1200, "solarMw": 380, "ambientTemperatureC": 31 },
+    { "hour": 17, "windMw": 1500, "solarMw": 160, "ambientTemperatureC": 29 },
+    { "hour": 18, "windMw": 1800, "solarMw": 40, "ambientTemperatureC": 26 },
+    { "hour": 19, "windMw": 2000, "solarMw": 0, "ambientTemperatureC": 24 },
+    { "hour": 20, "windMw": 2100, "solarMw": 0, "ambientTemperatureC": 22 },
+    { "hour": 21, "windMw": 2150, "solarMw": 0, "ambientTemperatureC": 21 },
+    { "hour": 22, "windMw": 2180, "solarMw": 0, "ambientTemperatureC": 20 },
+    { "hour": 23, "windMw": 2200, "solarMw": 0, "ambientTemperatureC": 19 }
+  ]
+}

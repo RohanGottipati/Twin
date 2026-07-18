@@ -1,0 +1,30 @@
+{
+  "assets": [
+    {
+      "id": "ontario-bess-01",
+      "name": "Milton Grid Battery",
+      "description": "Simulated 100 MW / 400 MWh grid-scale battery energy storage system used for the GridTwin control room demo.",
+      "market": "IESO",
+      "location": {
+        "label": "Milton, Ontario",
+        "latitude": 43.5183,
+        "longitude": -79.8774
+      },
+      "ratedPowerMw": 100,
+      "usableEnergyMwh": 400,
+      "minSocFraction": 0.1,
+      "maxSocFraction": 0.9,
+      "startingSocFraction": 0.5,
+      "roundTripEfficiency": 0.9,
+      "reserveRequirementMw": 20,
+      "maxRampMwPerInterval": 50,
+      "thermal": {
+        "warningTemperatureC": 34,
+        "maxTemperatureC": 45,
+        "deratingStartTemperatureC": 34,
+        "deratingFractionAtMax": 0.5
+      },
+      "status": "available"
+    }
+  ]
+}

@@ -1,0 +1,93 @@
+{
+  "scenarios": [
+    {
+      "id": "normal-day",
+      "name": "Normal Day",
+      "category": "baseline",
+      "description": "Typical Ontario winter weekday. No forecast surprises, no derating. Good default for a first run.",
+      "visible": {},
+      "hiddenStress": null,
+      "hiddenStressDescription": null
+    },
+    {
+      "id": "overnight-wind-surplus",
+      "name": "Overnight Wind Surplus",
+      "category": "renewable",
+      "description": "Strong overnight wind pushes prices toward zero from midnight to 05:00. Rewards charging during the surplus window.",
+      "visible": {
+        "windMultiplier": 1.8,
+        "windHours": [0, 1, 2, 3, 4, 5],
+        "priceMultiplier": 0.35,
+        "priceHours": [0, 1, 2, 3, 4, 5]
+      },
+      "hiddenStress": null,
+      "hiddenStressDescription": null
+    },
+    {
+      "id": "evening-demand-peak",
+      "name": "Evening Demand Peak",
+      "category": "market",
+      "description": "System demand and price both spike harder than the normal-day baseline between 17:00 and 20:00.",
+      "visible": {
+        "demandMultiplier": 1.12,
+        "demandHours": [17, 18, 19, 20],
+        "priceMultiplier": 1.25,
+        "priceHours": [17, 18, 19, 20]
+      },
+      "hiddenStress": null,
+      "hiddenStressDescription": null
+    },
+    {
+      "id": "demand-forecast-increase",
+      "name": "Demand Forecast Increase",
+      "category": "stress",
+      "description": "The planner sees the normal-day demand forecast. Actual system demand comes in materially higher; used to test plan robustness.",
+      "visible": {},
+      "hiddenStress": {
+        "demandMultiplier": 1.12
+      },
+      "hiddenStressDescription": "Actual demand across the horizon comes in 12% above the forecast that was used for planning."
+    },
+    {
+      "id": "battery-derating",
+      "name": "Battery Derating",
+      "category": "asset",
+      "description": "A known thermal restriction reduces charge and discharge capability by 30% during the 17:00-20:00 peak window. This is announced ahead of planning.",
+      "visible": {
+        "deratingPercent": 0.3,
+        "deratingHours": [17, 18, 19, 20]
+      },
+      "hiddenStress": null,
+      "hiddenStressDescription": null
+    },
+    {
+      "id": "renewable-forecast-miss",
+      "name": "Renewable Forecast Miss",
+      "category": "stress",
+      "description": "The planner sees an optimistic overnight wind forecast. Actual overnight wind output undershoots that forecast by half; used to test plan robustness.",
+      "visible": {},
+      "hiddenStress": {
+        "windMultiplier": 0.5,
+        "windHours": [0, 1, 2, 3, 4, 5]
+      },
+      "hiddenStressDescription": "Overnight wind output (00:00-05:00) actually reaches only 50% of the forecast used for planning."
+    },
+    {
+      "id": "combined-adversarial",
+      "name": "Combined Adversarial Event",
+      "category": "stress",
+      "description": "The announced peak-hour derating from the Battery Derating scenario, combined with an overnight wind shortfall and an evening demand surprise. The hardest scenario in the catalog.",
+      "visible": {
+        "deratingPercent": 0.3,
+        "deratingHours": [17, 18, 19, 20]
+      },
+      "hiddenStress": {
+        "windMultiplier": 0.5,
+        "windHours": [0, 1, 2, 3, 4, 5],
+        "demandMultiplier": 1.12,
+        "demandHours": [16, 17, 18, 19, 20]
+      },
+      "hiddenStressDescription": "Overnight wind undershoots forecast by 50% and evening demand (16:00-20:00) comes in 12% above forecast, layered on top of the announced peak-hour derating."
+    }
+  ]
+}
