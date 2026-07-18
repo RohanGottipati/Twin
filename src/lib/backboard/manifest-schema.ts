@@ -1,20 +1,19 @@
-import type { AssistantRoleKey } from "@/lib/backboard/assistants";
+import type { TwinTOAssistantKey } from "@/lib/backboard/assistants";
+import { TWINTO_ASSISTANT_KEYS } from "@/lib/backboard/assistants";
 import type { ResolvedAssistant } from "@/lib/backboard/assistant-manifest";
 
 /**
- * Schema version for the local, informational assistant-manifest snapshot
- * written by `npm run backboard:bootstrap` to `.backboard/assistant-
- * manifest.local.json` (gitignored; see .gitignore). Bump this whenever the
- * shape of `AssistantManifestFile` below changes, so a stale on-disk file
- * from a previous shape is easy to spot rather than silently misread.
+ * Schema version for `.backboard/assistant-manifest.local.json`.
+ * v3 introduces rosterVersion consolidated-16 and a keyed assistants map.
  */
-export const MANIFEST_SCHEMA_VERSION = 2;
+export const MANIFEST_SCHEMA_VERSION = 3;
 
-/** Identifies which product wrote the manifest file; TwinTO is the only product in this repository today (see AGENTS.md). */
 export const MANIFEST_PRODUCT = "twinto";
 
+export const MANIFEST_ROSTER_VERSION = "consolidated-16";
+
 export interface AssistantManifestEntry {
-  role: AssistantRoleKey;
+  role: TwinTOAssistantKey;
   name: string;
   assistantId: string;
   toolCount: number;
@@ -29,25 +28,22 @@ export interface AssistantManifestEntry {
 export interface AssistantManifestFile {
   schemaVersion: typeof MANIFEST_SCHEMA_VERSION;
   product: typeof MANIFEST_PRODUCT;
-  generatedAt: string;
+  rosterVersion: typeof MANIFEST_ROSTER_VERSION;
+  createdAt: string;
   assistantCount: number;
-  assistants: AssistantManifestEntry[];
+  assistants: Record<TwinTOAssistantKey, AssistantManifestEntry>;
 }
 
-/**
- * Builds the plain-object snapshot written to the local manifest file from a
- * resolved assistant manifest (see assistant-manifest.ts). Pure function so
- * it is trivially testable without touching the filesystem or a Backboard
- * adapter.
- */
 export function buildAssistantManifestFile(
-  manifest: Map<AssistantRoleKey, ResolvedAssistant> | ResolvedAssistant[],
+  manifest: Map<TwinTOAssistantKey, ResolvedAssistant> | ResolvedAssistant[],
 ): AssistantManifestFile {
   const resolved = manifest instanceof Map ? Array.from(manifest.values()) : manifest;
+  const assistants = {} as Record<TwinTOAssistantKey, AssistantManifestEntry>;
 
-  const assistants: AssistantManifestEntry[] = resolved
-    .map((entry) => ({
-      role: entry.role.key,
+  for (const entry of resolved) {
+    const key = entry.role.key;
+    assistants[key] = {
+      role: key,
       name: entry.role.name,
       assistantId: entry.record.assistantId,
       toolCount: entry.role.toolNames.length,
@@ -57,14 +53,21 @@ export function buildAssistantManifestFile(
         name: entry.model.modelName,
         contextLimit: entry.model.contextLimit,
       },
-    }))
-    .sort((a, b) => a.role.localeCompare(b.role));
+    };
+  }
+
+  for (const key of TWINTO_ASSISTANT_KEYS) {
+    if (!assistants[key]) {
+      throw new Error(`Manifest is missing required assistant key "${key}".`);
+    }
+  }
 
   return {
     schemaVersion: MANIFEST_SCHEMA_VERSION,
     product: MANIFEST_PRODUCT,
-    generatedAt: new Date().toISOString(),
-    assistantCount: assistants.length,
+    rosterVersion: MANIFEST_ROSTER_VERSION,
+    createdAt: new Date().toISOString(),
+    assistantCount: TWINTO_ASSISTANT_KEYS.length,
     assistants,
   };
 }
