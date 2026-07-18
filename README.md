@@ -3,9 +3,10 @@
 TwinTO is a simulated Toronto transit digital twin. A 2D MapLibre map of
 downtown Toronto shows Line 1, the 501 Queen streetcar, and a feeder bus;
 census-weighted synthetic citizen cohorts react to candidate schedule
-changes; and a virtual Backboard planning department (54 named specialist
+changes; and a virtual Backboard planning department (exactly 16 consolidated
 assistants) proposes, simulates, stress-tests, and recommends interventions
-before a human planner ever sees them.
+before a human planner ever sees them. Intent bundles activate only the
+specialists needed for each question.
 
 The flagship demo scenario is the `departure-406-412` 4:06/4:12 PM load
 imbalance at Union station: see `docs/twinto-implementation.md` for the full
@@ -24,12 +25,12 @@ with zero external credentials.
 - 2D MapLibre Toronto map (no 3D, no globe, no Cesium): transit routes and
   stations, a citizen-density layer, a station crowding heatmap, and an
   event/incident overlay.
+- City Copilot chat docked to the bottom of the map, with dynamic activation
+  of the consolidated 16-assistant roster (not all 16 on every message).
 - A virtual Backboard planning department that frames the problem,
-  establishes a baseline, proposes 2-3 genuinely different schedule
-  candidates, runs a deterministic transit simulator, predicts simulated
-  citizen-cohort reactions, stress-tests the leading candidate against a
-  concert-surge scenario, debates, and reaches a final recommendation, live
-  over SSE.
+  establishes a baseline, proposes candidates, runs a deterministic transit
+  simulator, predicts simulated citizen-cohort reactions, stress-tests the
+  leading candidate, and reaches a final recommendation over SSE.
 - A deterministic transit simulator and stress-tester that has final
   authority: a Backboard recommendation that fails a hard safety,
   accessibility, or evidence check is always overridden before it reaches
@@ -72,14 +73,20 @@ npm run check      # lint + typecheck + test + build
    ```bash
    npm run backboard:status
    ```
-5. (Live mode only, once) seed the 54-assistant roster and its knowledge
-   documents:
+5. (Live mode only, once) seed the consolidated 16-assistant roster and its
+   knowledge documents:
    ```bash
    npm run backboard:bootstrap
    ```
 6. (Live mode only, optional) run a real smoke test:
    ```bash
    npm run backboard:smoke
+   ```
+7. After bootstrap + smoke, dry-run then confirm cleanup of obsolete 54-agent
+   TwinTO specialists and any leftover GridTwin assistants:
+   ```bash
+   npm run backboard:consolidate-roster
+   npm run backboard:consolidate-roster -- --confirm
    ```
 
 ## Architecture
@@ -90,6 +97,7 @@ src/
   components/
     map/                  MapLibre Toronto map + layers (TransitLayers, CitizenDensityLayer, CrowdHeatmapLayer, EventLayer, MapLegend)
     twinto/                Product UI: scenario/policy panels, Backboard council, charts
+    chat/                  City Copilot bottom dock
     navigation/, mobile/, feedback/, primitives/   Shared UI patterns
   data/transit/           Synthetic fixture network, scenarios, cohorts, events (never live GTFS)
   lib/

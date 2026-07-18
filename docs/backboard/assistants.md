@@ -1,33 +1,39 @@
-# TwinTO assistant roster
+# TwinTO assistants (consolidated roster)
 
-54 named assistants with the prefix `TwinTO —`. Stable keys live in
-`src/lib/backboard/assistants.ts`. Old GridTwin battery assistants must not
-be renamed in place; create TwinTO assistants, smoke-test, then delete
-GridTwin names via `npm run backboard:cleanup-gridtwin -- --confirm`.
+TwinTO uses exactly **16** named Backboard assistants (`rosterVersion:
+consolidated-16`, manifest schemaVersion 3). The previous 54-specialist roster
+was architectural over-fragmentation: responsibilities were consolidated, not
+removed. Backboard features (tools, RAG, memory modes, streaming, model
+routing, structured outputs) remain fully in use.
 
-## Bundles
+## Why 16
 
-Flagship scenario `departure-406-412` uses `CORE_SCHEDULE_BUNDLE` plus
-`CONCERT_BUNDLE` (at least 18 unique roles). Weather overlays can add
-`WEATHER_BUNDLE`.
+Specialist micro-roles made every run look like dozens of agents were
+required, even for simple map questions. The consolidated roster keeps clear
+ownership (City Copilot, Planning Orchestrator, Final Policy Judge, etc.)
+while dynamic intent bundles activate only the specialists needed.
 
-## Shared prompt guard
+## Canonical keys
 
-Every system prompt includes the TwinTO guard: tool-backed facts only,
-never present mock citizen reactions as real opinion, never reveal
-chain-of-thought, label synthetic/fixture data, and defer viability to
-deterministic simulation plus hard safety/accessibility checks.
+See `TWINTO_ASSISTANT_KEYS` in `src/lib/backboard/assistants.ts`.
 
-## Model routing
+## Dynamic activation
 
-Profiles: `FAST_ANALYSIS`, `TOOL_ANALYSIS`, `STRUCTURED_POLICY`,
-`RISK_REASONING`, `VISION_DOCUMENT`, `VOICE_OPERATOR`, `SUMMARY`.
+Intents: `SIMPLE_MAP_NAVIGATION`, `SIMPLE_EXPLANATION`, `NEW_STATION_LOCATION`,
+`SCHEDULE_CHANGE`, `EVENT_RESPONSE`, `COMPARE_EXISTING_CANDIDATES`.
 
-High reasoning: planning orchestrator, safety, adversarial stress, debate
-moderator, final policy judge. Summaries use the low-cost profile.
+Simple navigation activates three assistants. Full planning questions activate
+the larger analysis/validation set. Events are added only when relevant.
 
-## Manifest
+## Bootstrap and cleanup
 
-Local manifest schema version 2, product `twinto`
-(`.backboard/assistant-manifest.local.json`). Delete any leftover v1
-GridTwin manifest before bootstrapping.
+```bash
+npm run backboard:bootstrap
+npm run backboard:smoke
+npm run backboard:consolidate-roster              # dry run
+npm run backboard:consolidate-roster -- --confirm
+```
+
+Do not rename old 54-agent specialists in place: create the clean 16, verify
+smoke, then delete obsolete TwinTO and GridTwin assistants with confirmation.
+Unknown assistants are never deleted.

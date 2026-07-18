@@ -7,12 +7,12 @@ npm run test
 npm run test:backboard
 ```
 
-Covers: 54 assistant keys, no GridTwin names in the active roster, no
-battery tools, bundles, mock citizen reaction, queue/boarding, departure
-load imbalance, wait metrics, event surge, accessibility, ranker, SSE
-parser, run history, manifest schema v2, security (server-only key, unknown
-tools, body limits, knowledge path allowlist), mock orchestration, API
-routes.
+Covers: exactly 16 assistant keys, no GridTwin or old 54-agent keys in the
+active roster, no battery tools, intent bundles, mock citizen reaction,
+queue/boarding, departure load imbalance, wait metrics, event surge,
+accessibility, ranker, SSE parser, run history, manifest schema v3,
+map-action allowlist, security (server-only key, unknown tools, body
+limits, knowledge path allowlist), mock orchestration, API routes.
 
 Default tests never call live Backboard.
 
