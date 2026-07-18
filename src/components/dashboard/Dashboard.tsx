@@ -127,16 +127,12 @@ export function Dashboard() {
         </div>
       </div>
 
-      {/* Right: neighbourhood inspector */}
-      {data && selectedCode && (
-        <div className="pointer-events-none absolute right-4 top-4 z-10">
-          <InspectorPanel index={nbhdIndex} personas={data.personas} />
-        </div>
-      )}
-
-      {/* Legend, clear of the maplibre controls and chat bar */}
-      <div className="pointer-events-none absolute bottom-28 right-14 z-10 hidden lg:block">
+      {/* Right: legend + neighbourhood inspector stacked */}
+      <div className="pointer-events-none absolute right-4 top-4 z-10 hidden flex-col items-end gap-2.5 lg:flex">
         <Legend />
+        {data && selectedCode && (
+          <InspectorPanel index={nbhdIndex} personas={data.personas} />
+        )}
       </div>
 
       <BuildingMiniChat />
