@@ -73,15 +73,15 @@ def test_pipeline_runs_end_to_end_and_produces_nondegenerate_output(tmp_path):
     results = run_pipeline(n_personas=60, seed=123, model=None, max_tokens=150)
     assert len(results) >= 30  # sanity: sampling + LLM calls actually produced rows
 
-    near = results[results["near"]]["valence"]
-    far = results[~results["near"]]["valence"]
+    near = results[results["near"]]["opinion_score"]
+    far = results[~results["near"]]["opinion_score"]
     assert len(near) >= 5 and len(far) >= 5, "near/far split too small to compare -- check NEAR_THRESHOLD_M"
 
-    # Real LM output, not a stub: opinions are non-empty text, and valence
+    # Real LM output, not a stub: opinions are non-empty text, and opinion_score
     # actually varies across personas (a constant score for everyone would
     # mean the scorer or the LM call path is broken, not just imprecise).
     assert results["opinion_text"].str.len().min() > 0
-    assert results["valence"].std() > 0.01
+    assert results["opinion_score"].std() > 0.01
 
     from eval.heatmap_phase1 import render_heatmap
 

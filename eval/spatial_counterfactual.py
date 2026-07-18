@@ -5,8 +5,8 @@
     now produce mixed, spatially-sensible opinions."
 
     Gate: "Counterfactual test: for a persona the change does not touch,
-    the opinion and valence are near-neutral; move that persona next to
-    the change and the valence shifts in the correct direction and
+    the opinion and opinion_score are near-neutral; move that persona next to
+    the change and the opinion_score shifts in the correct direction and
     magnitude. If it does not, the feature injection is broken; fix
     before proceeding."
 
@@ -148,7 +148,7 @@ def _base_persona(neighbourhood_name: str, home: dict) -> Persona:
     )
 
 
-def _sample_valences(persona: Persona, before: TwinState, after: TwinState, n_samples: int, model: str | None) -> dict:
+def _sample_opinion_scores(persona: Persona, before: TwinState, after: TwinState, n_samples: int, model: str | None) -> dict:
     features = compute_spatial_features(persona, before, after)
     spatial_block = build_spatial_block(features)
     prompt = PROMPT_TEMPLATE.format(
@@ -159,11 +159,11 @@ def _sample_valences(persona: Persona, before: TwinState, after: TwinState, n_sa
         spatial_block=spatial_block,
         policy_text=POLICY_TEXT,
     )
-    valences = []
+    opinion_scores = []
     opinions = []
     for _ in range(n_samples):
         opinion = complete_chat([{"role": "user", "content": prompt}], model=model, temperature=0.9, max_tokens=150)
-        valences.append(score_opinion(opinion))
+        opinion_scores.append(score_opinion(opinion))
         opinions.append(opinion)
     return {
         "persona_id": persona.id,
@@ -172,8 +172,8 @@ def _sample_valences(persona: Persona, before: TwinState, after: TwinState, n_sa
         "transit_access_time_before_min": features.transit_access_time_before_min,
         "transit_access_time_after_min": features.transit_access_time_after_min,
         "spatial_block": spatial_block,
-        "valences": valences,
-        "mean_valence": sum(valences) / len(valences),
+        "opinion_scores": opinion_scores,
+        "mean_opinion_score": sum(opinion_scores) / len(opinion_scores),
         "sample_opinion": opinions[0],
     }
 
@@ -190,14 +190,14 @@ def run_counterfactual(n_samples: int = N_SAMPLES_PER_PERSONA, model: str | None
     near_persona = _base_persona("Test Neighbourhood", near_home)
     far_persona = _base_persona("Test Neighbourhood", far_home)
 
-    near_result = _sample_valences(near_persona, before, after, n_samples, model)
-    far_result = _sample_valences(far_persona, before, after, n_samples, model)
+    near_result = _sample_opinion_scores(near_persona, before, after, n_samples, model)
+    far_result = _sample_opinion_scores(far_persona, before, after, n_samples, model)
 
     return {
         "new_stop_location": stop_xy,
         "near": near_result,
         "far": far_result,
-        "mean_valence_delta": near_result["mean_valence"] - far_result["mean_valence"],
+        "mean_opinion_score_delta": near_result["mean_opinion_score"] - far_result["mean_opinion_score"],
     }
 
 

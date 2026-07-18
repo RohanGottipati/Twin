@@ -1,4 +1,4 @@
-"""Placeholder valence scorer for Phase 1 (implementation_plan.md: "score
+"""Placeholder opinion_score scorer for Phase 1 (implementation_plan.md: "score
 with a placeholder sentiment probe").
 
 This is explicitly NOT the frozen linear probe over model activations that
@@ -6,9 +6,9 @@ AGENTS.md 3.1 mandates as the real scorer ("Prefer a frozen linear probe
 over activations to a text sentiment model, because activations reflect the
 model's actual state rather than its rhetoric"). Training that probe needs
 labelled human opinion data and comes in Phase 4
-(`model/scorer/` -- "Train the frozen valence probe on human opinion ->
-valence"). Until then, this lexicon scorer is a deliberately simple stand-in
-so the Phase 1 loop (opinion -> valence -> heatmap) can be exercised end to
+(`model/scorer/` -- "Train the frozen opinion_score probe on human opinion ->
+opinion_score"). Until then, this lexicon scorer is a deliberately simple stand-in
+so the Phase 1 loop (opinion -> opinion_score -> heatmap) can be exercised end to
 end.
 
 It still respects the one invariant that matters even for a placeholder
@@ -55,7 +55,7 @@ _WORD_RE = re.compile(r"[a-zA-Z']+")
 
 
 def score_opinion(opinion_text: str) -> float:
-    """Return a valence in [0, 1]; 0.5 is neutral / no signal.
+    """Return an opinion_score in [0, 1]; 0.5 is neutral / no signal.
 
     Reads only `opinion_text` -- see module docstring. Includes a simple
     negation-scope flip (a sentiment word preceded within NEGATION_WINDOW

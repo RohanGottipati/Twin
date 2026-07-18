@@ -43,7 +43,7 @@ copy, or demo is a bug.
 - **It is a distribution, not an oracle.** Output is always a distribution over
   a population with uncertainty, never a single confident number.
 - **The score is secondary; the opinion is primary.** The written opinion is the
-  artifact planners read and audit. The [0,1] valence is a *measurement* taken
+  artifact planners read and audit. The [0,1] opinion_score is a *measurement* taken
   off the opinion, not the point.
 - **No ground truth for the future exists.** There is no counterfactual Toronto.
   We validate by retrodiction and mechanism tests, never by claiming access to
@@ -55,9 +55,9 @@ If a stakeholder wants consequence prediction, that is a separate system. Say so
 
 **3.1 The causal chain is: features -> opinion -> score.**
 Spatial and policy effects are the real drivers. The opinion is a *mediator*.
-The valence is a *readout* of the opinion. This ordering is the whole reason the
+The opinion_score is a *readout* of the opinion. This ordering is the whole reason the
 system is interpretable. Concretely:
-- The valence probe must read the model's internal activations (or the opinion
+- The opinion_score probe must read the model's internal activations (or the opinion
   text), never the raw profile or policy. If the number can see the inputs
   directly, the opinion is no longer the mediator and the interpretability claim
   collapses.
@@ -92,7 +92,7 @@ lesson; it is baked in, not optional.)
 |  general tools over the twin: query / patch / run / diff  |
 +-----------------------------------------------------------+
 |  POPULATION SIMULATOR  (our Qwen model + two graphs)      |
-|  census-weighted personas -> opinions -> valences         |
+|  census-weighted personas -> opinions -> opinion_scores         |
 +-----------------------------------------------------------+
 |  CITY TWIN  (typed, versioned document + invariants)      |
 |  geometry + network + policy layer, from Toronto open data|
@@ -160,7 +160,7 @@ and asked for an opinion, which is then scored. Aggregation over the population
 Division of labor that survives all of the above: graphs own **structure** (who
 is affected, how effects reach them, who influences whom) and emit a per-persona
 context; the LM owns **generation** (turn context into a legible opinion plus a
-probeable valence). The LM cannot see global structure; the graphs cannot write
+probeable opinion_score). The LM cannot see global structure; the graphs cannot write
 a reason. Let each do its job.
 
 ## 5. The model: SFT then GRPO
@@ -181,14 +181,14 @@ reward you can measure but cannot hand-write. That is the textbook GRPO case.
 
 GRPO rollout content is **sampled from the model, not written**; the reward reads
 it. Per prompt, Flash samples a group; `score_response` blends:
-- valence match: frozen probe vs the matched real respondent's valence,
+- opinion_score match: frozen probe vs the matched real respondent's opinion_score,
 - realism / text-alignment: discriminator (per 3.4),
 - **the hard term**: group distributional match, JS divergence between the
-  sampled group's valence distribution and the real subgroup distribution.
+  sampled group's opinion_score distribution and the real subgroup distribution.
 
 Anything the reward needs beyond `input`/`output` must live under `metadata`;
 Flash silently drops every other top-level key before the row reaches a worker.
-So `target_valence`, `subgroup`, and `real_subgroup_dist` all go in `metadata`.
+So `target_opinion_score`, `subgroup`, and `real_subgroup_dist` all go in `metadata`.
 
 **5.3 Hard constraint on RL scope.** The distributional reward needs a real
 per-policy distribution, which only exists for retrodictable **past** policies
@@ -234,7 +234,7 @@ out-of-the-box persona alignment is substantially off, and prompting a model to
 /model
   /sft       SFT dataset builders + configs
   /grpo      environment.py (Flash env: reward), dataset/, config.toml
-  /scorer    frozen valence probe + realism discriminator (packaged sidecars)
+  /scorer    frozen opinion_score probe + realism discriminator (packaged sidecars)
   serving.py OpenAI-compatible client for the Flash endpoint
 /graphs      effect_gnn.py (later), opinion_gnn.py (ablation only)
 /agent       tools.py (query/patch/run/snapshot/diff), loop.py

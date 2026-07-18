@@ -3,7 +3,7 @@
     "Simplest simulator: prompt an off-the-shelf Qwen (via the Flash
     endpoint) with persona + a hand-written policy context; get an opinion;
     score with a placeholder sentiment probe. Aggregate census-weighted
-    valences into a neighbourhood heatmap. Render to a static file."
+    opinion_scores into a neighbourhood heatmap. Render to a static file."
 
 Gate: "For one hand-authored policy, the pipeline produces a heatmap where
 directly-affected areas differ visibly from unaffected ones. Eyeball sanity
@@ -157,7 +157,7 @@ def run_pipeline(n_personas: int, seed: int, model: str | None, max_tokens: int)
             temperature=0.9,
             max_tokens=max_tokens,
         )
-        valence = score_opinion(opinion)
+        opinion_score = score_opinion(opinion)
         rows.append(
             {
                 "persona_id": persona.id,
@@ -169,7 +169,7 @@ def run_pipeline(n_personas: int, seed: int, model: str | None, max_tokens: int)
                 "distance_to_change_m": dist,
                 "near": dist <= NEAR_THRESHOLD_M,
                 "opinion_text": opinion,
-                "valence": valence,
+                "opinion_score": opinion_score,
             }
         )
 
@@ -179,7 +179,7 @@ def run_pipeline(n_personas: int, seed: int, model: str | None, max_tokens: int)
 def render_heatmap(results: pd.DataFrame, out_path: Path) -> pd.DataFrame:
     neighbourhoods = gpd.read_file(PROCESSED_DIR / "neighbourhoods.geojson")
     neighbourhoods["AREA_SHORT_CODE"] = neighbourhoods["AREA_SHORT_CODE"].astype(str).str.zfill(3)
-    agg = results.groupby("neighbourhood_code")["valence"].agg(["mean", "count"]).reset_index()
+    agg = results.groupby("neighbourhood_code")["opinion_score"].agg(["mean", "count"]).reset_index()
     agg["neighbourhood_code"] = agg["neighbourhood_code"].astype(str).str.zfill(3)
     merged = neighbourhoods.merge(agg, left_on="AREA_SHORT_CODE", right_on="neighbourhood_code", how="left")
 
@@ -207,7 +207,7 @@ def render_heatmap(results: pd.DataFrame, out_path: Path) -> pd.DataFrame:
         linewidth=0.5,
     )
     ax.set_title(
-        "Phase 1: mean predicted valence by neighbourhood\n"
+        "Phase 1: mean predicted opinion_score by neighbourhood\n"
         f"(hand-authored policy: new streetcar stop; colour range [{vmin:.3f}, {vmax:.3f}])"
     )
     ax.set_axis_off()
@@ -235,14 +235,14 @@ def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     results.to_csv(OUTPUT_DIR / "phase1_personas.csv", index=False)
 
-    near = results[results["near"]]["valence"]
-    far = results[~results["near"]]["valence"]
+    near = results[results["near"]]["opinion_score"]
+    far = results[~results["near"]]["opinion_score"]
     summary = {
         "n_personas": len(results),
         "n_near": len(near),
         "n_far": len(far),
-        "mean_valence_near": float(near.mean()) if len(near) else None,
-        "mean_valence_far": float(far.mean()) if len(far) else None,
+        "mean_opinion_score_near": float(near.mean()) if len(near) else None,
+        "mean_opinion_score_far": float(far.mean()) if len(far) else None,
     }
     print(json.dumps(summary, indent=2))
     (OUTPUT_DIR / "phase1_summary.json").write_text(json.dumps(summary, indent=2))
