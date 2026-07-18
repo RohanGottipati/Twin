@@ -210,7 +210,7 @@ def main(out_path: Path = DEFAULT_OUT) -> None:
                     "persona_provenance": "real",
                     "demographics": demographics,
                     "persona_attrs_kept": kept,
-                    "persona_text_renderer": "persona_to_text_v2",
+                    "persona_text_renderer": "persona_to_text_v3",
                 },
             })
 

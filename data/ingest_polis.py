@@ -136,7 +136,7 @@ def ingest_conversation(conversation_id: str, meta: dict, rng: random.Random) ->
                 "persona_provenance": "synthetic",
                 "persona_attributes": attrs,
                 "persona_attrs_kept": kept,
-                "persona_text_renderer": "persona_to_text_v2",
+                "persona_text_renderer": "persona_to_text_v3",
             },
         })
     return rows

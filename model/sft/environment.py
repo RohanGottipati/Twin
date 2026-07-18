@@ -4,10 +4,7 @@ Rows: input = {persona_text, policy_text, spatial_features_text|null},
 output = real human opinion text (byte-for-byte).
 
 SFT uses default sft_completion(example.output). score_response is a
-pass-through stub (Flash does not use it for SFT loss; only for local smoke).
-
-Push: flash env push --name persona-env model/sft
-Then paste the returned id into model/sft/config.toml [environment].id
+pass-through stub (Flash does not use it for SFT loss).
 """
 
 from __future__ import annotations
@@ -18,7 +15,8 @@ from pathlib import Path
 from freesolo.datasets.types import TaskExample
 from freesolo.environments import EnvironmentSingleTurn, RewardResult
 
-from model.sft.prompt import build_user_content
+# keep prompt builder in this folder so `flash env push` is self-contained
+from prompt import build_user_content
 
 DEFAULT_DATASET_PATH = Path(__file__).parent / "dataset" / "train.jsonl"
 
@@ -34,11 +32,9 @@ def load_jsonl(path: str | Path):
 
 
 def _input_dict(example: TaskExample) -> dict:
-    # structured dict preferred; string fallback for scaffold-style rows
     inp = example.input
     if isinstance(inp, dict):
         return inp
-    # raw record may still hold the structured form
     rec = getattr(example, "record", None) or {}
     if isinstance(rec, dict) and isinstance(rec.get("input"), dict):
         return rec["input"]

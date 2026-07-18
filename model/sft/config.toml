@@ -1,18 +1,20 @@
-# Flash SFT config for ToronTwin persona opinions (AGENTS.md 5.1 / HANDOFF).
-# Before train: flash env push --name persona-env model/sft
-# then paste the returned id into [environment].id below.
-# Cost gate: flash train model/sft/config.toml --cost  (wait for human approval)
+# Flash SFT for ToronTwin persona opinions (AGENTS.md 5.1).
+# Flash 1.0.1 catalog has no Qwen2.5-7B; closest is Qwen3.5-9B.
+# Cost gate: flash train model/sft/config.toml --cost  then human OK before submit.
 
-model = "Qwen/Qwen2.5-7B-Instruct"
-model_policy = "allow"  # Qwen2.5-7B not in Flash default list; open-model policy
+model = "Qwen/Qwen3.5-9B"
 algorithm = "sft"
 seed = 42
 
 [environment]
-id = "torontwin/persona-env"
+id = "acmc/persona-env"
 
 [train]
 epochs = 3
 max_examples = 30000
 lora_rank = 32
 lora_alpha = 64
+
+[wandb]
+project = "torontwin-sft"
+run_name = "persona-sft-qwen35-9b"

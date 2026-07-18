@@ -77,7 +77,7 @@ def main() -> None:
     ap.add_argument("--txt", type=Path, default=DEFAULT_TXT)
     ap.add_argument("--temprature", type=float, default=0.9)
     ap.add_argument("--temperature", type=float, default=None)
-    ap.add_argument("--max-tokens", type=int, default=280)
+    ap.add_argument("--max-tokens", type=int, default=512)
     args = ap.parse_args()
     temp = args.temperature if args.temperature is not None else args.temprature
 

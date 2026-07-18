@@ -37,7 +37,7 @@ def main() -> None:
 
     print("=== 2. Same persona, three dropout renderings (variance check) ===")
     for i in range(3):
-        subset = attribute_dropout(REAL_ANES_LIKE_PERSONA, rng, keep_prob=0.6)
+        subset = attribute_dropout(REAL_ANES_LIKE_PERSONA, rng)
         print(f"-- kept fields: {sorted(subset.keys())}")
         print(persona_to_text(subset))
         print()
@@ -50,7 +50,7 @@ def main() -> None:
 
     print("=== 4. Synthetic persona with dropout applied too ===")
     synthetic2 = generate_synthetic_attributes(rng)
-    subset2 = attribute_dropout(synthetic2, rng, keep_prob=0.5)
+    subset2 = attribute_dropout(synthetic2, rng)
     print(f"-- full: {synthetic2}")
     print(f"-- kept: {sorted(subset2.keys())}")
     print(persona_to_text(subset2))

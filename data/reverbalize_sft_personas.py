@@ -45,7 +45,7 @@ def _one(i: int, row: dict) -> tuple[int, dict]:
     row = json.loads(json.dumps(row))  # shallow isolation across threads
     row["input"]["persona_text"] = text
     row["metadata"]["persona_attrs_kept"] = kept
-    row["metadata"]["persona_text_renderer"] = "persona_to_text_v2"
+    row["metadata"]["persona_text_renderer"] = "persona_to_text_v3"
     return i, row
 
 

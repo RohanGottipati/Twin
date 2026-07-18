@@ -113,7 +113,7 @@ def main(out_path: Path = DEFAULT_OUT) -> None:
                     "response_field": field_key,
                     "demographics": demo,
                     "persona_attrs_kept": kept,
-                    "persona_text_renderer": "persona_to_text_v2",
+                    "persona_text_renderer": "persona_to_text_v3",
                 },
             })
 
