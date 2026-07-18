@@ -33,6 +33,7 @@ import networkx as nx
 from shapely.geometry import shape
 from shapely.geometry.base import BaseGeometry
 
+from twin.network import snap, street_graph
 from twin.schema import LayerName
 from twin.state import TwinState
 
@@ -41,10 +42,6 @@ from twin.state import TwinState
 # between an underground subway station's point and the street centreline
 # above it, while still rejecting a stop placed on an unrelated block.
 TRANSIT_STOP_NETWORK_TOLERANCE_M = 35.0
-
-# Snap tolerance for treating two street-segment endpoints as "the same
-# node". Matches the tolerance used in data exploration for this network.
-STREET_NODE_SNAP_TOLERANCE_M = 1.0
 
 _EXPECTED_GEOM_TYPES: dict[LayerName, set[str]] = {
     "streets": {"LineString", "MultiLineString"},
@@ -112,10 +109,6 @@ def check_geometry_validity(state: TwinState) -> list[str]:
     return violations
 
 
-def _snap(coord: tuple[float, float], tol: float = STREET_NODE_SNAP_TOLERANCE_M) -> tuple[float, float]:
-    return (round(coord[0] / tol) * tol, round(coord[1] / tol) * tol)
-
-
 def check_street_network_edits_connect(state: TwinState) -> list[str]:
     """A street segment that was added or modified by the edit set producing
     this state must share an endpoint (within snap tolerance) with some
@@ -135,7 +128,7 @@ def check_street_network_edits_connect(state: TwinState) -> list[str]:
         for line in lines:
             coords = list(line.coords)
             for endpoint in (coords[0], coords[-1]):
-                node_owners.setdefault(_snap(endpoint), set()).add(feat.id)
+                node_owners.setdefault(snap(endpoint), set()).add(feat.id)
 
     violations: list[str] = []
     for feature_id in edited_street_ids:
@@ -148,7 +141,7 @@ def check_street_network_edits_connect(state: TwinState) -> list[str]:
         for line in lines:
             coords = list(line.coords)
             for endpoint in (coords[0], coords[-1]):
-                owners = node_owners.get(_snap(endpoint), set())
+                owners = node_owners.get(snap(endpoint), set())
                 if owners - {feature_id}:
                     touches_other = True
         if not touches_other and len(all_streets) > 1:
@@ -157,18 +150,6 @@ def check_street_network_edits_connect(state: TwinState) -> list[str]:
                 "(edit would splice in a disconnected fragment)"
             )
     return violations
-
-
-def _street_graph(state: TwinState) -> nx.Graph:
-    graph = nx.Graph()
-    for feat in state.all_features("streets"):
-        geom = shape(feat.geometry.model_dump())
-        lines = list(geom.geoms) if geom.geom_type == "MultiLineString" else [geom]
-        for line in lines:
-            coords = list(line.coords)
-            u, v = _snap(coords[0]), _snap(coords[-1])
-            graph.add_edge(u, v, feature_id=feat.id)
-    return graph
 
 
 def check_street_removal_preserves_connectivity(state: TwinState, parent: TwinState | None) -> list[str]:
@@ -185,8 +166,8 @@ def check_street_removal_preserves_connectivity(state: TwinState, parent: TwinSt
     if not removed_street_ids:
         return []
 
-    parent_graph = _street_graph(parent)
-    candidate_graph = _street_graph(state)
+    parent_graph = street_graph(parent)
+    candidate_graph = street_graph(state)
 
     violations: list[str] = []
     for feature_id in removed_street_ids:
