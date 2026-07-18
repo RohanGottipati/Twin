@@ -17,6 +17,7 @@ dependencies = [
     "matplotlib>=3.11.1",
     "scikit-learn>=1.9.0",
     "xlrd>=2.0.2",
+    "popgen3",
 ]
 
 [dependency-groups]
@@ -28,3 +29,6 @@ dev = [
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+
+[tool.uv.sources]
+popgen3 = { git = "https://github.com/tomnetutc/PopGen3.git" }

@@ -21,10 +21,11 @@ def census_df() -> pd.DataFrame:
     return pd.read_csv(path)
 
 
-def test_fourteen_neighbourhoods_overlap_ward_13(census_df: pd.DataFrame):
-    # Documented in data/ingest_census.py: Ward 13 "Toronto Centre" + 300m
-    # buffer overlaps exactly 14 of the city's 158 neighbourhoods.
-    assert len(census_df) == 14
+def test_all_158_neighbourhoods_present(census_df: pd.DataFrame):
+    # 2026-07-18: ingest_census.py now covers all 158 City of Toronto
+    # social-planning neighbourhoods city-wide, not just the 14 overlapping
+    # the twin's original Ward-13 study area.
+    assert len(census_df) == 158
 
 
 def test_age_subgroups_sum_to_population_total(census_df: pd.DataFrame):

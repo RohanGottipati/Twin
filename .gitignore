@@ -6,6 +6,8 @@ ANES/
 *.jsonl
 *.json
 *.txt
+CES/
+StatCan/
 
 # dependencies
 /node_modules

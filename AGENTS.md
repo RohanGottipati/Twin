@@ -65,10 +65,11 @@ system is interpretable. Concretely:
   because activations reflect the model's actual state rather than its rhetoric,
   and the probe direction can be causally tested via activation patching.
 
-**3.2 The scorer/probe is frozen during RL.** It is trained once and never
+**3.2 The product opinion_score probe is frozen if used.** When free-text opinions
+are turned into a [0,1] readout for maps, that probe is trained once and never
 co-adapted with the generator. A generator trained against a moving scorer
-learns to hack it (steganographic tells that move the number while the prose
-degrades). Freezing the scorer is what keeps the number meaningful.
+learns to hack it. GRPO reward itself does **not** use this probe (see 5.2);
+freezing still applies whenever the probe is in the serving path.
 
 **3.3 Every scored artifact is legible text.** Any time we score, we score a
 human-readable opinion. This includes the opinion-propagation GNN (see 4.4): if
@@ -76,10 +77,10 @@ it mutates opinion *embeddings*, we decode the propagated embedding back to
 regenerated opinion text via the LM *before* scoring. We never score a vector
 nobody can read. The audit trail is the product.
 
-**3.4 Realism is part of every reward.** A model can land the right stance with
-strongly-worded empty text. Rewards always include a realism / text-alignment
-term so RL cannot hack the stance bin with filler. (This is the DEBATE-benchmark
-lesson; it is baked in, not optional.)
+**3.4 Format and stance hacking.** Student GRPO rewards free-text opinions. Include
+a realism / text-alignment term so RL cannot satisfy the frozen MCQ judge with
+empty or steganographic stubs (DEBATE-benchmark lesson). The judge call itself
+should use structured outputs so option parsing is not the failure mode.
 
 ## 4. Architecture: four layers
 
@@ -167,43 +168,74 @@ a reason. Let each do its job.
 
 Served via Freesolo Flash (managed LoRA on Qwen), OpenAI-compatible endpoint.
 
-**5.1 SFT teaches imitation.** Gold = real human opinion text (Toronto
-consultation open-ends, ANES likes/dislikes). Rows are `input`/`output`:
-input = persona + policy + spatial features, output = the human opinion. Teaches
-voice, plausibility, the output contract.
+**5.1 SFT teaches free-text opinions.** Gold = real human opinion text (Toronto
+consultation open-ends, ANES likes/dislikes open-ends). Rows are
+`input`/`output`: input = persona + policy + optional spatial features, output =
+the human opinion. Teaches voice, plausibility, and the product output contract
+(legible first-person text). SFT does **not** use `structured_outputs` (Flash
+rejects that key for SFT; SFT never samples).
 
-**5.2 GRPO earns its keep on the one thing SFT cannot do: population-level
-distributional calibration.** SFT is per-example; it cannot fix an aggregate
-defect. The known LLM failure (from OpinionQA) is aggregate: populations come
-out too centrist, too agreeable, too low-variance (mode collapse). That defect
-exists only at the level of the *distribution over a sampled group*, so it is a
-reward you can measure but cannot hand-write. That is the textbook GRPO case.
+**5.2 GRPO calibrates free-text opinions so a frozen judge recovers the survey
+choice.** SFT alone does not fix persona misalignment on multiple-choice surveys
+(OpinionQA finding). GRPO trains on rows where a real respondent with a known
+profile both (a) can be prompted for an open opinion and (b) has a gold MCQ
+option.
 
-GRPO rollout content is **sampled from the model, not written**; the reward reads
-it. Per prompt, Flash samples a group; `score_response` blends:
-- opinion_score match: frozen probe vs the matched real respondent's opinion_score,
-- realism / text-alignment: discriminator (per 3.4),
-- **the hard term**: group distributional match, JS divergence between the
-  sampled group's opinion_score distribution and the real subgroup distribution.
+Two different models, do not conflate them:
 
-Anything the reward needs beyond `input`/`output` must live under `metadata`;
-Flash silently drops every other top-level key before the row reaches a worker.
-So `target_opinion_score`, `subgroup`, and `real_subgroup_dist` all go in `metadata`.
+1. **Student (trained).** Flash GRPO samples free-text opinion rollouts from the
+   LoRA we are updating (warm-started from SFT). The student writes a first-person
+   opinion conditioned on persona + question/policy context. Student rollouts are
+   **not** forced into A/B/C/D; the product artifact stays legible prose.
+2. **Judge (frozen, not trained).** Inside `score_response`, call a **separate**
+   model that is not in `[train]`: given the student's opinion text plus the MCQ
+   stem and options, infer which option that opinion corresponds to
+   (`A`/`B`/`C`/`D`/`none`). Prefer Flash/OpenAI **structured outputs** (or an
+   equivalent constrained decode) on this judge call so parsing is reliable:
+   https://freesolo.co/docs/guides/structured-outputs
+   `none` = opinion does not entail any option (or is too vague to map).
 
-**5.3 Hard constraint on RL scope.** The distributional reward needs a real
-per-policy distribution, which only exists for retrodictable **past** policies
-(Toronto consultations, ANES items). Novel planner hypotheticals have no real
-distribution to match. Therefore RL trains only on the past-policy set;
-novel-policy behavior is measured indirectly (mechanism tests, calibration
-transfer), never reward-trained. This is fundamental. Hold out entire *policies*
-(not rows) for eval, or the target distribution leaks and the result is void.
+Reward is binary on the judge's output:
+
+- judge parse failure / truncation → 0;
+- reward **1** if `judge_choice == metadata.gold_choice`, else **0**.
+
+Optional: add a light realism term on the student text (3.4) so GRPO cannot
+satisfy the judge with steganographic stubs. The judge never receives gradients;
+only the student does (via GRPO on the sampled opinions).
+
+Anything the reward needs beyond `input`/`output` lives under `metadata`; Flash
+silently drops other top-level keys. Put at least `gold_choice`, question id,
+and option texts in `metadata`. Document the judge model id/revision in the env.
+
+This is possible because Flash GRPO only requires that `score_response` return a
+scalar: it may call external APIs, load a frozen sidecar, etc. Cost and latency
+of the judge call are part of the GRPO spend; preview with `--cost` and keep the
+judge small/cheap when possible.
+
+Planner-facing free-text opinions are exactly what the student learns to write.
+Novel twin edits still have no MCQ gold; they are evaluated by mechanism tests
+and transfer, not by inventing letters.
+
+**5.3 Hard constraint on RL scope.** MCQ reward needs a real chosen option, which
+only exists for past survey items (OpinionQA, ANES/CES closed items, similar).
+Novel planner hypotheticals have no gold letter. Therefore GRPO trains only on
+the survey-MCQ set; novel-policy free-text behavior is measured indirectly
+(mechanism tests, calibration transfer, retrodiction on open-ends), never
+reward-trained with fake MCQ labels. Hold out entire *questions* / *policies*
+(not rows) for eval, or the label leaks and the result is void.
 
 **5.4 Non-negotiable training hygiene.**
-- Warm-start GRPO from the SFT adapter. Cold RL here is noise.
-- Freeze the probe and discriminator during RL (they never appear in `[train]`).
-- Before any GRPO spend, run the sampler and check within-group `pred_std`.
-  Near-zero variance on many prompts means no gradient; fix temperature or
-  prompt design first.
+- Warm-start GRPO from the SFT adapter. Cold RL on free-text opinions is noise.
+- Do **not** put `structured_outputs` on the student GRPO config unless you
+  intentionally constrain student prose; structured outputs belong on the
+  **judge** call inside `score_response`.
+- The judge is frozen (fixed weights / fixed API model). Never co-train it with
+  the student. Product opinion_score probe (3.1), if used at serving, is also
+  frozen and is separate from the judge.
+- Before any GRPO spend: (1) smoke the judge alone on gold human opinions →
+  choice accuracy floor; (2) sample student groups and check text diversity
+  (near-zero variance → no gradient). A weak judge caps the whole run.
 
 ## 6. Data sources and what each one is FOR
 
@@ -215,8 +247,8 @@ Do not treat these as interchangeable. Each validates a different layer.
 | StatCan census (dissemination areas) | Population weighting / persona sampling |
 | Toronto Core Service Review 2011 (13k open-ended participants, by topic incl. transit) | **Backtest**: retrodict a real local change |
 | Have Your Say Toronto (ongoing + archived consultations) | Additional local backtest material |
-| OpinionQA (Santurkar 2023; 1506 Qs, 80k Pew respondents, 60 groups) | **Population calibration** benchmark |
-| ANES / CES (individual demographics + responses) | **Individual retrodiction** (JS distance + F1; RF baseline) |
+| OpinionQA (Santurkar 2023; 1506 Qs, 80k Pew respondents, 60 groups) | **GRPO MCQ** train/eval: profile → choice; also subgroup calibration benchmark |
+| ANES / CES (individual demographics + closed items) | **GRPO MCQ** gold choices; open-ends also feed SFT; RF baseline for retrodiction |
 | GlobalOpinionQA | Cross-national calibration (optional breadth) |
 | DEBATE benchmark (opinion dynamics, before/after opinion text) | **Validate the opinion-propagation GNN** specifically |
 
@@ -233,8 +265,8 @@ out-of-the-box persona alignment is substantially off, and prompting a model to
 /population  sampler.py (census-weighted), persona records
 /model
   /sft       SFT dataset builders + configs
-  /grpo      environment.py (Flash env: reward), dataset/, config.toml
-  /scorer    frozen opinion_score probe + realism discriminator (packaged sidecars)
+  /grpo      environment.py (Flash env: student free-text + frozen MCQ judge reward)
+  /scorer    frozen opinion_score probe for free-text serving readout (not GRPO reward)
   serving.py OpenAI-compatible client for the Flash endpoint
 /graphs      effect_gnn.py (later), opinion_gnn.py (ablation only)
 /agent       tools.py (query/patch/run/snapshot/diff), loop.py
@@ -253,12 +285,13 @@ out-of-the-box persona alignment is substantially off, and prompting a model to
   costly actions rather than firing them blind.
 - **Never hard-code opinionated city tools.** If you feel the urge, the logic
   belongs in the twin compiler.
-- **Keep the scored thing legible.** If a change would make the final number a
-  readout of something other than a human-readable opinion, stop.
+- **Keep the product audit trail legible.** Planner-facing outputs are human-
+  readable opinions (plus a probe readout). GRPO MCQ choices are a training
+  signal, not a substitute for that audit trail at serving.
 - **Feature extraction before graphs.** Exact compute first; GNN only when
   latency demands it (effect) or as a validated ablation (opinion).
 - **Cite dataset provenance in code comments.** Which dataset, which split, what
-  it validates. Splits by *policy* for the distributional eval.
+  it validates. Splits by *question* / *policy* for MCQ GRPO eval.
 - **Cost awareness.** Preview Flash runs with `--cost`; deploy or export runs you
   want to keep (managed checkpoints get garbage-collected ~7 days after last
   activity if never deployed).
@@ -267,8 +300,8 @@ out-of-the-box persona alignment is substantially off, and prompting a model to
 
 1. Opinion-graph edge set: spatial adjacency, shared demographics, homophily, or
    learned? This choice IS the social theory; get sign-off before drawing it.
-2. Acceptable scope of RL training on past policies only (see 5.3). Confirmed
-   constraint or blocker?
+2. GRPO judge: which frozen model (size, API vs local), and when is gold `none`
+   vs forcing A–D? Smoke judge accuracy on human gold opinions before spend.
 3. Persona granularity: one persona per census cell, or sampled individuals?
    Drives both realism and compute.
 4. Which single real Toronto change is the Phase 6 backtest target? Pick one with

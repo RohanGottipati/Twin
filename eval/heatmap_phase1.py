@@ -21,6 +21,18 @@ compiler rather than reimplementing "add a stop" as a one-off.
 No exact feature graph yet (that's Phase 3): "directly affected" is a
 simple straight-line distance threshold from each persona's home to the new
 stop, not a real network/commute-time computation.
+
+**Known-broken as of 2026-07-18**: `population/sampler.py` was rewritten to
+draw IPF/IPU-fitted personas city-wide from real census+PUMF data, and no
+longer places personas at real twin building coordinates (per explicit user
+direction that persona generation is about attribute realism, not
+building/home-location geometry -- "this is not about visualization its
+about simulation"). This script's near/far split depends on
+`persona.home_x`/`home_y`, which the new sampler always leaves `None`, so
+`run_pipeline` below will raise a `TypeError` if actually executed. Left
+in place (not deleted) since the underlying "hand-authored policy as a real
+twin patch + diff" logic is still correct and reusable; needs a separate
+home-placement layer on top of the new sampler if this gate is revisited.
 """
 
 from __future__ import annotations
@@ -132,8 +144,8 @@ def run_pipeline(n_personas: int, seed: int, model: str | None, max_tokens: int)
     assert "transit_stops:phase1-new-stop" in d.layers["transit_stops"].added
 
     census = pd.read_csv(PROCESSED_DIR / "census_profile.csv")
-    neighbourhoods = gpd.read_file(PROCESSED_DIR / "neighbourhoods.geojson")
-    personas = sample_population(new_state, census, neighbourhoods, n_personas=n_personas, seed=seed)
+    pumf = pd.read_csv(PROCESSED_DIR / "pumf_toronto.csv")
+    personas = sample_population(census, pumf, n_personas=n_personas, seed=seed)
     if not personas:
         raise RuntimeError("sample_population returned no personas -- check twin/census data")
 
