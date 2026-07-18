@@ -1,85 +1,41 @@
 "use client";
 
-import { ArrowLeft, HelpCircle } from "lucide-react";
-import { useWorldStore } from "@/store/useWorldStore";
-import { getCityById } from "@/config/cities/registry";
-import { useSceneController } from "@/components/world/SceneControllerContext";
+import type { ReactNode } from "react";
 import { GlassPanel } from "@/components/primitives/GlassPanel";
-import { StatusPill } from "@/components/primitives/StatusPill";
-import { IconButton } from "@/components/primitives/IconButton";
 
-export function TopNavigation() {
-  const mode = useWorldStore((s) => s.mode);
-  const activeCityId = useWorldStore((s) => s.activeCityId);
-  const isSceneReady = useWorldStore((s) => s.isSceneReady);
-  const isSceneLoading = useWorldStore((s) => s.isSceneLoading);
-  const toggleHelp = useWorldStore((s) => s.toggleHelpPanel);
-  const isHelpOpen = useWorldStore((s) => s.isHelpPanelOpen);
-  const controller = useSceneController();
+type TopNavigationProps = {
+  /** Right-aligned status badges, e.g. mock-mode or data-mode pills. */
+  statusSlot?: ReactNode;
+  /** Center-aligned scenario/context label, hidden on small screens. */
+  contextSlot?: ReactNode;
+  /** Left-aligned action, e.g. a back button or menu toggle. */
+  leadingSlot?: ReactNode;
+};
 
-  const isWorld = mode === "world";
-  const activeCity = activeCityId ? getCityById(activeCityId) : undefined;
-
+/**
+ * Generic branding + status bar, deliberately store-agnostic: TwinTOAppShell
+ * supplies whatever it wants rendered in each slot rather than this
+ * component reaching into any store itself, so it stays reusable.
+ */
+export function TopNavigation({ statusSlot, contextSlot, leadingSlot }: TopNavigationProps) {
   return (
     <GlassPanel className="pointer-events-auto flex items-center justify-between gap-3 px-3 py-2 sm:px-4">
       <div className="flex items-center gap-3">
-        {!isWorld && (
-          <button
-            type="button"
-            onClick={controller.goToWorld}
-            data-testid="back-to-world-button"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] px-3 py-1.5 text-sm font-medium text-[#F5F7FA] transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55D8E6]"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span className="hidden sm:inline">Back to World</span>
-          </button>
-        )}
+        {leadingSlot}
         <div className="leading-tight">
-          <p className="text-sm font-semibold tracking-wide text-[#F5F7FA]">
-            Skyline
+          <p className="flex items-center gap-1.5 text-sm font-semibold tracking-wide text-twinto-text">
+            <span className="inline-block h-2 w-2 rounded-full bg-twinto-red" aria-hidden="true" />
+            TwinTO
           </p>
-          <p className="text-[10px] uppercase tracking-widest text-[#9AA7B5]">
-            {isWorld ? "World Explorer" : "City Explorer"}
+          <p className="text-[10px] uppercase tracking-widest text-twinto-muted">
+            Toronto Transit Digital Twin
           </p>
         </div>
       </div>
 
-      <div className="hidden text-center sm:block">
-        <p className="text-sm font-medium text-[#F5F7FA]">
-          {isWorld ? "Global View" : (activeCity?.name ?? "City")}
-        </p>
-        {!isWorld && activeCity && (
-          <p className="text-[10px] text-[#9AA7B5]">
-            {activeCity.region}, {activeCity.country}
-          </p>
-        )}
-      </div>
+      {contextSlot && <div className="hidden text-center sm:block">{contextSlot}</div>}
 
-      <div className="flex items-center gap-2">
-        {isSceneReady && !isSceneLoading ? (
-          <StatusPill tone="ready" className="hidden sm:inline-flex">
-            Ready
-          </StatusPill>
-        ) : (
-          <StatusPill tone="loading" className="hidden sm:inline-flex">
-            Loading
-          </StatusPill>
-        )}
-        <a
-          href="/control/ontario-bess-01"
-          data-testid="open-gridtwin-control-room"
-          className="hidden rounded-lg border border-[#6287FF]/40 bg-[#6287FF]/10 px-2.5 py-1.5 text-xs font-medium text-[#6287FF] transition-colors hover:bg-[#6287FF]/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55D8E6] sm:inline-flex"
-        >
-          GridTwin
-        </a>
-        <IconButton
-          label="Toggle help"
-          icon={<HelpCircle className="h-5 w-5" />}
-          onClick={() => toggleHelp()}
-          active={isHelpOpen}
-          tooltipSide="bottom"
-        />
-      </div>
+      <div className="flex items-center gap-2">{statusSlot}</div>
     </GlassPanel>
   );
 }

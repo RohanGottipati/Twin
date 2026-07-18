@@ -18,7 +18,7 @@ export function SceneErrorOverlay({
 }: SceneErrorOverlayProps) {
   return (
     <div
-      className="absolute inset-0 z-[70] flex items-center justify-center bg-[#070A0F] p-6"
+      className="absolute inset-0 z-[70] flex items-center justify-center bg-[#0A0D14] p-6"
       role="alert"
       aria-live="assertive"
       data-testid="scene-error"
@@ -40,7 +40,7 @@ export function SceneErrorOverlay({
           <button
             type="button"
             onClick={onRetry}
-            className="mt-6 inline-flex items-center gap-2 rounded-xl border border-[#55D8E6]/50 bg-[#55D8E6]/15 px-4 py-2 text-sm font-medium text-[#55D8E6] transition-colors hover:bg-[#55D8E6]/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#55D8E6]"
+            className="mt-6 inline-flex items-center gap-2 rounded-xl border border-[#5B8DEF]/50 bg-[#5B8DEF]/15 px-4 py-2 text-sm font-medium text-[#5B8DEF] transition-colors hover:bg-[#5B8DEF]/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B8DEF]"
           >
             <RefreshCw className="h-4 w-4" />
             Try again

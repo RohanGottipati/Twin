@@ -1,78 +1,48 @@
 "use client";
 
-import {
-  Building2,
-  Globe,
-  Layers,
-  List,
-  ZoomIn,
-  ZoomOut,
-} from "lucide-react";
-import { useWorldStore } from "@/store/useWorldStore";
-import { useSceneController } from "@/components/world/SceneControllerContext";
+import { Layers, List, MapPin, Users } from "lucide-react";
+import { useMapStore } from "@/store/useMapStore";
 import { GlassPanel } from "@/components/primitives/GlassPanel";
 import { IconButton } from "@/components/primitives/IconButton";
 
 type MobileToolbarProps = {
-  onOpenExplorer: () => void;
+  onOpenScenario: () => void;
+  onOpenCouncil: () => void;
 };
 
-export function MobileToolbar({ onOpenExplorer }: MobileToolbarProps) {
-  const mode = useWorldStore((s) => s.mode);
-  const isFlying = useWorldStore((s) => s.isFlying);
-  const toggleLayer = useWorldStore((s) => s.toggleLayerPanel);
-  const isLayerPanelOpen = useWorldStore((s) => s.isLayerPanelOpen);
-  const controller = useSceneController();
-
-  const isWorld = mode === "world";
+/** Bottom action bar for small screens: opens the panels that stack full-screen on mobile instead of docking beside the map. */
+export function MobileToolbar({ onOpenScenario, onOpenCouncil }: MobileToolbarProps) {
+  const toggleLayer = useMapStore((s) => s.toggleLayer);
+  const sentimentHeatmap = useMapStore((s) => s.layers.sentimentHeatmap);
+  const selectedStationId = useMapStore((s) => s.selectedStationId);
 
   return (
     <GlassPanel className="pointer-events-auto flex items-center gap-1.5 p-1.5">
-      {isWorld ? (
-        <IconButton
-          label="Open city explorer"
-          icon={<List className="h-5 w-5" />}
-          onClick={onOpenExplorer}
-          showTooltip={false}
-        />
-      ) : (
-        <IconButton
-          label="World view"
-          icon={<Globe className="h-5 w-5" />}
-          onClick={controller.goToWorld}
-          disabled={isFlying}
-          showTooltip={false}
-        />
-      )}
-      {!isWorld && (
-        <IconButton
-          label="Toronto city view"
-          icon={<Building2 className="h-5 w-5" />}
-          onClick={controller.goToCity}
-          active={mode === "city"}
-          disabled={isFlying}
-          showTooltip={false}
-        />
-      )}
       <IconButton
-        label="Zoom in"
-        icon={<ZoomIn className="h-5 w-5" />}
-        onClick={controller.zoomIn}
+        label="Scenario and policies"
+        icon={<List className="h-5 w-5" />}
+        onClick={onOpenScenario}
         showTooltip={false}
       />
       <IconButton
-        label="Zoom out"
-        icon={<ZoomOut className="h-5 w-5" />}
-        onClick={controller.zoomOut}
+        label="Agent council"
+        icon={<Users className="h-5 w-5" />}
+        onClick={onOpenCouncil}
         showTooltip={false}
       />
       <IconButton
-        label="Layers"
+        label="Toggle sentiment heatmap"
         icon={<Layers className="h-5 w-5" />}
-        onClick={() => toggleLayer()}
-        active={isLayerPanelOpen}
+        onClick={() => toggleLayer("sentimentHeatmap")}
+        active={sentimentHeatmap}
         showTooltip={false}
       />
+      {selectedStationId && (
+        <span className="ml-1 inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 text-[11px] text-twinto-muted">
+          <MapPin className="h-3.5 w-3.5" />
+          {selectedStationId}
+        </span>
+      )}
     </GlassPanel>
   );
 }

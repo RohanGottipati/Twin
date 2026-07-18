@@ -1,19 +1,18 @@
-@import "cesium/Build/Cesium/Widgets/widgets.css";
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-sans: "DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", monospace;
 }
 
 html,
 body {
   margin: 0;
   padding: 0;
-  background-color: #070a0f;
-  color: #f5f7fa;
+  background-color: #0a0d14;
+  color: #edeff3;
   font-family: var(--font-sans);
 }
 
@@ -23,22 +22,46 @@ body {
   overflow: hidden;
 }
 
-/* Keep the Cesium credit / attribution visible and legible. */
-.cesium-widget-credits {
-  color: rgba(245, 247, 250, 0.7) !important;
-  font-size: 11px !important;
+/* MapLibre fills its container; keep attribution legible against the dark shell. */
+.maplibregl-map {
+  width: 100%;
+  height: 100%;
 }
 
-.cesium-credit-logoContainer,
-.cesium-credit-textContainer {
-  color: rgba(245, 247, 250, 0.7) !important;
+.maplibregl-ctrl-attrib {
+  background: rgba(10, 13, 20, 0.65) !important;
+  color: rgba(237, 239, 243, 0.75) !important;
+  font-size: 10px !important;
+  border-radius: 6px !important;
 }
 
-/* Remove the default focus outline only when we provide our own ring. */
-.cesium-viewer,
-.cesium-widget,
-.cesium-widget canvas {
+.maplibregl-ctrl-attrib a {
+  color: rgba(237, 239, 243, 0.85) !important;
+}
+
+.maplibregl-ctrl-bottom-right,
+.maplibregl-ctrl-bottom-left {
+  z-index: 5;
+}
+
+.maplibregl-canvas-container,
+.maplibregl-canvas {
   outline: none;
+}
+
+/* Thin, unobtrusive scrollbars for the dense side panels. */
+.twinto-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+
+.twinto-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.twinto-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(255, 255, 255, 0.16);
+  border-radius: 6px;
 }
 
 @media (prefers-reduced-motion: reduce) {

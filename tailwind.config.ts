@@ -5,20 +5,22 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        skyline: {
-          base: "#070A0F",
-          panel: "rgba(8, 13, 21, 0.78)",
-          border: "rgba(255, 255, 255, 0.10)",
-          cyan: "#55D8E6",
-          blue: "#6287FF",
-          text: "#F5F7FA",
-          muted: "#9AA7B5",
-          warning: "#F4B860",
-          error: "#FF6B6B",
+        twinto: {
+          ink: "#0A0D14",
+          panel: "rgba(15,19,28,0.82)",
+          border: "rgba(255,255,255,0.08)",
+          text: "#EDEFF3",
+          muted: "#8B93A3",
+          accent: "#5B8DEF",
+          red: "#E0333B",
+          amber: "#E3A83B",
+          teal: "#3FBF9F",
+          error: "#FF5C5C",
         },
       },
       fontFamily: {
         sans: ["var(--font-sans)", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
       },
     },
   },
