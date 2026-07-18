@@ -39,6 +39,18 @@ export interface RouteCollection {
   features: RouteFeature[];
 }
 
+export interface StreetFeature {
+  type: "Feature";
+  properties: Record<string, never>;
+  geometry: { type: "LineString"; coordinates: LngLat[] };
+}
+
+/** Toronto Centreline links (streets, lanes, trails), citywide. */
+export interface StreetCollection {
+  type: "FeatureCollection";
+  features: StreetFeature[];
+}
+
 /**
  * One synthetic resident. Each persona stands in for ~PERSONS_PER_DOT real
  * residents of its neighbourhood; home locations are sampled inside the real

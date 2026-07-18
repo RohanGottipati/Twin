@@ -7,7 +7,11 @@ import { useSimStore } from "@/store/useSimStore";
 import { useMapStore } from "@/store/useMapStore";
 import { getScenario } from "@/lib/sim/scenarios";
 import { resolveAlignment } from "@/lib/sim/engine";
-import { buildWalkParams, walkOffset, type WalkParams } from "@/lib/sim/walk";
+import {
+  buildStreetWalkAnchors,
+  streetWalkPosition,
+  type StreetWalkAnchor,
+} from "@/lib/sim/streets";
 import {
   placeFromBuildingFeature,
   placeFromNeighbourhoodArea,
@@ -18,6 +22,7 @@ import type {
   NeighbourhoodCollection,
   Persona,
   RouteCollection,
+  StreetCollection,
 } from "@/lib/sim/types";
 import {
   ACCEPT_NEUTRAL,
@@ -67,12 +72,13 @@ interface MapCanvasProps {
   neighbourhoods: NeighbourhoodCollection;
   routes: RouteCollection;
   busRoutes: RouteCollection;
+  streets: StreetCollection;
   personas: Persona[];
   onReady: () => void;
 }
 
 interface WalkContext {
-  params: WalkParams;
+  anchors: (StreetWalkAnchor | null)[];
   t: number;
 }
 
@@ -86,10 +92,9 @@ function personaCollection(
     features: personas.map((p) => {
       let lng = p.lng;
       let lat = p.lat;
-      if (walk) {
-        const [dLng, dLat] = walkOffset(walk.params, p.id, walk.t);
-        lng += dLng;
-        lat += dLat;
+      const anchor = walk?.anchors[p.id];
+      if (anchor) {
+        [lng, lat] = streetWalkPosition(anchor, walk.t);
       }
       return {
         type: "Feature",
@@ -138,6 +143,7 @@ export function MapCanvas({
   neighbourhoods,
   routes,
   busRoutes,
+  streets,
   personas,
   onReady,
 }: MapCanvasProps) {
@@ -154,7 +160,7 @@ export function MapCanvas({
   const reducedMotion = useReducedMotion();
   const reducedMotionRef = useRef(reducedMotion);
   reducedMotionRef.current = reducedMotion;
-  const walkParamsRef = useRef<WalkParams | null>(null);
+  const walkAnchorsRef = useRef<(StreetWalkAnchor | null)[] | null>(null);
   const walkStartRef = useRef(0);
   const trainsLayerReadyRef = useRef(false);
   const trainsStartRef = useRef(0);
@@ -176,9 +182,9 @@ export function MapCanvas({
   // Current wander offset context, or undefined when motion should be still
   // (reduced-motion preference, or before the walk params are built).
   const currentWalk = (): WalkContext | undefined => {
-    const params = walkParamsRef.current;
-    if (!params || reducedMotionRef.current) return undefined;
-    return { params, t: performance.now() - walkStartRef.current };
+    const anchors = walkAnchorsRef.current;
+    if (!anchors || reducedMotionRef.current) return undefined;
+    return { anchors, t: performance.now() - walkStartRef.current };
   };
 
   // ---- init -------------------------------------------------------------
@@ -224,7 +230,7 @@ export function MapCanvas({
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
       });
-      walkParamsRef.current = buildWalkParams(personas);
+      walkAnchorsRef.current = buildStreetWalkAnchors(personas, streets);
       walkStartRef.current = performance.now();
       map.addSource("personas", {
         type: "geojson",
