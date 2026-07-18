@@ -1,0 +1,17 @@
+{
+  "name": "backhaul-exchange-db",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "scripts": {
+    "setup": "node scripts/1-setup-collections.js",
+    "load-nodes": "node scripts/2-load-nodes.js",
+    "generate-routes": "node scripts/3-generate-routes.js",
+    "generate-events": "node scripts/4-generate-events.js",
+    "demo": "node scripts/5-demo-queries.js",
+    "run-all": "node scripts/1-setup-collections.js && node scripts/2-load-nodes.js && node scripts/3-generate-routes.js && node scripts/4-generate-events.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.0.0",
+    "mongodb": "^6.0.0"
+  }
+}
