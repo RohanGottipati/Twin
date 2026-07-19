@@ -16,10 +16,41 @@ import { hashString, mulberry32 } from "@/lib/random";
 import { useSimStore } from "@/store/useSimStore";
 import { useMapStore } from "@/store/useMapStore";
 import type {
+  NeighbourhoodAggregate,
   NeighbourhoodCollection,
   Persona,
   RouteCollection,
 } from "@/lib/sim/types";
+
+/**
+ * aggregate()'s own byNeighbourhood averages every resident in a
+ * neighbourhood, including the many still-neutral (0.5) placeholders for
+ * residents who were never actually sampled -- which dilutes real signal
+ * toward neutral even when we do have a real reading. This recomputes it
+ * from only the residents in `sampledIndices` (those with a real opinion),
+ * so a neighbourhood only gets an entry -- and therefore a coloured tint on
+ * the map -- once it has an actual estimate.
+ */
+function sampledByNeighbourhood(
+  personas: Persona[],
+  acceptance: Float32Array,
+  sampledIndices: Iterable<number>,
+): Map<string, NeighbourhoodAggregate> {
+  const sums = new Map<string, { sum: number; count: number }>();
+  for (const index of sampledIndices) {
+    const p = personas[index];
+    if (!p) continue;
+    const s = sums.get(p.code) ?? { sum: 0, count: 0 };
+    s.sum += acceptance[index];
+    s.count += 1;
+    sums.set(p.code, s);
+  }
+  const byNeighbourhood = new Map<string, NeighbourhoodAggregate>();
+  for (const [code, s] of sums) {
+    byNeighbourhood.set(code, { mean: s.sum / s.count, count: s.count });
+  }
+  return byNeighbourhood;
+}
 
 /**
  * Streams real per-resident acceptance (src/app/api/neighbourhood-acceptance/route.ts,
@@ -217,6 +248,7 @@ export function Dashboard() {
         if (controller.signal.aborted) return;
         const result = aggregate(scenarioId, city.personas, updated, sweepKm);
         result.opinions = updatedOpinions;
+        result.byNeighbourhood = sampledByNeighbourhood(city.personas, updated, updatedOpinions.keys());
         useSimStore.getState().setResult(result);
       },
       controller.signal,
@@ -324,6 +356,7 @@ export function Dashboard() {
                   if (result.opinionText) opinionsRef.current.set(index, result.opinionText);
                   const merged = aggregate(scenarioId, city.personas, acceptance, sweepKm);
                   merged.opinions = opinionsRef.current;
+                  merged.byNeighbourhood = sampledByNeighbourhood(city.personas, acceptance, opinionsRef.current.keys());
                   useSimStore.getState().setResult(merged);
                 },
               });

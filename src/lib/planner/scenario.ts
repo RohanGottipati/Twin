@@ -25,7 +25,7 @@ export const cityEditSchema = z.discriminatedUnion("type", [
   }),
   z.object({
     type: z.literal("set_policy"),
-    key: z.string().min(1),
+    key: z.string().min(1, "set_policy edit requires a non-empty 'key', e.g. 'parking_levy_pct'."),
     value: z.union([z.number(), z.string(), z.boolean()]),
     label: z.string().optional(),
   }),

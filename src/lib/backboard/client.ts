@@ -372,6 +372,16 @@ export class StreamAccumulator {
         onEvent?.({ type: "run_ended", status: this.status });
         return true;
       }
+      case "error": {
+        // Backboard sometimes ends the stream with {type:"error"} and no run_ended
+        // (e.g. billing: "Free credits cannot be used for LLM chat").
+        const msg =
+          (event as { error?: string; message?: string }).error ||
+          (event as { message?: string }).message ||
+          "Backboard stream error";
+        this.status = "failed";
+        throw new BackboardApiError(msg, 402);
+      }
       default:
         return false;
     }

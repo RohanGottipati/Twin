@@ -286,11 +286,13 @@ export async function runCityOrchestration(
     "Respond as TechTO's planning agent (Claude Code for the city).",
     "You decide the whole turn: reply in prose, call tools, invoke specialists, or any mix.",
     "You have many tool rounds; use them. Prefer explore → score → revise → recommend over a one-shot guess.",
+    "Efficiency: pack screening into 1-2 run_python calls; score_population at most 2-3 shortlisted sites (pass neighbourhoodCodes); compose_map_actions once to compare and once to lock the winner; always end with a short Markdown answer.",
+    "Factual lookups (density, population, income): one run_python on DATA_DIR/census_profile.csv then answer; do not wander.",
     "For location / siting questions (stations, parks, facilities, corridors):",
     "- Screen multiple geographically distinct Toronto neighbourhoods (not just one corridor or the first hit).",
     "- Prefer run_python (pandas on DATA_DIR/census_profile.csv or Mongo) for ranking/filtering; use search_neighbourhoods / generate_station_candidates / propose_scenarios for shortlists.",
     "- Avoid query_city_layer dumps: only use it for a named neighbourhood or tiny top-N (limit ≤ 3). Big screens belong in run_python RESULT.",
-    "- Score acceptance on the shortlist with score_population BEFORE recommending.",
+    "- Score acceptance on the shortlist with score_population BEFORE recommending (2-3 candidates max).",
     "- If scores look weak (low mean/support, or byNeighbourhood opposition at the proposed site), discard and try other areas; do not recommend a poorly accepted site unless the user wants that tradeoff.",
     "- While comparing, compose_map_actions may show several candidate markers; for the final pick, leave one marker, fly_to_center, and highlight that neighbourhood.",
     "Never invent ScenarioPatches or fake rankings just to fill a pipeline.",
@@ -349,6 +351,55 @@ export async function runCityOrchestration(
     onToolCallEnd: (outcome) => emitToolEnd(outcome, "planning-orchestrator"),
   });
 
+  // if the model tool-spun and never wrote prose, force a no-tools closeout
+  let finalContent = (loop.finalResult.content || streamedAssistantText).trim();
+  if (!finalContent) {
+    if (loop.finalResult.status === "failed" || loop.finalResult.status === "in_progress") {
+      throw new Error(
+        `Planning agent returned no answer (status=${loop.finalResult.status}). Check Backboard billing/credits and retry.`,
+      );
+    }
+    emit(events, onEvent, {
+      type: "status",
+      runId,
+      message: "Drafting final answer…",
+    });
+    streamedAssistantText = "";
+    const closeout = await adapter.sendMessage(
+      {
+        assistantId: orch.record.assistantId,
+        threadId: loop.finalResult.threadId,
+        content:
+          "Stop. Do not call tools. Using only what you already learned this turn, write the final short Markdown answer to the user now (1-3 sentences + optional bullets).",
+        systemPrompt: orch.role.systemPrompt,
+        modelName: orch.model.modelName,
+        llmProvider: orch.model.provider,
+        tools: [],
+        thinking: orch.role.thinking,
+        memory: orch.role.memory,
+        jsonOutput: false,
+      },
+      (streamEvent) => {
+        if (streamEvent.type === "content_delta" && streamEvent.content) {
+          streamedAssistantText += streamEvent.content;
+          emit(events, onEvent, {
+            type: "assistant.delta",
+            runId,
+            content: streamEvent.content,
+          });
+        }
+        if (streamEvent.type === "reasoning_delta" && streamEvent.content) {
+          emit(events, onEvent, {
+            type: "assistant.reasoning",
+            runId,
+            content: streamEvent.content,
+          });
+        }
+      },
+    );
+    finalContent = (closeout.content || streamedAssistantText).trim();
+  }
+
   // only patches the agent (or explicit caller input) put forward; never invent
   let patches = context.proposedCityPatches;
   if (!patches.length && input.patches?.length) {
@@ -373,7 +424,7 @@ export async function runCityOrchestration(
     });
   }
 
-  const reply = extractReply(loop.finalResult.content || streamedAssistantText);
+  const reply = extractReply(finalContent);
   const rankingFromScores = candidates
     .map((c) => ({
       id: c.patch.id,

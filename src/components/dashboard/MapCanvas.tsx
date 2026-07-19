@@ -222,7 +222,14 @@ export function MapCanvas({
           id: "nbhd-fill",
           type: "fill",
           source: "nbhd",
-          paint: { "fill-color": ACCEPT_RAMP, "fill-opacity": 0.04 },
+          // A neighbourhood only gets a real sentiment tint once at least
+          // one of its residents has actually been sampled -- otherwise
+          // there's no real estimate for it yet, so it stays near-invisible
+          // rather than implying a 50/50 reading nobody actually measured.
+          paint: {
+            "fill-color": ACCEPT_RAMP,
+            "fill-opacity": ["case", ["==", ["feature-state", "sampled"], true], 0.22, 0.02],
+          },
         },
         firstSymbol
       );
@@ -489,18 +496,22 @@ export function MapCanvas({
         type: "circle",
         source: "personas",
         paint: {
+          // Residents actually Monte-Carlo-sampled for the real opinion
+          // model stand out clearly from the rest of the (unsampled,
+          // neutral) population dots, so a handful of real data points
+          // don't get lost among thousands of uninformative ones.
           "circle-radius": [
             "interpolate",
             ["linear"],
             ["zoom"],
             9,
-            1.5,
+            ["case", ["==", ["feature-state", "sampled"], true], 4, 1.1],
             11,
-            2.4,
+            ["case", ["==", ["feature-state", "sampled"], true], 6, 1.7],
             13,
-            3.6,
+            ["case", ["==", ["feature-state", "sampled"], true], 8.5, 2.4],
             16,
-            6.5,
+            ["case", ["==", ["feature-state", "sampled"], true], 13, 4],
           ],
           "circle-color": [
             "interpolate",
@@ -513,7 +524,9 @@ export function MapCanvas({
             1,
             ACCEPT_SUPPORT,
           ],
-          "circle-opacity": 0.82,
+          "circle-opacity": ["case", ["==", ["feature-state", "sampled"], true], 0.95, 0.3],
+          "circle-stroke-width": ["case", ["==", ["feature-state", "sampled"], true], 1.4, 0],
+          "circle-stroke-color": "#ffffff",
         },
       });
       map.addLayer({
@@ -849,7 +862,7 @@ export function MapCanvas({
       const agg = result.byNeighbourhood.get(f.properties.code);
       map.setFeatureState(
         { source: "nbhd", id: f.id },
-        { mean: agg ? agg.mean : 0.5 }
+        { mean: agg ? agg.mean : 0.5, sampled: Boolean(agg) }
       );
     }
 

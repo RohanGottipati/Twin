@@ -1362,8 +1362,16 @@ async function executeTool(
         overlays: context.agentOverlays,
         seed: 2262,
       });
-      // return errors to the model so it can fix code; only spawn/parse throws
-      return result;
+      // keep model context lean: preview + clipped logs, drop libs dump
+      const clip = (s: string, n: number) => (s.length > n ? `${s.slice(0, n)}…` : s);
+      return {
+        ok: result.ok,
+        error: result.error,
+        result_preview: result.result_preview,
+        stdout: clip(result.stdout || "", 2500),
+        stderr: clip(result.stderr || "", 800),
+        mongo_bound: result.mongo_bound,
+      };
     }
     default:
       throw new ToolDispatchError(`Unknown tool: "${name}"`);

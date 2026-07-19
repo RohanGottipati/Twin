@@ -88,16 +88,20 @@ def _readonly_db(db: Any) -> Any:
     return ReadOnlyDb(db)
 
 
-def _preview(obj: Any, max_rows: int = 20) -> Any:
+def _preview(obj: Any, max_rows: int = 12) -> Any:
     try:
         import pandas as pd
 
         if isinstance(obj, pd.DataFrame):
+            # keep agent context small: few rows, few cols if wide
+            view = obj
+            if view.shape[1] > 16:
+                view = view.iloc[:, :16]
             return {
                 "type": "dataframe",
-                "columns": [str(c) for c in obj.columns.tolist()],
+                "columns": [str(c) for c in view.columns.tolist()],
                 "shape": list(obj.shape),
-                "rows": json.loads(obj.head(max_rows).to_json(orient="records", date_format="iso")),
+                "rows": json.loads(view.head(max_rows).to_json(orient="records", date_format="iso")),
             }
         if isinstance(obj, pd.Series):
             return {
@@ -109,8 +113,11 @@ def _preview(obj: Any, max_rows: int = 20) -> Any:
     except Exception:
         pass
     if isinstance(obj, (dict, list, str, int, float, bool)) or obj is None:
+        raw = json.dumps(obj, default=str)
+        if len(raw) > 6000:
+            return {"type": "json", "value": raw[:6000] + "…", "truncated": True}
         return {"type": "json", "value": obj}
-    return {"type": "repr", "value": repr(obj)[:4000]}
+    return {"type": "repr", "value": repr(obj)[:3000]}
 
 
 def main() -> None:

@@ -4,6 +4,7 @@ import { PRINCIPLED_CITY_BUNDLE } from "@/lib/backboard/assistants";
 import { runCityOrchestration } from "@/lib/planner/orchestrator";
 import { plannerRunBodySchema } from "@/lib/planner/request";
 import { getCitizenReactionProviderMode } from "@/lib/citizen-reaction/provider";
+import { jsonError } from "@/lib/backboard/route-helpers";
 
 export const runtime = "nodejs";
 
@@ -13,8 +14,12 @@ export const runtime = "nodejs";
  * Prefer /api/planner/stream when the chat UI wants token deltas.
  */
 export async function POST(request: Request) {
-  const json = await request.json();
-  const body = plannerRunBodySchema.parse(json);
+  const bodyRaw = await request.json().catch(() => null);
+  const parsed = plannerRunBodySchema.safeParse(bodyRaw);
+  if (!parsed.success) {
+    return jsonError("Invalid request body.", 400, { issues: parsed.error.issues });
+  }
+  const body = parsed.data;
   const result = await runCityOrchestration({
     question: body.question,
     patches: body.patches,

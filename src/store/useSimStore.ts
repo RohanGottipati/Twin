@@ -26,7 +26,7 @@ interface SimState {
 export const useSimStore = create<SimState>((set) => ({
   status: "loading",
   scenarioId: "baseline",
-  layers: { rail: true, streetcar: true, bus: false, personas: true, districts: false },
+  layers: { rail: true, streetcar: true, bus: true, personas: true, districts: true },
   selectedCode: null,
   result: null,
   personaCount: 0,
