@@ -25,8 +25,21 @@ export type CityRunEvent =
   | { type: "assistant.delta"; runId: string; content: string }
   | { type: "assistant.clear"; runId: string }
   | { type: "status"; runId: string; message: string }
-  | { type: "tool.requested"; runId: string; role: TwinTOAssistantKey; toolName: string }
-  | { type: "tool.completed"; runId: string; role: TwinTOAssistantKey; toolName: string; ok: boolean }
+  | {
+      type: "tool.requested";
+      runId: string;
+      role: TwinTOAssistantKey;
+      toolName: string;
+      toolCallId: string;
+    }
+  | {
+      type: "tool.completed";
+      runId: string;
+      role: TwinTOAssistantKey;
+      toolName: string;
+      toolCallId: string;
+      ok: boolean;
+    }
   | { type: "scenarios.proposed"; runId: string; patches: ScenarioPatch[] }
   | {
       type: "citizens.scored";
@@ -53,6 +66,7 @@ export interface CityCandidateResult {
 
 export interface CityOrchestrationResult {
   runId: string;
+  threadId: string;
   question: string;
   participatingAgents: TwinTOAssistantKey[];
   candidates: CityCandidateResult[];
@@ -74,6 +88,9 @@ export interface RunCityOrchestrationInput {
   seed?: number;
   /** Current UI map drawings so collision checks see what the user already sees. */
   agentOverlays?: AgentMapOverlay[];
+  /** Continue an existing Backboard thread for multi-turn City Code chat. */
+  threadId?: string;
+  history?: Array<{ role: "user" | "assistant"; content: string }>;
 }
 
 const optionalMetaSchema = z.object({
@@ -194,37 +211,41 @@ export async function runCityOrchestration(
   });
 
   const hintPatches = input.patches?.length ? input.patches : [];
+  const history = (input.history ?? [])
+    .filter((turn) => turn.content.trim().length > 0)
+    .slice(-12);
 
   const content = [
+    history.length
+      ? [
+          "Recent conversation (oldest first):",
+          ...history.map((turn) => `${turn.role === "user" ? "User" : "City Code"}: ${turn.content}`),
+          "",
+        ].join("\n")
+      : "",
     `User message: ${input.question}`,
     "",
-    "Respond as ToronTwin's planning agent (Claude Code for the city).",
-    "You decide the whole turn: reply in prose, call tools, invoke specialists, or any mix.",
-    "Tools are available and optional; use them only when they help.",
+    "You are City Code, ToronTwin's planning colleague (Claude Code for the city).",
+    "You have real agency this turn: ask a clarifying question, push back, propose options,",
+    "call tools, draw on the map, or answer. Do not force a full analysis when the ask is vague.",
+    "If the goal, geography, constraints, or tradeoffs are unclear, ask 1-3 concrete questions and stop.",
+    "Tools are optional; use them only when they help this turn.",
     "For location screening, use query_city_layer before choosing an official Toronto neighbourhood.",
     "Never invent ScenarioPatches or fake rankings just to fill a pipeline.",
     "If you score population acceptance, say it is simulated day-one feel, not ridership.",
-    "When comparing places or proposing geometry, use compose_map_actions to fly/highlight/draw on the map so the user can see it.",
-    "For recommendations, use concise Markdown sections when relevant: Recommendation, Why this area, Sustainability potential, Screening metrics, Success KPIs to validate, and What to validate next.",
-    "Separate measured screening indicators from proposed KPIs. Sustainability outcomes are potential mechanisms until validated, not forecasts or promises.",
+    "When comparing places or proposing geometry, use compose_map_actions so the user can see it.",
     hintPatches.length
       ? `Caller supplied optional starter patches (use or ignore):\n${JSON.stringify(hintPatches)}`
       : "",
-    "Final reply: concise Markdown to the user. Lead with the answer; no rambling.",
+    "Reply in concise Markdown. Lead with the answer or your clarifying question; no rambling.",
   ]
     .filter(Boolean)
     .join("\n");
 
-  // drop generic status spam; tool.requested / tool.completed drive the chat log
-  // emit(events, onEvent, {
-  //   type: "status",
-  //   runId,
-  //   message: "City Code agent is working…",
-  // });
-
   const loop = await runToolLoop({
     adapter,
     assistantId: orch.record.assistantId,
+    threadId: input.threadId,
     content,
     systemPrompt: orch.role.systemPrompt,
     modelName: orch.model.modelName,
@@ -254,6 +275,7 @@ export async function runCityOrchestration(
         runId,
         role: "planning-orchestrator",
         toolName: call.name,
+        toolCallId: call.id,
       });
     },
     onToolCallEnd: (outcome) => {
@@ -262,6 +284,7 @@ export async function runCityOrchestration(
         runId,
         role: "planning-orchestrator",
         toolName: outcome.toolName,
+        toolCallId: outcome.toolCallId,
         ok: outcome.ok,
       });
       if (outcome.ok && outcome.toolName === TOOL_NAMES.PROPOSE_SCENARIOS) {
@@ -350,6 +373,7 @@ export async function runCityOrchestration(
 
   return {
     runId,
+    threadId: loop.finalResult.threadId,
     question: input.question,
     participatingAgents,
     candidates,

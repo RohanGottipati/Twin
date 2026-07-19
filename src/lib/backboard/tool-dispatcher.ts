@@ -38,7 +38,6 @@ import { parseScenarioPatch, parseScenarioPatches, type ScenarioPatch } from "@/
 import { getPopulationProvider } from "@/lib/population/provider";
 import type { PopulationProvider } from "@/lib/population/provider";
 import { runAgentPython } from "@/lib/analysis/run-python";
-import { matchCannedAsk } from "@/lib/planner/canned";
 import { isTwinTOAssistantKey, ASSISTANT_ROSTER } from "@/lib/backboard/assistants";
 import { getToolDefinitions } from "@/lib/backboard/tools";
 import {
@@ -866,14 +865,30 @@ async function executeTool(
         .object({
           query: z.string().optional(),
           tags: z.array(z.string()).optional(),
-          limit: z.number().int().positive().max(10).optional(),
+          limit: z.number().int().positive().max(25).optional(),
         })
         .strict()
         .parse(args ?? {});
+      const areas = queryTorontoAreas({
+        name: parsed.query,
+        sortBy: parsed.query ? "name" : "fallbackScore",
+        direction: parsed.query ? "asc" : "desc",
+        limit: parsed.limit ?? 8,
+      });
       return {
-        dataMode: "synthetic-fixture",
-        storageLayer: repo.getStorageLayer(),
-        neighbourhoods: repo.searchNeighbourhoods(parsed.query, parsed.tags, parsed.limit ?? 5),
+        dataMode: "official-open-data",
+        neighbourhoods: areas.map((area) => ({
+          id: area.code,
+          name: area.name,
+          center: area.center,
+          population: area.population,
+          medianIncome: area.medianIncome,
+          rapidTransitGapKm: area.rapidTransitGapKm,
+          surfaceTransitDistanceKm: area.surfaceTransitDistanceKm,
+          fallbackScore: area.fallbackScore,
+          provenance: area.provenance,
+        })),
+        note: "Official neighbourhood boundaries + Census/TTC screening features. Not a synthetic TwinTO fixture list.",
       };
     }
     case TOOL_NAMES.GET_NETWORK_SNAPSHOT:
@@ -954,15 +969,23 @@ async function executeTool(
         .object({ query: z.string().min(1), limit: z.number().int().positive().max(8).optional() })
         .strict()
         .parse(args);
-      const neighbourhoods = repo.searchNeighbourhoods(parsed.query, undefined, parsed.limit ?? 5);
-      const candidates = neighbourhoods.map((n, index) => ({
-        candidateId: `station-${n.id}`,
-        neighbourhoodId: n.id,
-        label: `${n.name} station option`,
-        coordinates: n.center,
+      const limit = parsed.limit ?? 5;
+      // prefer name hits; otherwise top screening gaps citywide
+      const named = queryTorontoAreas({ name: parsed.query, sortBy: "fallbackScore", direction: "desc", limit });
+      const areas =
+        named.length > 0
+          ? named
+          : queryTorontoAreas({ sortBy: "fallbackScore", direction: "desc", limit });
+      const candidates = areas.map((area, index) => ({
+        candidateId: `area-${area.code}`,
+        neighbourhoodId: area.code,
+        label: area.name,
+        coordinates: area.center,
         rankHint: index + 1,
-        tags: n.tags,
-        underservedAfter22: n.underservedAfter22,
+        rapidTransitGapKm: area.rapidTransitGapKm,
+        population: area.population,
+        medianIncome: area.medianIncome,
+        fallbackScore: area.fallbackScore,
       }));
       context.stationCandidates = candidates.map((c) => ({
         candidateId: c.candidateId,
@@ -971,7 +994,11 @@ async function executeTool(
         coordinates: c.coordinates,
         rankHint: c.rankHint,
       }));
-      return { dataMode: "synthetic-fixture", storageLayer: repo.getStorageLayer(), candidates };
+      return {
+        dataMode: "official-open-data",
+        candidates,
+        note: "Screening options from official neighbourhood open data. Labels are real place names; not an existing-station inventory.",
+      };
     }
     case TOOL_NAMES.PROPOSE_VARIANTS:
       return handleProposeVariants(args, context);
@@ -1200,11 +1227,8 @@ async function executeTool(
         })
         .strict()
         .parse(args);
-      let patches = parseScenarioPatches(parsed.patches);
-      if (parsed.question) {
-        const canned = matchCannedAsk(parsed.question);
-        if (canned && patches.length === 0) patches = [...canned.patches];
-      }
+      // agent-authored patches only; never inject canned/fixture scenarios
+      const patches = parseScenarioPatches(parsed.patches);
       context.proposedCityPatches = patches;
       return {
         dataMode: "in-memory-twin",

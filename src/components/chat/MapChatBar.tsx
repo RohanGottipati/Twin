@@ -19,7 +19,7 @@ import { useTwinTOStore } from "@/store/useTwinTOStore";
 import type { UseBackboardRunResult } from "@/lib/twinto/use-backboard-run";
 import { FLAGSHIP_SCENARIO_ID } from "@/data/transit/scenarios";
 import { cn } from "@/lib/utils/cn";
-import type { CityPlanRankingRow } from "@/components/planner/CityPlanStrip";
+import type { CityPlanRankingRow, CityPlanStepEvent } from "@/components/planner/CityPlanStrip";
 import { ChatMarkdown } from "@/components/chat/ChatMarkdown";
 
 interface ChatMessage {
@@ -28,6 +28,9 @@ interface ChatMessage {
   content: string;
   /** true while tokens are still arriving */
   streaming?: boolean;
+  /** tool step row: spinner until done */
+  stepState?: "running" | "done" | "failed" | "info";
+  toolCallId?: string;
 }
 
 const EXAMPLE_ASK =
@@ -46,13 +49,18 @@ export interface MapChatBarProps {
     handlers?: {
       onDelta?: (content: string) => void;
       onClear?: () => void;
-      onStep?: (message: string) => void;
+      onStep?: (event: CityPlanStepEvent) => void;
+    },
+    options?: {
+      threadId?: string;
+      history?: Array<{ role: "user" | "assistant"; content: string }>;
     },
   ) => Promise<{
     summary?: string;
     ranking?: CityPlanRankingRow[];
     chosenId?: string;
     mapActions?: unknown[];
+    threadId?: string;
   } | void>;
   cityPlanRunning?: boolean;
 }
@@ -77,6 +85,7 @@ export function MapChatBar({
   const inputRef = useRef<HTMLInputElement>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const transcriptRef = useRef<HTMLDivElement>(null);
+  const cityThreadIdRef = useRef<string | undefined>(undefined);
 
   const selectedPlace = useMapStore((s) => s.selectedPlace);
   const layers = useMapStore((s) => s.layers);
@@ -161,12 +170,45 @@ export function MapChatBar({
         let assistantId: string | null = null;
         let streamed = "";
 
-        const appendStep = (message: string) => {
+        const applyStep = (event: CityPlanStepEvent) => {
           flushSync(() => {
-            setMessages((prev) => [
-              ...prev,
-              { id: `step-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, role: "system", content: message },
-            ]);
+            setMessages((prev) => {
+              if (event.kind === "info") {
+                return [
+                  ...prev,
+                  {
+                    id: `info-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+                    role: "system",
+                    content: event.message,
+                    stepState: "info",
+                  },
+                ];
+              }
+              if (event.kind === "tool_start") {
+                return [
+                  ...prev,
+                  {
+                    id: `tool-${event.toolCallId}`,
+                    role: "system",
+                    content: `${event.label}…`,
+                    stepState: "running",
+                    toolCallId: event.toolCallId,
+                  },
+                ];
+              }
+              // tool_done: flip the matching running row
+              return prev.map((message) => {
+                if (message.toolCallId !== event.toolCallId && message.id !== `tool-${event.toolCallId}`) {
+                  return message;
+                }
+                const base = message.content.replace(/…\s*$/, "").replace(/\s*\(failed\)\s*$/i, "");
+                return {
+                  ...message,
+                  content: event.ok ? `${base} · done` : `${base} · failed`,
+                  stepState: event.ok ? "done" : "failed",
+                };
+              });
+            });
           });
           transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight });
         };
@@ -187,17 +229,34 @@ export function MapChatBar({
           transcriptRef.current?.scrollTo({ top: transcriptRef.current.scrollHeight });
         };
 
-        const payload = await onCityPlanQuestion(text, {
-          onDelta: (chunk) => {
-            streamed += chunk;
-            paintReply(streamed, true);
+        const history = messages
+          .filter((message) => message.role === "user" || message.role === "assistant")
+          .filter((message) => message.content.trim().length > 0)
+          .slice(-12)
+          .map((message) => ({
+            role: message.role as "user" | "assistant",
+            content: message.content,
+          }));
+
+        const payload = await onCityPlanQuestion(
+          text,
+          {
+            onDelta: (chunk) => {
+              streamed += chunk;
+              paintReply(streamed, true);
+            },
+            onClear: () => {
+              streamed = "";
+              if (assistantId) paintReply("", true);
+            },
+            onStep: applyStep,
           },
-          onClear: () => {
-            streamed = "";
-            if (assistantId) paintReply("", true);
+          {
+            threadId: cityThreadIdRef.current,
+            history,
           },
-          onStep: (message) => appendStep(message),
-        });
+        );
+        if (payload?.threadId) cityThreadIdRef.current = payload.threadId;
         const mapParsed = parseMapActions(payload?.mapActions ?? []);
         if (mapParsed.ok) applyMapActions(mapParsed.actions);
         const ranking = payload?.ranking ?? [];
@@ -210,9 +269,10 @@ export function MapChatBar({
           .join("\n");
         let body = payload?.summary?.trim() || streamed.trim() || "Done.";
         if (ranking.length) {
+          const leading = ranking.find((r) => r.id === payload?.chosenId)?.title ?? ranking[0]?.title;
           body +=
-            `\n\nRanked scenarios:\n${rankLines}` +
-            (payload?.chosenId ? `\n\nLeading: ${payload.chosenId}` : "") +
+            `\n\nRanked options:\n${rankLines}` +
+            (leading ? `\n\nLeading: ${leading}` : "") +
             "\n\n(Simulated day-one acceptance; not real public opinion or ridership.)";
         }
         paintReply(body, false);
@@ -342,7 +402,20 @@ export function MapChatBar({
                 {message.role === "user" ? (
                   <p className="whitespace-pre-wrap text-[12px] leading-relaxed">{message.content}</p>
                 ) : message.role === "system" ? (
-                  <p className="leading-snug">{message.content}</p>
+                  <p className="inline-flex items-center gap-1.5 leading-snug">
+                    {message.stepState === "running" ? (
+                      <Loader2 className="h-3 w-3 shrink-0 animate-spin text-white/55" aria-hidden />
+                    ) : message.stepState === "done" ? (
+                      <span className="text-white/40" aria-hidden>
+                        ✓
+                      </span>
+                    ) : message.stepState === "failed" ? (
+                      <span className="text-red-300/80" aria-hidden>
+                        ✕
+                      </span>
+                    ) : null}
+                    <span>{message.content}</span>
+                  </p>
                 ) : (
                   <div>
                     {message.content ? <ChatMarkdown content={message.content} /> : null}

@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { CANNED_CITY_ASKS } from "@/lib/planner/canned";
 import { createRunStreamClient } from "@/lib/backboard/stream-parser";
-import { toolDoneMessage, toolStartMessage } from "@/lib/planner/step-messages";
+import { toolRunningLabel } from "@/lib/planner/step-messages";
 import { cn } from "@/lib/utils/cn";
 import { useMapStore } from "@/store/useMapStore";
 
@@ -24,13 +24,23 @@ export interface CityPlanRunSummary {
   participatingAgents: string[];
   events: string[];
   mapActions?: unknown[];
+  threadId?: string;
 }
+
+export type CityPlanStepEvent =
+  | { kind: "info"; message: string }
+  | { kind: "tool_start"; toolCallId: string; toolName: string; label: string }
+  | { kind: "tool_done"; toolCallId: string; toolName: string; ok: boolean };
 
 export interface CityPlanStreamHandlers {
   onDelta?: (content: string) => void;
   onClear?: () => void;
-  /** Append-only progress line (tool calls, agent start, scoring, …). */
-  onStep?: (message: string) => void;
+  onStep?: (event: CityPlanStepEvent) => void;
+}
+
+export interface CityPlanStartOptions {
+  threadId?: string;
+  history?: Array<{ role: "user" | "assistant"; content: string }>;
 }
 
 export function useCityPlanRun() {
@@ -39,18 +49,25 @@ export function useCityPlanRun() {
   const [error, setError] = useState<string | null>(null);
   const [liveText, setLiveText] = useState("");
   const abortRef = useRef<{ abort: () => void } | null>(null);
+  const threadIdRef = useRef<string | undefined>(undefined);
 
-  function start(question: string, handlers?: CityPlanStreamHandlers): Promise<CityPlanRunSummary & { mapActions?: unknown[] }> {
+  function start(
+    question: string,
+    handlers?: CityPlanStreamHandlers,
+    options?: CityPlanStartOptions,
+  ): Promise<CityPlanRunSummary & { mapActions?: unknown[]; threadId?: string }> {
     setIsRunning(true);
     setError(null);
     setLiveText("");
     abortRef.current?.abort();
 
     const agentOverlays = useMapStore.getState().agentOverlays;
+    const threadId = options?.threadId ?? threadIdRef.current;
+    const history = options?.history;
 
     return new Promise((resolve, reject) => {
       let settled = false;
-      const settleOk = (value: CityPlanRunSummary & { mapActions?: unknown[] }) => {
+      const settleOk = (value: CityPlanRunSummary & { mapActions?: unknown[]; threadId?: string }) => {
         if (settled) return;
         settled = true;
         resolve(value);
@@ -61,11 +78,11 @@ export function useCityPlanRun() {
         reject(err);
       };
 
-      const step = (message: string) => handlers?.onStep?.(message);
+      const step = (event: CityPlanStepEvent) => handlers?.onStep?.(event);
 
       abortRef.current = createRunStreamClient({
         url: "/api/planner/stream",
-        body: { question, seed: 2262, agentOverlays },
+        body: { question, seed: 2262, agentOverlays, threadId, history },
         onEvent: (envelope) => {
           if (envelope.type === "planner.delta") {
             const content = (envelope.payload as { content?: unknown }).content;
@@ -78,25 +95,43 @@ export function useCityPlanRun() {
             handlers?.onClear?.();
           } else if (envelope.type === "planner.status") {
             const message = (envelope.payload as { message?: unknown }).message;
-            // only append concrete progress lines (e.g. post-loop scoring), skip fluff
             if (typeof message === "string" && !/^(Starting|City Code agent is working)/i.test(message)) {
-              step(message);
+              step({ kind: "info", message });
             }
           } else if (envelope.type === "agent.started") {
             const name = (envelope.payload as { name?: unknown }).name;
-            step(typeof name === "string" ? `${name} joined` : "City Code agent joined");
+            step({
+              kind: "info",
+              message: typeof name === "string" ? `${name} joined` : "City Code agent joined",
+            });
           } else if (envelope.type === "tool.requested") {
-            const toolName = (envelope.payload as { toolName?: unknown }).toolName;
-            if (typeof toolName === "string") step(toolStartMessage(toolName));
-          } else if (envelope.type === "tool.completed") {
-            const payload = envelope.payload as { toolName?: unknown; ok?: unknown };
+            const payload = envelope.payload as { toolName?: unknown; toolCallId?: unknown };
             if (typeof payload.toolName === "string") {
-              step(toolDoneMessage(payload.toolName, payload.ok !== false));
+              const toolCallId =
+                typeof payload.toolCallId === "string" ? payload.toolCallId : `${payload.toolName}-${Date.now()}`;
+              step({
+                kind: "tool_start",
+                toolCallId,
+                toolName: payload.toolName,
+                label: toolRunningLabel(payload.toolName),
+              });
+            }
+          } else if (envelope.type === "tool.completed") {
+            const payload = envelope.payload as { toolName?: unknown; toolCallId?: unknown; ok?: unknown };
+            if (typeof payload.toolName === "string") {
+              const toolCallId =
+                typeof payload.toolCallId === "string" ? payload.toolCallId : `${payload.toolName}-done`;
+              step({
+                kind: "tool_done",
+                toolCallId,
+                toolName: payload.toolName,
+                ok: payload.ok !== false,
+              });
             }
           } else if (envelope.type === "scenarios.proposed") {
-            step("Registered scenario candidates");
+            step({ kind: "info", message: "Registered scenario candidates" });
           } else if (envelope.type === "citizens.scored") {
-            step("Scored a candidate against the synthetic population");
+            step({ kind: "info", message: "Scored a candidate against the synthetic population" });
           } else if (envelope.type === "planner.failed") {
             const message =
               typeof (envelope.payload as { message?: unknown }).message === "string"
@@ -116,7 +151,11 @@ export function useCityPlanRun() {
               participatingAgents?: string[];
               events?: string[];
               mapActions?: unknown[];
+              threadId?: string;
             };
+            if (typeof payload.threadId === "string" && payload.threadId) {
+              threadIdRef.current = payload.threadId;
+            }
             const next: CityPlanRunSummary = {
               question: payload.question ?? question,
               ranking: payload.ranking ?? [],
@@ -127,13 +166,13 @@ export function useCityPlanRun() {
               participatingAgents: payload.participatingAgents ?? [],
               events: payload.events ?? [],
               mapActions: payload.mapActions,
+              threadId: payload.threadId ?? threadIdRef.current,
             };
             setSummary(next);
             setLiveText(next.summary);
             setIsRunning(false);
             settleOk(next);
           }
-          // ignore planner.status: we append concrete tool/agent lines instead
         },
         onError: (err) => {
           setError(err.message);
@@ -153,6 +192,7 @@ export function useCityPlanRun() {
     isRunning,
     error,
     liveText,
+    threadId: threadIdRef.current,
     start,
     setSummary,
     cannedAsks: CANNED_CITY_ASKS,
@@ -202,7 +242,7 @@ export function CityPlanStrip({
             >
               <span>
                 {i + 1}. {row.title}
-                {row.id === summary.chosenId ? " · chosen" : ""}
+                {row.id === summary.chosenId ? " · leading" : ""}
               </span>
               <span className="font-mono">
                 mean {row.mean.toFixed(2)} · support {(row.supportShare * 100).toFixed(0)}%

@@ -21,4 +21,4 @@ init_from_adapter = "flash-1784401342-0d51be72"
 
 [wandb]
 project = "torontwin-grpo"
-run_name = "mcq-judge-qwen7b-16x8-backoff"
+run_name = "mcq-judge-rewritten-qs-16x8"

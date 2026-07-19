@@ -42,6 +42,20 @@ export const plannerRunBodySchema = z.object({
   patches: z.array(scenarioPatchSchema).optional(),
   seed: z.number().optional(),
   agentOverlays: z.array(overlaySchema).optional(),
+  /** Reuse Backboard thread so City Code can follow up / clarify across turns. */
+  threadId: z.string().min(1).optional(),
+  /** Recent user/assistant turns when the client has local transcript context. */
+  history: z
+    .array(
+      z
+        .object({
+          role: z.enum(["user", "assistant"]),
+          content: z.string().min(1).max(8000),
+        })
+        .strict(),
+    )
+    .max(24)
+    .optional(),
 });
 
 export type PlannerRunBody = z.infer<typeof plannerRunBodySchema>;

@@ -185,8 +185,8 @@ export function Dashboard() {
             enablePlanningRun={false}
             enableCityPlanRun
             cityPlanRunning={cityPlan.isRunning}
-            onCityPlanQuestion={async (q, handlers) => {
-              const payload = await cityPlan.start(q, handlers);
+            onCityPlanQuestion={async (q, handlers, options) => {
+              const payload = await cityPlan.start(q, handlers, options);
               return payload;
             }}
           />

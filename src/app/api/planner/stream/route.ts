@@ -60,6 +60,8 @@ export async function POST(request: Request) {
         patches: body.patches,
         seed: body.seed ?? 2262,
         agentOverlays: body.agentOverlays,
+        threadId: body.threadId,
+        history: body.history,
         onEvent: (event: CityRunEvent) => {
           if (aborted || writer.closed) return;
           if (event.type === "assistant.delta") {
@@ -89,6 +91,7 @@ export async function POST(request: Request) {
           availableRoster: PRINCIPLED_CITY_BUNDLE,
           participatingAgents: result.participatingAgents,
           runId: result.runId,
+          threadId: result.threadId,
           question: result.question,
           ranking: result.ranking,
           chosenId: result.chosenId,

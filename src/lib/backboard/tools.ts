@@ -283,13 +283,17 @@ export const TOOL_DEFINITIONS: Record<ToolName, ChatToolDefinition> = {
   [TOOL_NAMES.SEARCH_NEIGHBOURHOODS]: {
     name: TOOL_NAMES.SEARCH_NEIGHBOURHOODS,
     description:
-      "Search synthetic Toronto neighbourhood fixtures by name, tags, or underserved-after-hours flags. Returns bounded candidate areas with centroids.",
+      "Search official City of Toronto neighbourhoods (158 areas) by name. Returns Census population/income and TTC proximity screening features from open data, not TwinTO synthetic fixtures.",
     parameters: {
       type: "object",
       properties: {
-        query: { type: "string", description: "Neighbourhood name or free-text query." },
-        tags: { type: "array", items: { type: "string" }, description: "Optional tags such as downtown, waterfront, underserved-night." },
-        limit: { type: "number", description: "Maximum neighbourhoods to return (default 5)." },
+        query: { type: "string", description: "Neighbourhood name substring, e.g. Alderwood or Parkdale." },
+        tags: {
+          type: "array",
+          items: { type: "string" },
+          description: "Ignored for open-data search; kept for schema compatibility.",
+        },
+        limit: { type: "number", description: "Max results (default 8, max 25)." },
       },
       required: [],
     },
@@ -489,11 +493,11 @@ export const TOOL_DEFINITIONS: Record<ToolName, ChatToolDefinition> = {
   [TOOL_NAMES.GENERATE_STATION_CANDIDATES]: {
     name: TOOL_NAMES.GENERATE_STATION_CANDIDATES,
     description:
-      "Generate bounded synthetic station or neighbourhood candidates for a planning question. Returns candidate ids, labels, coordinates, and catchment notes. Never invents geometry outside the fixture catalogue.",
+      "Screen official Toronto neighbourhoods as station-siting options from open data (Census + TTC proximity). Returns real neighbourhood names and coordinates. Screening only, not ridership or inventory of existing stations.",
     parameters: {
       type: "object",
       properties: {
-        query: { type: "string", description: "Planning question or corridor description." },
+        query: { type: "string", description: "Planning question or area name filter." },
         limit: { type: "number", description: "Maximum candidates (default 5)." },
       },
       required: ["query"],
