@@ -712,7 +712,11 @@ export function MapCanvas({
         const featureId = personaHits[0].id;
         const acceptanceState =
           featureId !== undefined
-            ? (map.getFeatureState({ source: "personas", id: featureId }) as { a?: number })
+            ? (map.getFeatureState({ source: "personas", id: featureId }) as {
+                a?: number;
+                opinion?: string;
+                sampled?: boolean;
+              })
             : {};
         const acceptance = acceptanceState.a ?? 0.5;
         const nbhdName = nbhdByCode.get(p.code)?.name ?? p.code;
@@ -731,7 +735,15 @@ export function MapCanvas({
                   ${p.commuteMode ? `<div>Commute: <b>${escapeHtml(p.commuteMode)}</b></div>` : ""}
                   ${p.incomeBand ? `<div>Household income: <b>${escapeHtml(p.incomeBand)}</b></div>` : ""}
                   ${p.education ? `<div>Education: <b>${escapeHtml(p.education)}</b></div>` : ""}
-                  <div style="margin-top:6px;opacity:0.7">Scenario acceptance: <b>${Math.round(acceptance * 100)}%</b></div>
+                  ${
+                    acceptanceState.sampled
+                      ? `<div style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(0,0,0,0.1)">
+                          <div style="opacity:0.7;margin-bottom:2px">Real opinion on this scenario:</div>
+                          <div style="font-style:italic">&ldquo;${escapeHtml(acceptanceState.opinion ?? "")}&rdquo;</div>
+                          <div style="margin-top:6px;opacity:0.7">Acceptance: <b>${Math.round(acceptance * 100)}%</b></div>
+                        </div>`
+                      : `<div style="margin-top:6px;opacity:0.7">Not sampled for this scenario</div>`
+                  }
                 </div>`
               : `<div style="font-family:inherit;font-size:12px;line-height:1.5">
                   <div style="font-weight:600;font-size:13px;margin-bottom:4px">${escapeHtml(nbhdName)}</div>
@@ -911,6 +923,13 @@ export function MapCanvas({
         map.setFeatureState({ source: "personas", id: i }, { a: values[i] });
       }
     };
+
+    // Real opinion text only exists for residents actually Monte-Carlo-sampled
+    // this scenario -- mark those dots so the click popup can show a real
+    // quote instead of a bare acceptance percentage for everyone else.
+    for (const [i, text] of result.opinions ?? []) {
+      map.setFeatureState({ source: "personas", id: i }, { opinion: text, sampled: true });
+    }
 
     const token = ++sweepToken.current;
     const target = result.acceptance;
