@@ -5,6 +5,9 @@
 *.json
 # residential building centroids for map dots (zoning-filtered massing)
 !public/data/home-sites.json
+# frozen opinion_score probes (train_bow_probe / train_embedding_probe); needed at Next build time
+!src/lib/citizen-reaction/bow-probe-weights.json
+!src/lib/citizen-reaction/embedding-probe-weights.json
 *.txt
 CES/
 StatCan/
