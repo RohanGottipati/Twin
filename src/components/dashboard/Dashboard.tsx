@@ -89,6 +89,7 @@ export function Dashboard() {
       if (e.key === "Escape") {
         useSimStore.getState().select(null);
         useMapStore.getState().clearPlaceSelection();
+        useMapStore.getState().clearAgent3DFocus();
       }
     };
     window.addEventListener("keydown", onKey);

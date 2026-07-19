@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import type { SelectedMapPlace } from "@/lib/twinto/place-context";
 import type { AgentMapOverlay } from "@/lib/twinto/map-overlays";
+import type { Agent3DFocus } from "@/lib/map/localized-3d";
 
 export interface MapLayerVisibility {
   transit: boolean;
@@ -36,6 +37,7 @@ interface MapState {
   highlightedNeighbourhoodIds: string[];
   candidateMarkers: CandidateMarker[];
   agentOverlays: AgentMapOverlay[];
+  agent3DFocus: Agent3DFocus | null;
   /** Place selected for the floating mini chat (building footprint or station). */
   selectedPlace: SelectedMapPlace | null;
   buildingMiniChatOpen: boolean;
@@ -65,6 +67,8 @@ interface MapActions {
     what: "markers" | "highlights" | "drawings" | "annotations" | "all",
   ) => void;
   setAgentOverlays: (overlays: AgentMapOverlay[]) => void;
+  setAgent3DFocus: (focus: Agent3DFocus | null) => void;
+  clearAgent3DFocus: () => void;
   selectPlace: (place: SelectedMapPlace) => void;
   clearPlaceSelection: () => void;
   setBuildingMiniChatOpen: (open: boolean) => void;
@@ -91,6 +95,7 @@ const initialState: MapState = {
   highlightedNeighbourhoodIds: [],
   candidateMarkers: [],
   agentOverlays: [],
+  agent3DFocus: null,
   selectedPlace: null,
   buildingMiniChatOpen: false,
 };
@@ -111,11 +116,15 @@ export const useMapStore = create<MapStore>((set) => ({
       layers: { ...state.layers, ...layers },
     })),
 
-  setCameraTarget: (cameraTarget) => set({ cameraTarget }),
-  setBoundsTarget: (boundsTarget) => set({ boundsTarget }),
+  setCameraTarget: (cameraTarget) =>
+    set({ cameraTarget, ...(cameraTarget ? { boundsTarget: null } : {}) }),
+  setBoundsTarget: (boundsTarget) =>
+    set({ boundsTarget, ...(boundsTarget ? { cameraTarget: null } : {}) }),
   setHighlightedNeighbourhoods: (highlightedNeighbourhoodIds) => set({ highlightedNeighbourhoodIds }),
   setCandidateMarkers: (candidateMarkers) => set({ candidateMarkers }),
   setAgentOverlays: (agentOverlays) => set({ agentOverlays }),
+  setAgent3DFocus: (agent3DFocus) => set({ agent3DFocus }),
+  clearAgent3DFocus: () => set({ agent3DFocus: null }),
 
   upsertAgentOverlay: (overlay) =>
     set((state) => ({
@@ -125,9 +134,18 @@ export const useMapStore = create<MapStore>((set) => ({
       ],
     })),
   removeAgentOverlays: (ids) =>
-    set((state) => ({
-      agentOverlays: state.agentOverlays.filter((o) => !ids.includes(o.id)),
-    })),
+    set((state) => {
+      const agentOverlays = state.agentOverlays.filter(
+        (overlay) => !ids.includes(overlay.id),
+      );
+      const focus = state.agent3DFocus;
+      if (focus?.source !== "drawings") return { agentOverlays };
+      const targets = focus.targets.filter((target) => !ids.includes(target.id));
+      return {
+        agentOverlays,
+        agent3DFocus: targets.length > 0 ? { ...focus, targets } : null,
+      };
+    }),
   clearMapOverlays: (what) =>
     set((state) => {
       if (what === "all") {
@@ -135,10 +153,25 @@ export const useMapStore = create<MapStore>((set) => ({
           candidateMarkers: [],
           highlightedNeighbourhoodIds: [],
           agentOverlays: [],
+          agent3DFocus: null,
         };
       }
-      if (what === "markers") return { candidateMarkers: [] };
-      if (what === "highlights") return { highlightedNeighbourhoodIds: [] };
+      if (what === "markers") {
+        return {
+          candidateMarkers: [],
+          ...(state.agent3DFocus?.source === "markers"
+            ? { agent3DFocus: null }
+            : {}),
+        };
+      }
+      if (what === "highlights") {
+        return {
+          highlightedNeighbourhoodIds: [],
+          ...(state.agent3DFocus?.source === "highlights"
+            ? { agent3DFocus: null }
+            : {}),
+        };
+      }
       if (what === "annotations") {
         return {
           agentOverlays: state.agentOverlays.filter((o) => o.kind !== "annotation"),
@@ -147,6 +180,9 @@ export const useMapStore = create<MapStore>((set) => ({
       // drawings: points, lines, polygons
       return {
         agentOverlays: state.agentOverlays.filter((o) => o.kind === "annotation"),
+        ...(state.agent3DFocus?.source === "drawings"
+          ? { agent3DFocus: null }
+          : {}),
       };
     }),
 

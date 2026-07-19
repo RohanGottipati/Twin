@@ -2,6 +2,7 @@
 
 import type { MapAction } from "@/lib/twinto/map-actions";
 import type { AgentMapOverlay } from "@/lib/twinto/map-overlays";
+import { deriveAgent3DFocus } from "@/lib/map/localized-3d";
 import { useMapStore } from "@/store/useMapStore";
 import { useTwinTOStore } from "@/store/useTwinTOStore";
 
@@ -76,6 +77,13 @@ export function applyMapActions(actions: MapAction[]): void {
             : "chat";
       useTwinTOStore.getState().setPanelFocus(focus);
     }
+  }
+
+  const focus = deriveAgent3DFocus(actions, {
+    candidateMarkers: useMapStore.getState().candidateMarkers,
+  });
+  if (focus !== undefined) {
+    useMapStore.getState().setAgent3DFocus(focus);
   }
 }
 
