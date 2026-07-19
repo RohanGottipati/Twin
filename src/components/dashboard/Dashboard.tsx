@@ -6,7 +6,7 @@ import { LayersPanel } from "./LayersPanel";
 import { InspectorPanel } from "./InspectorPanel";
 import { MapChatBar } from "@/components/chat/MapChatBar";
 import { BuildingMiniChat } from "@/components/chat/BuildingMiniChat";
-import { CityPlanStrip, useCityPlanRun } from "@/components/planner/CityPlanStrip";
+import { useCityPlanRun } from "@/components/planner/CityPlanStrip";
 import { buildPersonas } from "@/lib/sim/personas";
 import { runScenario, aggregate } from "@/lib/sim/engine";
 import type { HomeSitesByCode } from "@/lib/sim/home-sites";
@@ -19,7 +19,6 @@ import type {
   Persona,
   RouteCollection,
 } from "@/lib/sim/types";
-import { CANNED_CITY_ASKS } from "@/lib/planner/canned";
 
 /**
  * Streams real per-resident acceptance (src/app/api/neighbourhood-acceptance/route.ts,
@@ -285,25 +284,6 @@ export function Dashboard() {
           <BuildingMiniChat placement="below-inspector" />
         </div>
       )}
-
-      {/* Demo canned asks + live plan strip */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-[4.5rem] z-20 flex flex-col items-center gap-2 px-3 sm:px-4 md:bottom-24">
-        <div className="pointer-events-auto flex max-w-3xl flex-wrap justify-center gap-1.5">
-          {CANNED_CITY_ASKS.map((ask) => (
-            <button
-              key={ask.id}
-              type="button"
-              disabled={cityPlan.isRunning}
-              onClick={() => void cityPlan.start(ask.question)}
-              className="border border-hairline bg-panel/90 px-2.5 py-1 text-[10px] text-muted backdrop-blur hover:text-ink-bright disabled:opacity-50"
-              title={ask.question}
-            >
-              {ask.id}
-            </button>
-          ))}
-        </div>
-        <CityPlanStrip summary={cityPlan.summary} isRunning={cityPlan.isRunning} />
-      </div>
 
       {/* Bottom: liquid-glass City Copilot */}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center p-3 sm:p-4">
