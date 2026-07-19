@@ -20,6 +20,9 @@ const INCOME_SPREAD = 30_000;
  * Build the synthetic population: home points rejection-sampled inside each
  * real neighbourhood polygon, count proportional to 2021 census population.
  * Deterministic per neighbourhood code, so the map is stable across sessions.
+ *
+ * Prefer `/api/personas` (building-snapped real residents). This path is the
+ * offline/synthetic fallback only.
  */
 export function buildPersonas(
   neighbourhoods: NeighbourhoodCollection

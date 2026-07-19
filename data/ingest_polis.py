@@ -1,8 +1,12 @@
 """Polis SFT row ingestion (implementation_plan.md Phase 4, SFT data).
 
 Source: compdemocracy/openData on GitHub (CC-BY-4.0 licence -- public,
-redistribution-permitted).
-Conversations: four policy-relevant threads.
+redistribution-permitted). The repo hosts 20 conversation directories total;
+11 are included here (English-language only -- vtaiwan.uberx and the four
+austria-climate.* threads are Chinese/German and excluded to keep training
+text monolingual, matching the opinion model's English output;
+bg2050-volunteers is excluded because its participants-votes.csv 404s, no
+real vote data available for it).
 
 SFT output contract (AGENTS.md 5.1):
     input  = persona + policy + spatial_features (null; Polis not geo-specific)
@@ -65,6 +69,52 @@ CONVERSATIONS: dict[str, dict] = {
             "What approach to youth policing should London take?"
         ),
         "title": "London youth policing",
+    },
+    "american-assembly.bowling-green": {
+        "policy_text": (
+            "What do you believe should change in Bowling Green/Warren County, Kentucky, "
+            "in order to make it a better place to live, work, and spend time?"
+        ),
+        "title": "Improving Bowling Green / Warren County",
+    },
+    "football-concussions": {
+        "policy_text": (
+            "Is the concussion and CTE crisis the end of the NFL? "
+            "What should be done about football-related brain injuries?"
+        ),
+        "title": "Concussions in the NFL",
+    },
+    "march-on.operation-marchin-orders": {
+        "policy_text": (
+            "What does the collective movement want? What are we fighting for? "
+            "What direction do we want to see our country go, and what are the "
+            "'marching orders' we are going to give our elected officials?"
+        ),
+        "title": "Operation Marching Orders",
+    },
+    "scoop-hivemind.affordable-housing": {
+        "policy_text": "What ideas would help crack housing affordability in New Zealand?",
+        "title": "ScoopNZ Hivemind on affordable housing",
+    },
+    "scoop-hivemind.biodiversity": {
+        "policy_text": "What should New Zealand do to protect and restore its biodiversity?",
+        "title": "Protecting and Restoring NZ's Biodiversity",
+    },
+    "scoop-hivemind.freshwater": {
+        "policy_text": "What should be done to protect and improve freshwater quality in New Zealand?",
+        "title": "HiveMind - Freshwater Quality in NZ",
+    },
+    "scoop-hivemind.ubi": {
+        "policy_text": "Should Aotearoa New Zealand adopt a Universal Basic Income (UBI)?",
+        "title": "A Universal Basic Income for Aotearoa NZ?",
+    },
+    "ssis.land-bank-farmland.2rumnecbeh.2021-08-01": {
+        "policy_text": (
+            "How should the San Juan Islands Land Bank and community adapt land use and "
+            "conservation policy to best address the community's interests in farmland "
+            "and land conservation?"
+        ),
+        "title": "Land use and conservation in the San Juan Islands",
     },
 }
 
