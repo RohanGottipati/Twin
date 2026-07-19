@@ -44,6 +44,8 @@ export const COLLECTIONS = {
   rawIngestEvents: "raw_ingest_events",
   streamDeadLetters: "stream_dead_letters",
   similarInterventions: "similar_interventions",
+  /** Cache of real per-persona opinion generations, keyed by (personaId, policyHash). See src/lib/citizen-reaction/opinion-cache.ts. */
+  opinionReactionsCache: "opinion_reactions_cache",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
