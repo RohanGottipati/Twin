@@ -31,7 +31,7 @@ const MIN_SAMPLES = Number(process.env.TECHTO_OPINION_SAMPLE_SIZE ?? 3);
 const MAX_SAMPLES = Math.max(MIN_SAMPLES, Number(process.env.TECHTO_OPINION_MAX_SAMPLE_SIZE ?? 6));
 const EXTRA_BATCH = 3;
 const DISAGREEMENT_STDDEV_THRESHOLD = 0.18;
-const CONCURRENCY = Number(process.env.TECHTO_OPINION_CONCURRENCY ?? 8);
+const CONCURRENCY = Number(process.env.TECHTO_OPINION_CONCURRENCY ?? 128);
 
 interface ArchetypeResult {
   meanAcceptance: number;

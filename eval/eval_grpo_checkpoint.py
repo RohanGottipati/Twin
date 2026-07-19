@@ -30,6 +30,7 @@ CKPTS = {
     "sft_e2_step1850": ("flash-1784401342-0d51be72/step-1850", "1850", "flash-1784401342-0d51be72"),
     "grpo_step20": ("flash-1784430260-04bc1f31/step-20", "20", "flash-1784430260-04bc1f31"),
     "grpo_step40": ("flash-1784430260-04bc1f31/step-40", "40", "flash-1784430260-04bc1f31"),
+    "grpo_step80": ("flash-1784430260-04bc1f31/step-80", "80", "flash-1784430260-04bc1f31"),
 }
 
 

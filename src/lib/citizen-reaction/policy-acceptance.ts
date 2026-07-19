@@ -5,9 +5,9 @@ import { scoreOpinionWithEmbeddingProbe } from "@/lib/citizen-reaction/embedding
 import { runWithLimit } from "@/lib/citizen-reaction/concurrency";
 import type { ScenarioPatch } from "@/lib/planner/scenario";
 
-const BATCH_SIZE = Number(process.env.TECHTO_POLICY_BATCH_SIZE ?? 12);
-const MAX_SAMPLE_SIZE = Number(process.env.TECHTO_POLICY_MAX_SAMPLE_SIZE ?? 60);
-const CONCURRENCY = Number(process.env.TECHTO_OPINION_CONCURRENCY ?? 8);
+const BATCH_SIZE = Number(process.env.TECHTO_POLICY_BATCH_SIZE ?? 24);
+const MAX_SAMPLE_SIZE = Number(process.env.TECHTO_POLICY_MAX_SAMPLE_SIZE ?? 100);
+const CONCURRENCY = Number(process.env.TECHTO_OPINION_CONCURRENCY ?? 128);
 /** Stop once the 95% CI half-width on the mean acceptance is at or below this (acceptance is in [0, 1]). */
 const CI_HALF_WIDTH_TARGET = Number(process.env.TECHTO_POLICY_CI_TARGET ?? 0.08);
 /** Never stop before this many real residents, so an early lucky/unlucky batch can't look falsely confident. */
@@ -90,6 +90,19 @@ export async function scoreRealPolicyAcceptance(
       { $project: { persona_id: 1, neighbourhood_code: 1, text: 1, _id: 0 } },
     ])
     .toArray()) as unknown as ResidentPersonaDoc[];
+
+  if (pool.length === 0 && neighbourhoodCodes?.length) {
+    // A neighbourhoodCodes filter that matches zero real residents means the
+    // codes themselves are wrong (e.g. synthetic fixture ids or invented
+    // slugs, not real City of Toronto 3-digit codes) -- fail loudly instead
+    // of silently returning a fake mean=0.5/n=0 result that looks like a
+    // legitimate (if inconclusive) score.
+    throw new Error(
+      `score_population/run_twin_analysis: no real residents found for neighbourhoodCodes ${JSON.stringify(
+        neighbourhoodCodes,
+      )}. These must be real City of Toronto neighbourhood codes (e.g. "001".."158", as returned by query_city_layer / queryTorontoAreas), not search_neighbourhoods fixture ids or invented labels.`,
+    );
+  }
 
   const scored: Array<{ code: string; acceptance: number }> = [];
   let stopReason: "confident" | "max-sample" | "pool-exhausted" = "pool-exhausted";

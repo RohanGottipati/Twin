@@ -21,7 +21,7 @@ import type { Scenario } from "@/lib/sim/scenarios";
  */
 
 const SAMPLE_SIZE = Number(process.env.TECHTO_NEIGHBOURHOOD_SAMPLE_SIZE ?? 3);
-const CONCURRENCY = Number(process.env.TECHTO_OPINION_CONCURRENCY ?? 8);
+const CONCURRENCY = Number(process.env.TECHTO_OPINION_CONCURRENCY ?? 128);
 
 interface ResidentPersonaDoc {
   persona_id: string;

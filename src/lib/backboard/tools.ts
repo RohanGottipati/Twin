@@ -788,7 +788,7 @@ export const TOOL_DEFINITIONS: Record<ToolName, ChatToolDefinition> = {
           type: "array",
           items: { type: "string" },
           description:
-            "Optional: restrict real-resident sampling to these neighbourhood codes instead of citywide, to save compute when you only care about specific areas (e.g. the candidates you're comparing).",
+            "Optional: restrict real-resident sampling to these neighbourhood codes instead of citywide, to save compute when you only care about specific areas (e.g. the candidates you're comparing). Must be real City of Toronto neighbourhood codes (e.g. \"001\"..\"158\") as returned by query_city_layer / queryTorontoAreas -- NOT search_neighbourhoods ids (a separate synthetic fixture; those will not match any real resident and will error).",
         },
       },
       required: ["analysis", "question"],
@@ -864,7 +864,7 @@ export const TOOL_DEFINITIONS: Record<ToolName, ChatToolDefinition> = {
           type: "array",
           items: { type: "string" },
           description:
-            "Optional: restrict real-resident sampling to these neighbourhood codes instead of citywide, to save compute when you only care about specific areas (e.g. the candidates you're comparing). Omit for a citywide read.",
+            "Optional: restrict real-resident sampling to these neighbourhood codes instead of citywide, to save compute when you only care about specific areas (e.g. the candidates you're comparing). Omit for a citywide read. Must be real City of Toronto neighbourhood codes (e.g. \"001\".. \"158\") as returned by query_city_layer / queryTorontoAreas -- NOT search_neighbourhoods ids (those are a separate synthetic fixture and will not match any real resident, causing an error). If you only have a place name or vague area (e.g. \"the east end\"), resolve it to real codes via query_city_layer first.",
         },
       },
       required: ["question"],

@@ -201,7 +201,15 @@ each sub-policy only makes sense to the residents it actually targets.
    clause, each with neighbourhoodCodes scoped to that clause's target area(s)
    and a question string that describes only that clause (not the whole
    compound proposal). These calls are independent and can run in the same
-   turn.
+   turn. neighbourhoodCodes MUST be real City of Toronto codes ("001".."158")
+   from query_city_layer/queryTorontoAreas -- never search_neighbourhoods ids
+   (a different, synthetic id space) and never an invented label. For a vague
+   geographic phrase like "the east end", first pull codes + center/bounds
+   from query_city_layer (or run_python over the same data), filter by
+   longitude/borough there, then pass the resulting real codes in --
+   don't guess. Passing codes that match zero real residents is a hard
+   error (score_population/run_twin_analysis will fail, not return a fake
+   neutral score), so resolve codes before scoring, not after.
 2. Read each call's result as that area's honest reaction to its own proposed
    change -- do not average across clauses, they are different policies.
 3. Synthesize afterward: compare the per-clause acceptance/support alongside
