@@ -3,7 +3,7 @@ import { errorMessage, jsonError } from "@/lib/backboard/route-helpers";
 import { createSseResponse, createSseStream } from "@/lib/backboard/sse";
 import { runCityOrchestration, type CityRunEvent } from "@/lib/planner/orchestrator";
 import { plannerRunBodySchema } from "@/lib/planner/request";
-import { getPopulationProviderMode } from "@/lib/population/provider";
+import { getCitizenReactionProviderMode } from "@/lib/citizen-reaction/provider";
 import type { TechTORunEventEnvelope } from "@/lib/transit/schemas";
 
 export const runtime = "nodejs";
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
         {
           schemaVersion: 1,
           backboardMode: result.adapterMode,
-          populationMode: getPopulationProviderMode(),
+          populationMode: getCitizenReactionProviderMode(),
           availableRoster: PRINCIPLED_CITY_BUNDLE,
           participatingAgents: result.participatingAgents,
           runId: result.runId,
@@ -105,7 +105,6 @@ export async function POST(request: Request) {
           events: result.events.map((e) => e.type),
           candidates: result.candidates.map((c) => ({
             patch: c.patch,
-            twinVersion: c.twinVersion,
             score: {
               scenarioId: c.score.scenarioId,
               provider: c.score.provider,

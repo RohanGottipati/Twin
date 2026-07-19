@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { PRINCIPLED_CITY_BUNDLE } from "@/lib/backboard/assistants";
 import { runCityOrchestration } from "@/lib/planner/orchestrator";
 import { plannerRunBodySchema } from "@/lib/planner/request";
-import { getPopulationProviderMode } from "@/lib/population/provider";
+import { getCitizenReactionProviderMode } from "@/lib/citizen-reaction/provider";
 
 export const runtime = "nodejs";
 
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   return NextResponse.json({
     schemaVersion: 1,
     backboardMode: result.adapterMode,
-    populationMode: getPopulationProviderMode(),
+    populationMode: getCitizenReactionProviderMode(),
     availableRoster: PRINCIPLED_CITY_BUNDLE,
     participatingAgents: result.participatingAgents,
     runId: result.runId,
@@ -40,7 +40,6 @@ export async function POST(request: Request) {
     events: result.events,
     candidates: result.candidates.map((c) => ({
       patch: c.patch,
-      twinVersion: c.twinVersion,
       score: {
         scenarioId: c.score.scenarioId,
         provider: c.score.provider,
