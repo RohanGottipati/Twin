@@ -64,7 +64,7 @@ export type PlanningIntent =
   | "OPEN_CITY_ASK";
 
 const SHARED_GUARD = `
-You are part of ToronTwin / TwinTO, a Toronto city planning sandbox on Backboard.
+You are part of TechTO, a Toronto city planning sandbox on Backboard.
 You must use tool results for all factual and numerical claims.
 You must never represent simulated citizen reactions as real public opinion.
 You must never reveal private chain-of-thought.
@@ -109,7 +109,7 @@ function role(
 export const ASSISTANT_ROSTER: Record<TwinTOAssistantKey, AssistantRoleDefinition> = {
   "city-copilot": role({
     key: "city-copilot",
-    name: "ToronTwin — City Copilot",
+    name: "TechTO — City Copilot",
     shortDescription: "Front-door chat; intent handoff to the planning department.",
     uiGroup: "Conversation",
     memory: "Readonly",
@@ -132,7 +132,7 @@ acceptance yourself; cite tools and specialists. Keep replies short.
 
   "planning-orchestrator": role({
     key: "planning-orchestrator",
-    name: "ToronTwin — Planning Orchestrator",
+    name: "TechTO — Planning Orchestrator",
     shortDescription: "Unopinionated coordinator agent: tools over fixed city workflows.",
     uiGroup: "Planning",
     memory: "Readonly",
@@ -155,7 +155,7 @@ acceptance yourself; cite tools and specialists. Keep replies short.
     ],
     knowledgeDocuments: docs("GENERAL_TRANSIT", "PLANNING"),
     promptBody: `
-You are ToronTwin's Planning Orchestrator: a free-form agent for Toronto city
+You are TechTO's Planning Orchestrator: a free-form agent for Toronto city
 planning, analogous to Claude Code for a city twin.
 
 You have general tools (query/patch/snapshot/diff twin, propose_scenarios,
@@ -183,7 +183,7 @@ actually happened this turn.
 
   "geospatial-twin": role({
     key: "geospatial-twin",
-    name: "ToronTwin — Geospatial Twin",
+    name: "TechTO — Geospatial Twin",
     shortDescription: "Query/patch city geometry, land use, networks via twin verbs.",
     uiGroup: "Planning",
     memory: "Readonly",
@@ -211,7 +211,7 @@ final winner.
 
   "scenario-designer": role({
     key: "scenario-designer",
-    name: "ToronTwin — Scenario Designer",
+    name: "TechTO — Scenario Designer",
     shortDescription: "Proposes N general ScenarioPatches for any city ask.",
     uiGroup: "Planning",
     memory: "Readonly",
@@ -235,7 +235,7 @@ plus a counterfactual when useful. Never declare the final winner.
 
   "citizen-response": role({
     key: "citizen-response",
-    name: "ToronTwin — Citizen Response",
+    name: "TechTO — Citizen Response",
     shortDescription: "Scores census-weighted population acceptance for patches.",
     uiGroup: "Analysis",
     memory: "Readonly",
@@ -256,7 +256,7 @@ are the audit trail; scores are readouts.
 
   "equity-impact": role({
     key: "equity-impact",
-    name: "ToronTwin — Equity Impact",
+    name: "TechTO — Equity Impact",
     shortDescription: "Who wins/loses across neighbourhoods and groups for any policy.",
     uiGroup: "Analysis",
     memory: "Readonly",
@@ -281,7 +281,7 @@ tabular / statistical checks against Mongo or TWIN when helpful.
 
   feasibility: role({
     key: "feasibility",
-    name: "ToronTwin — Feasibility",
+    name: "TechTO — Feasibility",
     shortDescription: "Cost, infra, safety, carbon, ops constraints for any proposal.",
     uiGroup: "Analysis",
     memory: "Readonly",
@@ -303,14 +303,16 @@ tabular / statistical checks against Mongo or TWIN when helpful.
     promptBody: `
 You assess feasibility: cost, infrastructure, safety, carbon, and operational
 stress for any city patch. Call transit metric tools only when the ask needs
-them; they are tools, not your identity. Use run_python for quantitative
-hypotheses (read-only Mongo + scientific Python stack).
+them; they are tools, not your identity. For ROI, separate measured inputs,
+modeled monetized benefits, assumptions, and scenario ranges. Never claim an
+ROI figure when lifecycle cost or benefit evidence is missing. Use run_python
+for quantitative hypotheses (read-only Mongo + scientific Python stack).
 `.trim(),
   }),
 
   "adversarial-reviewer": role({
     key: "adversarial-reviewer",
-    name: "ToronTwin — Adversarial Reviewer",
+    name: "TechTO — Adversarial Reviewer",
     shortDescription: "Attacks proposals; finds failure modes. Memory off.",
     uiGroup: "Validation",
     memory: "off",
@@ -332,7 +334,7 @@ hidden harms (including event/surge stress). Memory is off.
 
   "evidence-auditor": role({
     key: "evidence-auditor",
-    name: "ToronTwin — Evidence Auditor",
+    name: "TechTO — Evidence Auditor",
     shortDescription: "Audit trail: claims must cite twin/population tool outputs.",
     uiGroup: "Validation",
     memory: "Readonly",
@@ -354,7 +356,7 @@ scores, documents, or run_python outputs. Reject unsupported conclusions.
 
   "final-policy-judge": role({
     key: "final-policy-judge",
-    name: "ToronTwin — Final Policy Judge",
+    name: "TechTO — Final Policy Judge",
     shortDescription: "Ranks validated ScenarioPatches; never invents metrics.",
     uiGroup: "Decision",
     memory: "Readonly",
@@ -371,7 +373,7 @@ or reject_all. Never invent metrics. Acceptance is not ridership.
 
   "explanation-map": role({
     key: "explanation-map",
-    name: "ToronTwin — Explanation and Map",
+    name: "TechTO — Explanation and Map",
     shortDescription: "Plain-language explain + allowlisted map actions.",
     uiGroup: "Conversation",
     memory: "Readonly",

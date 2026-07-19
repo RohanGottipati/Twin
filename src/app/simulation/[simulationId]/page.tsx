@@ -36,7 +36,7 @@ export default function SimulationPage() {
           className="inline-flex items-center gap-1.5 self-start text-sm text-twinto-muted transition-colors hover:text-twinto-text"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to TwinTO
+          Back to TechTO
         </Link>
 
         {run === undefined && <GlassPanel className="p-6 text-sm text-twinto-muted">Loading stored run…</GlassPanel>}
@@ -45,7 +45,7 @@ export default function SimulationPage() {
           <GlassPanel className="p-6">
             <EmptyState
               title="Run not found in this browser"
-              description={`No stored run matches "${simulationId}" here. Run history is saved per-browser; open TwinTO and start or select a run instead.`}
+              description={`No stored run matches "${simulationId}" here. Run history is saved per-browser; open TechTO and start or select a run instead.`}
             />
           </GlassPanel>
         )}

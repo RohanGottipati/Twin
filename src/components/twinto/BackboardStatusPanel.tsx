@@ -109,7 +109,9 @@ export function BackboardStatusPanel({ onCapabilitiesLoaded }: BackboardStatusPa
           <ul className="max-h-40 space-y-1 overflow-y-auto twinto-scroll pr-1">
             {capabilities.assistants.map((assistant) => (
               <li key={assistant.role} className="rounded border border-white/5 bg-white/[0.02] px-2 py-1.5">
-                <span className="font-medium text-twinto-text">{assistant.name.replace(/^TwinTO — /, "")}</span>
+                <span className="font-medium text-twinto-text">
+                  {assistant.name.replace(/^(?:TwinTO|TechTO) — /, "")}
+                </span>
                 <span className="block text-[10px] text-twinto-muted">
                   {assistant.model.provider}/{assistant.model.name} · {assistant.memory} · {assistant.toolNames.length} tools
                 </span>

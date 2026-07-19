@@ -183,7 +183,7 @@ export function Dashboard() {
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-ink">
           <div className="text-center">
             <div className="font-ui text-[13px] font-semibold uppercase tracking-[0.3em] text-ink-bright">
-              ToronTwin
+              TechTO
             </div>
             <div className="mt-2 font-mono text-[11px] text-muted">
               loading Toronto geodata…
@@ -212,10 +212,10 @@ function Wordmark() {
   return (
     <header className="pointer-events-auto flex items-baseline gap-2.5 border border-hairline bg-panel px-4 py-2.5">
       <h1 className="font-ui text-[13px] font-bold uppercase tracking-[0.26em] text-ink-bright">
-        ToronTwin
+        TechTO
       </h1>
       <span className="font-mono text-[9.5px] uppercase tracking-wider text-muted">
-        Toronto · Backboard planning dept · synthetic citizens
+        Toronto · planning sandbox · synthetic citizens
       </span>
     </header>
   );

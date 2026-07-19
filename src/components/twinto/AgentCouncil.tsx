@@ -94,7 +94,7 @@ export function AgentCouncil({ events }: AgentCouncilProps) {
                               <Icon
                                 className={`h-3 w-3 ${STATUS_COLOR[status]} ${status === "started" ? "animate-spin" : ""}`}
                               />
-                              {definition.name.replace(/^TwinTO — /, "")}
+                              {definition.name.replace(/^(?:TwinTO|TechTO) — /, "")}
                             </span>
                           </div>
                           <p className="mt-0.5 text-[11px] text-twinto-muted">{definition.shortDescription}</p>

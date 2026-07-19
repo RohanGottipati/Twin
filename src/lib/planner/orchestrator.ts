@@ -195,12 +195,14 @@ export async function runCityOrchestration(
   const content = [
     `User message: ${input.question}`,
     "",
-    "Respond as ToronTwin's planning agent (Claude Code for the city).",
+    "Respond as TechTO's planning agent (Claude Code for the city).",
     "You decide the whole turn: reply in prose, call tools, invoke specialists, or any mix.",
     "Tools are available and optional; use them only when they help.",
     "Never invent ScenarioPatches or fake rankings just to fill a pipeline.",
     "If you score population acceptance, say it is simulated day-one feel, not ridership.",
     "When comparing places or proposing geometry, use compose_map_actions to fly/highlight/draw on the map so the user can see it.",
+    "For recommendations, use concise sections when relevant: Recommendation, Why this area, Screening metrics, ROI and value case, Success KPIs, and What to validate next.",
+    "In ROI and value case, separate measured inputs, modeled monetized benefits, assumptions, and scenario ranges. Calculate ROI only when both lifecycle costs and monetized benefits are evidenced; otherwise state that no ROI figure is being claimed yet.",
     hintPatches.length
       ? `Caller supplied optional starter patches (use or ignore):\n${JSON.stringify(hintPatches)}`
       : "",

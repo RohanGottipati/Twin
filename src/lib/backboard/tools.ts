@@ -817,7 +817,7 @@ export const TOOL_DEFINITIONS: Record<ToolName, ChatToolDefinition> = {
   [TOOL_NAMES.INVOKE_ASSISTANT]: {
     name: TOOL_NAMES.INVOKE_ASSISTANT,
     description:
-      "Ask another ToronTwin Backboard assistant to do one focused task with its tools. Use when you need a specialist lens; do not invent niche one-off agents. Pass a clear task string.",
+      "Ask another TechTO Backboard assistant to do one focused task with its tools. Use when you need a specialist lens; do not invent niche one-off agents. Pass a clear task string.",
     parameters: {
       type: "object",
       properties: {

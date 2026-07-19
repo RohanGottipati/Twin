@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ArrowUp, Loader2, MapPin, X } from "lucide-react";
 import { createRunStreamClient } from "@/lib/backboard/stream-parser";
 import { parseMapActions } from "@/lib/twinto/map-actions";
@@ -9,6 +9,7 @@ import { FLAGSHIP_SCENARIO_ID } from "@/data/transit/scenarios";
 import { useMapStore } from "@/store/useMapStore";
 import { cn } from "@/lib/utils/cn";
 import { ChatMarkdown } from "@/components/chat/ChatMarkdown";
+import { PdfExportButton } from "@/components/chat/PdfExportButton";
 
 interface MiniMessage {
   id: string;
@@ -68,6 +69,25 @@ export function BuildingMiniChat() {
     ]);
     setInput("");
   }, [place]);
+
+  const exportReport = useMemo(
+    () =>
+      place
+        ? {
+            title: `TechTO place chat: ${place.label}`,
+            subtitle: `${placeKindLabel(place.kind)} · Toronto`,
+            messages: messages.map((message) => ({
+              role: message.role,
+              content: message.content,
+              citedEvidence: message.citedEvidence,
+            })),
+          }
+        : {
+            title: "TechTO place chat",
+            messages: [],
+          },
+    [messages, place]
+  );
 
   if (!open || !place) return null;
 
@@ -174,6 +194,13 @@ export function BuildingMiniChat() {
             {activeAgent ? ` · ${activeAgent}` : " · ask about local reaction"}
           </p>
         </div>
+        {messages.length > 0 && (
+          <PdfExportButton
+            report={exportReport}
+            compact
+            testId="building-mini-chat-export"
+          />
+        )}
         <button
           type="button"
           onClick={() => clearPlaceSelection()}

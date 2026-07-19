@@ -17,9 +17,9 @@ const plexMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ToronTwin | Toronto simulation dashboard",
+  title: "TechTO | Toronto planning dashboard",
   description:
-    "Interactive 2D geospatial dashboard for Toronto: real neighbourhoods, real TTC routes, and a synthetic resident population reacting to policy scenarios.",
+    "Interactive Toronto planning dashboard with real neighbourhoods, TTC routes, synthetic resident sentiment, and exportable planning chat reports.",
 };
 
 export const viewport: Viewport = {
