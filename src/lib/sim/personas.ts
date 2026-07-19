@@ -5,6 +5,7 @@ import {
   type LngLat,
 } from "@/lib/geo";
 import { hashString, mulberry32 } from "@/lib/random";
+import { sampleHomeSite, type HomeSitesByCode } from "@/lib/sim/home-sites";
 import type { NeighbourhoodCollection, Persona } from "./types";
 
 /** Each dot on the map stands in for roughly this many census residents. */
@@ -17,15 +18,15 @@ const CITY_MEDIAN_INCOME = 84_000;
 const INCOME_SPREAD = 30_000;
 
 /**
- * Build the synthetic population: home points rejection-sampled inside each
- * real neighbourhood polygon, count proportional to 2021 census population.
- * Deterministic per neighbourhood code, so the map is stable across sessions.
+ * Build the synthetic population. Prefer residential building centroids from
+ * home-sites.json (zoning-filtered 3D Massing); only fall back to polygon
+ * rejection sampling when a neighbourhood has no sites.
  *
- * Prefer `/api/personas` (building-snapped real residents). This path is the
- * offline/synthetic fallback only.
+ * Prefer `/api/personas` for real Mongo residents. This path is offline fallback.
  */
 export function buildPersonas(
-  neighbourhoods: NeighbourhoodCollection
+  neighbourhoods: NeighbourhoodCollection,
+  homes?: HomeSitesByCode | null,
 ): Persona[] {
   const personas: Persona[] = [];
   let id = 0;
@@ -46,11 +47,18 @@ export function buildPersonas(
     const maxAttempts = target * 60;
     while (placed < target && attempts < maxAttempts) {
       attempts++;
-      const p: LngLat = [
-        minX + rng() * (maxX - minX),
-        minY + rng() * (maxY - minY),
-      ];
-      if (!pointInGeometry(p, feature.geometry)) continue;
+      // snap onto residential-zone building when we have sites for this nbhd
+      const snapped = homes ? sampleHomeSite(homes, code, rng) : null;
+      let p: LngLat;
+      if (snapped) {
+        p = snapped;
+      } else {
+        p = [
+          minX + rng() * (maxX - minX),
+          minY + rng() * (maxY - minY),
+        ];
+        if (!pointInGeometry(p, feature.geometry)) continue;
+      }
 
       // Behaviour priors: transit propensity decays with distance from the
       // core (a real Toronto commute-mode gradient), with individual noise.

@@ -3,6 +3,8 @@
 *.md
 *.jsonl
 *.json
+# residential building centroids for map dots (zoning-filtered massing)
+!public/data/home-sites.json
 *.txt
 CES/
 StatCan/

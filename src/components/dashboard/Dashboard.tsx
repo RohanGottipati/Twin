@@ -9,6 +9,9 @@ import { BuildingMiniChat } from "@/components/chat/BuildingMiniChat";
 import { CityPlanStrip, useCityPlanRun } from "@/components/planner/CityPlanStrip";
 import { buildPersonas } from "@/lib/sim/personas";
 import { runScenario, aggregate } from "@/lib/sim/engine";
+import type { HomeSitesByCode } from "@/lib/sim/home-sites";
+import { sampleHomeSite } from "@/lib/sim/home-sites";
+import { hashString, mulberry32 } from "@/lib/random";
 import { useSimStore } from "@/store/useSimStore";
 import { useMapStore } from "@/store/useMapStore";
 import type {
@@ -79,21 +82,49 @@ interface CityData {
   personas: Persona[];
 }
 
+/** Zoning-filtered residential building centroids (public/data/home-sites.json). */
+async function loadHomeSites(): Promise<HomeSitesByCode | null> {
+  const response = await fetch("/data/home-sites.json");
+  if (!response.ok) return null;
+  return (await response.json()) as HomeSitesByCode;
+}
+
 /**
  * Loads real residents from `/api/personas` (backed by MongoDB's
- * `resident_personas`). Falls back to fully-synthetic `buildPersonas()`
- * only if the API is unreachable, so the map still renders during an
- * outage -- this fallback path is not the intended steady state.
+ * `resident_personas`), placed on residential-zone building centroids.
+ * Falls back to synthetic `buildPersonas()` (also building-snapped when
+ * home-sites.json is available) if the API is unreachable.
  */
 async function loadPersonas(neighbourhoods: NeighbourhoodCollection): Promise<Persona[]> {
   try {
     const response = await fetch("/api/personas");
     if (!response.ok) throw new Error("personas fetch failed");
-    const data = (await response.json()) as { personas: Persona[] };
-    if (data.personas?.length) return data.personas;
+    const data = (await response.json()) as {
+      personas: Persona[];
+      placement?: string;
+    };
+    if (data.personas?.length) {
+      // if API fell back to polygon scatter, re-snap client-side when we can
+      if (data.placement === "neighbourhood-polygon") {
+        const homes = await loadHomeSites();
+        if (homes) {
+          // rebuild coords from homes while keeping persona attrs from API
+          for (const p of data.personas) {
+            const rng = mulberry32(hashString(`resnap:${p.code}:${p.id}`));
+            const spot = sampleHomeSite(homes, p.code, rng);
+            if (spot) {
+              p.lng = spot[0];
+              p.lat = spot[1];
+            }
+          }
+        }
+      }
+      return data.personas;
+    }
     throw new Error("personas response empty");
   } catch {
-    return buildPersonas(neighbourhoods);
+    const homes = await loadHomeSites();
+    return buildPersonas(neighbourhoods, homes);
   }
 }
 
