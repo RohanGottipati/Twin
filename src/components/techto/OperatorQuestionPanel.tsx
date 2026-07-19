@@ -6,7 +6,7 @@ import { GlassPanel } from "@/components/primitives/GlassPanel";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { createRunStreamClient } from "@/lib/backboard/stream-parser";
 import { cn } from "@/lib/utils/cn";
-import type { TwinTORunResult } from "@/lib/techto/types";
+import type { TechTORunResult } from "@/lib/techto/types";
 
 export interface OperatorQuestionPanelProps {
   scenarioId: string;

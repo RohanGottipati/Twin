@@ -51,6 +51,30 @@ body {
   outline: none;
 }
 
+/* Persona/place click popups: match the app's flat, no-shadow surface style. */
+.maplibregl-popup-content {
+  background: rgba(18, 22, 21, 0.96) !important;
+  color: #cfd8d0;
+  border: 1px solid rgba(226, 236, 228, 0.12);
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  padding: 10px 12px !important;
+}
+
+.maplibregl-popup-tip {
+  display: none !important;
+}
+
+.maplibregl-popup-close-button {
+  color: rgba(207, 216, 208, 0.7);
+  font-size: 16px;
+}
+
+.maplibregl-popup-close-button:hover {
+  background: transparent !important;
+  color: #e8ede9;
+}
+
 /* Map chat input: bright text + visible blinking caret on dark glass. */
 .chat-glass-input {
   color: #ffffff;

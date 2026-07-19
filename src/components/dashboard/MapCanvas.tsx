@@ -33,6 +33,14 @@ const SELECTED_BUILDING_SOURCE = "torontwin-selected-building";
 const SELECTED_BUILDING_FILL = "torontwin-selected-building-fill";
 const SELECTED_BUILDING_LINE = "torontwin-selected-building-line";
 
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 function buildingLayerIds(map: maplibregl.Map): string[] {
   const style = map.getStyle();
   if (!style?.layers) return [];
@@ -929,37 +937,6 @@ export function MapCanvas({
     };
     requestAnimationFrame(tick);
   }, [result, neighbourhoods, personas, ready]);
-
-  // ---- pedestrian wander: residents amble around their home block ---------
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !ready) return;
-    let rafId: number | undefined;
-    let cancelled = false;
-
-    // Runs every animation frame (cheap at 2k dots) so the wander reads as
-    // continuous motion rather than discrete hops.
-    const tick = () => {
-      if (cancelled) return;
-      if (!reducedMotionRef.current && layersRef.current.personas) {
-        const source = map.getSource<maplibregl.GeoJSONSource>("personas");
-        const walk = currentWalk();
-        if (source && walk) {
-          source.setData(personaCollection(personas, displayedA.current, walk));
-        }
-      }
-      rafId = requestAnimationFrame(tick);
-    };
-    rafId = requestAnimationFrame(tick);
-
-    return () => {
-      cancelled = true;
-      if (rafId !== undefined) cancelAnimationFrame(rafId);
-    };
-    // reducedMotion/layers are read live via refs so the loop doesn't restart
-    // on every toggle.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, personas]);
 
   // Agent camera fly / fit
   useEffect(() => {

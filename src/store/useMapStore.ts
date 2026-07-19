@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import type { SelectedMapPlace } from "@/lib/techto/place-context";
 import type { AgentMapOverlay } from "@/lib/techto/map-overlays";
+import type { Agent3DFocus } from "@/lib/map/localized-3d";
 
 export interface MapLayerVisibility {
   transit: boolean;
@@ -39,6 +40,7 @@ interface MapState {
   /** Place selected for the floating mini chat (building footprint or station). */
   selectedPlace: SelectedMapPlace | null;
   buildingMiniChatOpen: boolean;
+  agent3DFocus: Agent3DFocus | null;
 }
 
 interface MapActions {
@@ -68,6 +70,8 @@ interface MapActions {
   selectPlace: (place: SelectedMapPlace) => void;
   clearPlaceSelection: () => void;
   setBuildingMiniChatOpen: (open: boolean) => void;
+  setAgent3DFocus: (focus: Agent3DFocus | null) => void;
+  clearAgent3DFocus: () => void;
   reset: () => void;
 }
 
@@ -93,6 +97,7 @@ const initialState: MapState = {
   agentOverlays: [],
   selectedPlace: null,
   buildingMiniChatOpen: false,
+  agent3DFocus: null,
 };
 
 export const useMapStore = create<MapStore>((set) => ({
@@ -125,9 +130,16 @@ export const useMapStore = create<MapStore>((set) => ({
       ],
     })),
   removeAgentOverlays: (ids) =>
-    set((state) => ({
-      agentOverlays: state.agentOverlays.filter((o) => !ids.includes(o.id)),
-    })),
+    set((state) => {
+      const agentOverlays = state.agentOverlays.filter((o) => !ids.includes(o.id));
+      const focus = state.agent3DFocus;
+      if (!focus || focus.source === "highlights") return { agentOverlays };
+      const targets = focus.targets.filter((target) => !ids.includes(target.id));
+      return {
+        agentOverlays,
+        agent3DFocus: targets.length > 0 ? { ...focus, targets } : null,
+      };
+    }),
   clearMapOverlays: (what) =>
     set((state) => {
       if (what === "all") {
@@ -135,10 +147,21 @@ export const useMapStore = create<MapStore>((set) => ({
           candidateMarkers: [],
           highlightedNeighbourhoodIds: [],
           agentOverlays: [],
+          agent3DFocus: null,
         };
       }
-      if (what === "markers") return { candidateMarkers: [] };
-      if (what === "highlights") return { highlightedNeighbourhoodIds: [] };
+      if (what === "markers") {
+        return {
+          candidateMarkers: [],
+          ...(state.agent3DFocus?.source === "markers" ? { agent3DFocus: null } : {}),
+        };
+      }
+      if (what === "highlights") {
+        return {
+          highlightedNeighbourhoodIds: [],
+          ...(state.agent3DFocus?.source === "highlights" ? { agent3DFocus: null } : {}),
+        };
+      }
       if (what === "annotations") {
         return {
           agentOverlays: state.agentOverlays.filter((o) => o.kind !== "annotation"),
@@ -147,6 +170,7 @@ export const useMapStore = create<MapStore>((set) => ({
       // drawings: points, lines, polygons
       return {
         agentOverlays: state.agentOverlays.filter((o) => o.kind === "annotation"),
+        ...(state.agent3DFocus?.source === "drawings" ? { agent3DFocus: null } : {}),
       };
     }),
 
@@ -163,6 +187,8 @@ export const useMapStore = create<MapStore>((set) => ({
       selectedStationId: null,
     }),
   setBuildingMiniChatOpen: (buildingMiniChatOpen) => set({ buildingMiniChatOpen }),
+  setAgent3DFocus: (agent3DFocus) => set({ agent3DFocus }),
+  clearAgent3DFocus: () => set({ agent3DFocus: null }),
 
   reset: () => set({ ...initialState, layers: DEFAULT_LAYERS }),
 }));

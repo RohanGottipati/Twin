@@ -38,7 +38,7 @@ import { parseScenarioPatch, parseScenarioPatches, type ScenarioPatch } from "@/
 import { scoreRealPolicyAcceptance, policyTextForPatch } from "@/lib/citizen-reaction/policy-acceptance";
 import { runAgentPython } from "@/lib/analysis/run-python";
 import { matchCannedAsk } from "@/lib/planner/canned";
-import { isTechTOAssistantKey, ASSISTANT_ROSTER } from "@/lib/backboard/assistants";
+import { isTechTOAssistantKey } from "@/lib/backboard/assistants";
 import { getToolDefinitions } from "@/lib/backboard/tools";
 import {
   queryTorontoAreas,
@@ -114,6 +114,8 @@ export interface RunContext {
   onNestedToolEnd?: (outcome: ToolCallOutcome, role: string) => void;
   /** Bubble each real Monte-Carlo-sampled resident's score.population/run_twin_analysis result up to the map so its dot can be coloured live. */
   onPersonaScored?: (result: { personaId: string; code: string; acceptance: number; opinionText: string }) => void;
+  /** Push accepted map actions to the UI without echoing geometry into model context. */
+  onMapActions?: (actions: MapAction[]) => void;
 }
 
 const DEFAULT_MAP_CONTEXT: MapContextState = {
@@ -135,6 +137,7 @@ export function createRunContext(
     onNestedToolStart?: (call: ChatToolCall, role: string) => void;
     onNestedToolEnd?: (outcome: ToolCallOutcome, role: string) => void;
     onPersonaScored?: (result: { personaId: string; code: string; acceptance: number; opinionText: string }) => void;
+    onMapActions?: (actions: MapAction[]) => void;
   },
 ): RunContext {
   return {
@@ -156,6 +159,7 @@ export function createRunContext(
     onNestedToolStart: extras?.onNestedToolStart,
     onNestedToolEnd: extras?.onNestedToolEnd,
     onPersonaScored: extras?.onPersonaScored,
+    onMapActions: extras?.onMapActions,
   };
 }
 
@@ -801,6 +805,45 @@ async function handleCreateTraining(args: unknown, context: RunContext, repo: Tr
 // Dispatch
 // ---------------------------------------------------------------------------
 
+/** Short ack for compose_map_actions so geometry is not re-fed to the model. */
+function summarizeMapAction(action: MapAction): Record<string, unknown> {
+  if (action.type === "fly_to_center") {
+    return { type: action.type, center: action.center, zoom: action.zoom };
+  }
+  if (action.type === "fit_bounds") {
+    return { type: action.type, bounds: action.bounds };
+  }
+  if (action.type === "highlight_neighbourhoods") {
+    return { type: action.type, neighbourhoodIds: action.neighbourhoodIds };
+  }
+  if (action.type === "show_candidate_markers") {
+    return {
+      type: action.type,
+      candidates: action.candidates.map((c) => ({
+        id: c.candidateId,
+        label: c.label,
+        rank: c.rank,
+      })),
+    };
+  }
+  if (action.type === "draw_point" || action.type === "annotate") {
+    return { type: action.type, id: action.id };
+  }
+  if (action.type === "draw_line" || action.type === "draw_polygon") {
+    return { type: action.type, id: action.id, n: action.coordinates.length };
+  }
+  if (action.type === "remove_overlays") {
+    return { type: action.type, ids: action.ids };
+  }
+  if (action.type === "clear_map_overlays") {
+    return { type: action.type, what: action.what };
+  }
+  if (action.type === "set_layer_visibility") {
+    return { type: action.type, layerId: action.layerId, visible: action.visible };
+  }
+  return { type: (action as { type: string }).type };
+}
+
 async function executeTool(
   name: string,
   args: unknown,
@@ -812,12 +855,14 @@ async function executeTool(
   switch (name as ToolName) {
     case TOOL_NAMES.GET_CURRENT_MAP_CONTEXT:
       return {
-        dataMode: "synthetic-fixture",
-        provenance: "run-context-map",
-        storageLayer: repo.getStorageLayer(),
-        ...context.mapContext,
-        scenarioId: context.scenarioId,
-        agentOverlays: context.agentOverlays,
+        center: context.mapContext.center,
+        zoom: context.mapContext.zoom,
+        selectedStationId: context.mapContext.selectedStationId,
+        selectedNeighbourhoodId: context.mapContext.selectedNeighbourhoodId,
+        highlightedNeighbourhoodIds: context.mapContext.highlightedNeighbourhoodIds,
+        visibleLayers: context.mapContext.visibleLayers,
+        overlayCount: context.agentOverlays.length,
+        overlayIds: context.agentOverlays.map((o) => o.id),
         twinPoiCount: context.twin.pois.length,
         twinCorridorCount: context.twin.corridors.length,
       };
@@ -873,14 +918,7 @@ async function executeTool(
               surfaceTransitDistanceKm: a.surfaceTransitDistanceKm,
               fallbackScore: a.fallbackScore,
             }));
-      return {
-        layer: parsed.layer,
-        dataMode: "official-open-data",
-        detail,
-        count: rows.length,
-        areas: rows,
-        note: "Slim neighbourhood screen only. For larger rankings/filters use run_python on DATA_DIR/census_profile.csv. Not a ridership forecast.",
-      };
+      return { areas: rows };
     }
     case TOOL_NAMES.SEARCH_NEIGHBOURHOODS: {
       const parsed = z
@@ -891,10 +929,15 @@ async function executeTool(
         })
         .strict()
         .parse(args ?? {});
+      const hits = repo.searchNeighbourhoods(parsed.query, parsed.tags, parsed.limit ?? 5);
       return {
-        dataMode: "synthetic-fixture",
-        storageLayer: repo.getStorageLayer(),
-        neighbourhoods: repo.searchNeighbourhoods(parsed.query, parsed.tags, parsed.limit ?? 5),
+        neighbourhoods: hits.map((n) => ({
+          id: n.id,
+          name: n.name,
+          center: n.center,
+          tags: n.tags,
+          underservedAfter22: n.underservedAfter22,
+        })),
       };
     }
     case TOOL_NAMES.GET_NETWORK_SNAPSHOT:
@@ -992,7 +1035,7 @@ async function executeTool(
         coordinates: c.coordinates,
         rankHint: c.rankHint,
       }));
-      return { dataMode: "synthetic-fixture", storageLayer: repo.getStorageLayer(), candidates };
+      return { candidates };
     }
     case TOOL_NAMES.PROPOSE_VARIANTS:
       return handleProposeVariants(args, context);
@@ -1157,16 +1200,12 @@ async function executeTool(
 
       // Append so multiple compose calls in one turn accumulate
       context.composedMapActions = [...context.composedMapActions, ...accepted];
+      if (accepted.length) context.onMapActions?.(accepted);
       return {
         ok: errors.length === 0,
-        accepted,
-        rejected,
-        errors,
-        agentOverlays: context.agentOverlays,
-        note:
-          errors.length > 0
-            ? "Some map actions were rejected (schema, Toronto scope, or collision). Frontend executes only accepted actions."
-            : "Frontend remains the final executor of map actions.",
+        applied: accepted.map(summarizeMapAction),
+        rejectedCount: rejected.length,
+        errors: errors.length ? errors : undefined,
       };
     }
     case TOOL_NAMES.WRITE_MEMORY:
@@ -1231,10 +1270,12 @@ async function executeTool(
       }
       context.proposedCityPatches = patches;
       return {
-        dataMode: "in-memory-twin",
-        count: patches.length,
-        patchIds: patches.map((p) => p.id),
-        patches,
+        patches: patches.map((p) => ({
+          id: p.id,
+          title: p.title,
+          rationale: p.rationale,
+          editTypes: p.edits.map((e) => e.type),
+        })),
       };
     }
     case TOOL_NAMES.SCORE_POPULATION: {
@@ -1258,21 +1299,19 @@ async function executeTool(
         neighbourhoodCodes: parsed.neighbourhoodCodes,
         onPersonaScored: context.onPersonaScored,
       });
-      // compact neighbourhood readout so the agent can reject weak local sites
       const nhRows = Object.entries(score.byNeighbourhood)
-        .map(([code, v]) => ({ code, mean: v.mean, count: v.count }))
+        .map(([code, v]) => ({ code, mean: Number(v.mean.toFixed(3)), n: v.count }))
         .sort((a, b) => a.mean - b.mean);
-      const weakest = nhRows.slice(0, 5);
-      const strongest = nhRows.slice(-5).reverse();
       return {
-        dataMode: "real-opinion-model",
-        provider: score.provider,
         scenarioId: score.scenarioId,
-        citywide: score.citywide,
-        neighbourhoodCount: nhRows.length,
-        weakestNeighbourhoods: weakest,
-        strongestNeighbourhoods: strongest,
-        note: `Real acceptance: adaptively Monte-Carlo-sampled real residents (${score.citywide.sampleSize} sampled, stopped because "${score.citywide.stopReason}", 95% CI ±${score.citywide.ciHalfWidth.toFixed(3)}) scored by the trained opinion model, not simulated public opinion or ridership. If citywide.stopReason is "max-sample" the CI may still be wide -- treat the mean cautiously. If weakestNeighbourhoods include your proposed site or citywide support is low, try other areas before recommending. Pass neighbourhoodCodes to score only the areas you're actually comparing instead of the whole city when you don't need a citywide read.`,
+        mean: Number(score.citywide.mean.toFixed(3)),
+        support: Number(score.citywide.supportShare.toFixed(3)),
+        oppose: Number(score.citywide.opposeShare.toFixed(3)),
+        n: score.citywide.sampleSize,
+        ciHalfWidth: Number(score.citywide.ciHalfWidth.toFixed(3)),
+        stopReason: score.citywide.stopReason,
+        weakest: nhRows.slice(0, 3),
+        strongest: nhRows.slice(-3).reverse(),
       };
     }
     case TOOL_NAMES.INVOKE_ASSISTANT: {
@@ -1314,11 +1353,10 @@ async function executeTool(
         onToolCallEnd: (outcome) => context.onNestedToolEnd?.(outcome, parsed.role),
       });
       context.invokeDepth -= 1;
+      const content = (loop.finalResult.content || "").trim();
       return {
         role: parsed.role,
-        name: ASSISTANT_ROSTER[parsed.role].name,
-        content: loop.finalResult.content,
-        toolRounds: loop.rounds,
+        content: content.length > 4000 ? `${content.slice(0, 4000)}…` : content,
         toolsUsed: loop.toolCallLog.map((t) => t.toolName),
       };
     }
@@ -1338,15 +1376,17 @@ async function executeTool(
         { neighbourhoodCodes: parsed.neighbourhoodCodes, onPersonaScored: context.onPersonaScored },
       );
       const nhRows = Object.entries(score.byNeighbourhood)
-        .map(([code, v]) => ({ code, mean: v.mean, count: v.count }))
+        .map(([code, v]) => ({ code, mean: Number(v.mean.toFixed(3)), n: v.count }))
         .sort((a, b) => a.mean - b.mean);
       return {
-        analysis: parsed.analysis,
-        provider: score.provider,
-        citywide: score.citywide,
-        weakestNeighbourhoods: nhRows.slice(0, 5),
-        strongestNeighbourhoods: nhRows.slice(-5).reverse(),
-        note: `Real acceptance readout: adaptively Monte-Carlo-sampled real residents (${score.citywide.sampleSize} sampled, stopped because "${score.citywide.stopReason}", 95% CI ±${score.citywide.ciHalfWidth.toFixed(3)}) scored by the trained opinion model, not simulated public opinion or ridership. Weak local scores should trigger trying other sites. Pass neighbourhoodCodes to restrict sampling to specific areas instead of the whole city.`,
+        mean: Number(score.citywide.mean.toFixed(3)),
+        support: Number(score.citywide.supportShare.toFixed(3)),
+        oppose: Number(score.citywide.opposeShare.toFixed(3)),
+        n: score.citywide.sampleSize,
+        ciHalfWidth: Number(score.citywide.ciHalfWidth.toFixed(3)),
+        stopReason: score.citywide.stopReason,
+        weakest: nhRows.slice(0, 3),
+        strongest: nhRows.slice(-3).reverse(),
       };
     }
     case TOOL_NAMES.RUN_PYTHON: {

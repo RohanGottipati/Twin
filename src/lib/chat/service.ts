@@ -96,7 +96,7 @@ function buildOutOfScopeResponse(threadId: string, messageId: string): CityCopil
 }
 
 function buildNavResponse(threadId: string, messageId: string, text: string): CityCopilotResponse {
-  const matches = searchNeighbourhoods(text, undefined, 3);
+  const match = searchNeighbourhoods(text, undefined, 3)[0];
   const rawActions =
     match != null
       ? [

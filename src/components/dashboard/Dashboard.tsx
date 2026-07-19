@@ -330,7 +330,7 @@ export function Dashboard() {
           {selectedCode && (
             <InspectorPanel index={nbhdIndex} personas={data.personas} />
           )}
-          <BuildingMiniChat placement="below-inspector" />
+          <BuildingMiniChat />
         </div>
       )}
 

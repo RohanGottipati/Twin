@@ -6,7 +6,7 @@ import { GlassPanel } from "@/components/primitives/GlassPanel";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { StatusPill } from "@/components/primitives/StatusPill";
 import { useReducedMotion } from "@/hooks/useReducedMotion";
-import type { TwinTORunResult } from "@/lib/techto/types";
+import type { TechTORunResult } from "@/lib/techto/types";
 
 const ACTION_LABEL: Record<string, string> = {
   approve: "Approve",
