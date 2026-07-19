@@ -27,7 +27,7 @@ export function DistributionPanel() {
           Day-one acceptance
         </h2>
         <span className="font-mono text-[9px] text-muted/60">
-          synthetic preview · n={personaCount.toLocaleString()}
+          n={personaCount.toLocaleString()}
         </span>
       </header>
 

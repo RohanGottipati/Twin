@@ -19,7 +19,7 @@ export function MapLegend() {
   return (
     <GlassPanel className="pointer-events-auto w-[min(88vw,260px)] p-3">
       <p className="text-[10px] font-semibold uppercase tracking-widest text-techto-muted">
-        Toronto only · synthetic-fixture
+        Toronto only
       </p>
       <p className="mt-1 text-[10px] leading-snug text-techto-muted">
         All planning and agent suggestions stay inside the City of Toronto.

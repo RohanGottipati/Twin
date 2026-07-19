@@ -53,7 +53,10 @@ function clamp01(x: number): number {
   return Math.max(0, Math.min(1, x));
 }
 
-/** Last-resort fallback only: polygon sample (should almost never run; every nbhd has massing sites). */
+/**
+ * Polygon sample when building centroids are unavailable for a neighbourhood.
+ * Prefer `public/data/home-sites.json` (from scripts/data/build_home_sites.py).
+ */
 function samplePointInPolygon(geometry: PolygonGeometry, rng: () => number): [number, number] {
   const [minX, minY, maxX, maxY] = geometryBbox(geometry);
   for (let attempt = 0; attempt < 200; attempt++) {
@@ -63,21 +66,32 @@ function samplePointInPolygon(geometry: PolygonGeometry, rng: () => number): [nu
   return [(minX + maxX) / 2, (minY + maxY) / 2];
 }
 
+async function loadHomeSites(): Promise<HomeSitesByCode | null> {
+  const homesPath = path.join(process.cwd(), "public", "data", "home-sites.json");
+  try {
+    const homesRaw = await readFile(homesPath, "utf-8");
+    return JSON.parse(homesRaw) as HomeSitesByCode;
+  } catch (error) {
+    const code = (error as NodeJS.ErrnoException).code;
+    if (code === "ENOENT") return null;
+    throw error;
+  }
+}
+
 /**
  * Serves real resident dots for the homepage map: one dot per real
- * `resident_personas` record, placed on a Toronto 3D Massing building
- * centroid inside that neighbourhood (never parks / water / empty lots).
+ * `resident_personas` record. Placement prefers Toronto 3D Massing building
+ * centroids from home-sites.json; if that file is missing, samples inside
+ * the neighbourhood polygon so Mongo residents still render.
  */
 export async function GET() {
   try {
     const geojsonPath = path.join(process.cwd(), "public", "data", "neighbourhoods.geojson");
-    const homesPath = path.join(process.cwd(), "public", "data", "home-sites.json");
-    const [geojsonRaw, homesRaw] = await Promise.all([
+    const [geojsonRaw, homes] = await Promise.all([
       readFile(geojsonPath, "utf-8"),
-      readFile(homesPath, "utf-8"),
+      loadHomeSites(),
     ]);
     const geojson = JSON.parse(geojsonRaw) as { features: NeighbourhoodGeoJsonFeature[] };
-    const homes = JSON.parse(homesRaw) as HomeSitesByCode;
 
     const db = await getMongoDb();
     const docs = (await db
@@ -118,7 +132,9 @@ export async function GET() {
       const rng = mulberry32(hashString(`resident_personas:${code}`));
 
       for (const source of pool) {
-        const home = sampleHomeSite(homes, code, rng) ?? samplePointInPolygon(feature.geometry, rng);
+        const home =
+          (homes ? sampleHomeSite(homes, code, rng) : null) ??
+          samplePointInPolygon(feature.geometry, rng);
         const [lng, lat] = home;
         const { transitAffinity, carDependence } = affinitiesFromCommuteMode(source.commute_mode, rng);
         personas.push({
@@ -140,7 +156,10 @@ export async function GET() {
       }
     }
 
-    return Response.json({ personas });
+    return Response.json({
+      personas,
+      placement: homes ? "building-centroids" : "neighbourhood-polygon",
+    });
   } catch (error) {
     return jsonError(errorMessage(error), 500);
   }
