@@ -248,7 +248,7 @@ export const TOOL_DEFINITIONS: Record<ToolName, ChatToolDefinition> = {
   [TOOL_NAMES.QUERY_CITY_LAYER]: {
     name: TOOL_NAMES.QUERY_CITY_LAYER,
     description:
-      "Query a typed Toronto city-twin layer. The neighbourhood layer covers all 158 official areas and exposes Census population/income plus exact TTC-route proximity features. This is a read-only query, not a final policy ranking.",
+      "Small, targeted lookup of official Toronto neighbourhood screening features (population, income, TTC proximity). Prefer run_python (pandas over data/processed/census_profile.csv or Mongo) for ranking, filters, joins, or anything returning more than a handful of rows. Use this tool only for a named neighbourhood or a short top-N (limit ≤ 5) with a tight selector. Returns slim rows by default.",
     parameters: {
       type: "object",
       properties: {
@@ -256,7 +256,7 @@ export const TOOL_DEFINITIONS: Record<ToolName, ChatToolDefinition> = {
         selector: {
           type: "object",
           properties: {
-            name: { type: "string" },
+            name: { type: "string", description: "Exact or substring neighbourhood name / code." },
             minPopulation: { type: "number" },
             maxMedianIncome: { type: "number" },
             minRapidTransitGapKm: { type: "number" },
@@ -275,7 +275,15 @@ export const TOOL_DEFINITIONS: Record<ToolName, ChatToolDefinition> = {
           ],
         },
         direction: { type: "string", enum: ["asc", "desc"] },
-        limit: { type: "number", description: "Maximum 25 results; defaults to 10." },
+        limit: {
+          type: "number",
+          description: "Max rows (default 3, hard max 5). Keep this small; use run_python for bigger screens.",
+        },
+        detail: {
+          type: "string",
+          enum: ["summary", "full"],
+          description: "summary (default): code/name/center + key metrics only. full: all fields including bounds/provenance.",
+        },
       },
       required: ["layer"],
     },
@@ -776,6 +784,12 @@ export const TOOL_DEFINITIONS: Record<ToolName, ChatToolDefinition> = {
         },
         question: { type: "string", description: "Planner question conditioning the score." },
         scenarioId: { type: "string", description: "Label for this analysis run." },
+        neighbourhoodCodes: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "Optional: restrict real-resident sampling to these neighbourhood codes instead of citywide, to save compute when you only care about specific areas (e.g. the candidates you're comparing).",
+        },
       },
       required: ["analysis", "question"],
     },
@@ -783,7 +797,7 @@ export const TOOL_DEFINITIONS: Record<ToolName, ChatToolDefinition> = {
   [TOOL_NAMES.RUN_PYTHON]: {
     name: TOOL_NAMES.RUN_PYTHON,
     description:
-      "Run short Python to test hypotheses (pandas, numpy, scipy, statsmodels, sklearn). Read-only Mongo is available as `db` (MONGODB_URI_READONLY / MONGODB_URI). Also injected: TWIN (current twin snapshot), OVERLAYS (agent map drawings), DATA_DIR (data/processed). Assign RESULT to a DataFrame/Series/dict for a preview. Toronto data only. No Mongo writes. Print for stdout.",
+      "Run short Python for screening and analysis (pandas, numpy, scipy, statsmodels, sklearn). Prefer this over query_city_layer for rankings, filters, joins, or multi-row screens. Read-only Mongo as `db`. Injected: TWIN, OVERLAYS, DATA_DIR (data/processed; e.g. census_profile.csv for 158 neighbourhoods). Assign RESULT to a DataFrame/Series/dict for a preview. Toronto data only. No Mongo writes. Print for stdout.",
     parameters: {
       type: "object",
       properties: {
@@ -839,13 +853,19 @@ export const TOOL_DEFINITIONS: Record<ToolName, ChatToolDefinition> = {
   [TOOL_NAMES.SCORE_POPULATION]: {
     name: TOOL_NAMES.SCORE_POPULATION,
     description:
-      "Score real citizen acceptance for a ScenarioPatch (or a free-form question) by Monte-Carlo-sampling real Toronto residents and running the real trained opinion model. Returns citywide mean/support and byNeighbourhood breakdowns. Use those numbers as a decision signal: if acceptance is weak at the proposed site, try other neighbourhoods before recommending. A model-predicted reaction based on real resident profiles, not an actual public survey or ridership figure.",
+      "Score real citizen acceptance for a ScenarioPatch (or a free-form question) by adaptively Monte-Carlo-sampling real Toronto residents and running the real trained opinion model: it draws residents in small batches and keeps sampling until the 95% confidence interval on the mean is tight (or a hard cap / the real resident pool is hit), so the returned citywide.sampleSize and citywide.ciHalfWidth vary run to run -- check citywide.stopReason and ciHalfWidth before treating the mean as settled. Returns citywide mean/support and byNeighbourhood breakdowns. Use those numbers as a decision signal: if acceptance is weak at the proposed site, try other neighbourhoods before recommending. A model-predicted reaction based on real resident profiles, not an actual public survey or ridership figure.",
     parameters: {
       type: "object",
       properties: {
         patch: { type: "object", description: "Optional ScenarioPatch; if omitted, scores current twin." },
         question: { type: "string", description: "Planner question." },
         scenarioId: { type: "string", description: "Candidate id label." },
+        neighbourhoodCodes: {
+          type: "array",
+          items: { type: "string" },
+          description:
+            "Optional: restrict real-resident sampling to these neighbourhood codes instead of citywide, to save compute when you only care about specific areas (e.g. the candidates you're comparing). Omit for a citywide read.",
+        },
       },
       required: ["question"],
     },

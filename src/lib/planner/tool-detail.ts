@@ -1,14 +1,14 @@
-/** Compact JSON preview for live tool traces (toggleable in chat). */
+/** Full JSON / text for toggleable tool traces (no truncation). */
 
-export function clipToolDetail(value: unknown, max = 700): string | undefined {
+export function clipToolDetail(value: unknown): string | undefined {
   if (value === undefined || value === null) return undefined;
   // prefer plain strings (e.g. specialist reply) over JSON quotes
   const s = typeof value === "string" ? value : JSON.stringify(value, null, 2);
   if (!s || s === "{}" || s === "[]" || s === '""') return undefined;
-  return s.length > max ? `${s.slice(0, max)}…` : s;
+  return s;
 }
 
-/** Pick the most useful slice of a tool result for the detail pane. */
+/** Format a tool result for the detail pane (full payload). */
 export function toolOutputPreview(toolName: string, output: unknown): string | undefined {
   if (!output || typeof output !== "object") return clipToolDetail(output);
   const o = output as Record<string, unknown>;
@@ -18,6 +18,7 @@ export function toolOutputPreview(toolName: string, output: unknown): string | u
       role: o.role,
       name: o.name,
       toolsUsed: o.toolsUsed,
+      toolRounds: o.toolRounds,
       content: o.content,
     });
   }
@@ -26,13 +27,6 @@ export function toolOutputPreview(toolName: string, output: unknown): string | u
       accepted: o.accepted,
       rejected: o.rejected,
       errors: o.errors,
-    });
-  }
-  // drop huge raw rows; keep counts / notes when present
-  if ("features" in o && Array.isArray(o.features)) {
-    return clipToolDetail({
-      ...o,
-      features: `[${o.features.length} features]`,
     });
   }
   return clipToolDetail(output);

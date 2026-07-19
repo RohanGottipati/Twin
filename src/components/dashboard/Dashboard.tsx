@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { MapCanvas } from "./MapCanvas";
 import { LayersPanel } from "./LayersPanel";
+import { ScenarioPanel } from "./ScenarioPanel";
 import { InspectorPanel } from "./InspectorPanel";
 import { MapChatBar } from "@/components/chat/MapChatBar";
 import { BuildingMiniChat } from "@/components/chat/BuildingMiniChat";
@@ -269,6 +270,11 @@ export function Dashboard() {
           onReady={() => setMapReady(true)}
         />
       )}
+
+      {/* Top center: scenario tabs -- switch which version of the city is shown */}
+      <div className="pointer-events-none absolute inset-x-0 top-4 z-10 hidden justify-center overflow-x-auto px-3 md:flex">
+        <ScenarioPanel />
+      </div>
 
       {/* Left rail: identity and map layers */}
       <div className="pointer-events-none absolute left-4 top-4 z-10 hidden w-[288px] flex-col gap-3 md:flex">

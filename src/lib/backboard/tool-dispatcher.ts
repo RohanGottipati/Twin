@@ -846,22 +846,40 @@ async function executeTool(
             ])
             .optional(),
           direction: z.enum(["asc", "desc"]).optional(),
-          limit: z.number().int().positive().max(25).optional(),
+          // keep this tool tiny: big screens belong in run_python
+          limit: z.number().int().positive().max(5).optional(),
+          detail: z.enum(["summary", "full"]).optional(),
         })
         .strict()
         .parse(args);
+      const limit = Math.min(parsed.limit ?? 3, 5);
       const areas = queryTorontoAreas({
         ...parsed.selector,
         sortBy: parsed.sortBy as TorontoAreaSortField | undefined,
         direction: parsed.direction,
-        limit: parsed.limit,
+        limit,
       });
+      const detail = parsed.detail ?? "summary";
+      const rows =
+        detail === "full"
+          ? areas
+          : areas.map((a) => ({
+              code: a.code,
+              name: a.name,
+              center: a.center,
+              population: a.population,
+              medianIncome: a.medianIncome,
+              rapidTransitGapKm: a.rapidTransitGapKm,
+              surfaceTransitDistanceKm: a.surfaceTransitDistanceKm,
+              fallbackScore: a.fallbackScore,
+            }));
       return {
         layer: parsed.layer,
         dataMode: "official-open-data",
-        count: areas.length,
-        areas,
-        note: "Screening features only; not a ridership forecast or final siting decision.",
+        detail,
+        count: rows.length,
+        areas: rows,
+        note: "Slim neighbourhood screen only. For larger rankings/filters use run_python on DATA_DIR/census_profile.csv. Not a ridership forecast.",
       };
     }
     case TOOL_NAMES.SEARCH_NEIGHBOURHOODS: {
@@ -1307,14 +1325,14 @@ async function executeTool(
           analysis: z.enum(["population_score"]),
           question: z.string().min(1),
           scenarioId: z.string().optional(),
+          neighbourhoodCodes: z.array(z.string()).optional(),
         })
         .strict()
         .parse(args);
       const score = await scoreRealPolicyAcceptance(
         parsed.scenarioId ?? `analysis-${context.twin.version}`,
         parsed.question,
-        undefined,
-        context.onPersonaScored,
+        { neighbourhoodCodes: parsed.neighbourhoodCodes, onPersonaScored: context.onPersonaScored },
       );
       const nhRows = Object.entries(score.byNeighbourhood)
         .map(([code, v]) => ({ code, mean: v.mean, count: v.count }))
@@ -1325,7 +1343,7 @@ async function executeTool(
         citywide: score.citywide,
         weakestNeighbourhoods: nhRows.slice(0, 5),
         strongestNeighbourhoods: nhRows.slice(-5).reverse(),
-        note: "Real acceptance readout: Monte-Carlo-sampled real residents scored by the trained opinion model, not simulated public opinion or ridership. Weak local scores should trigger trying other sites.",
+        note: `Real acceptance readout: adaptively Monte-Carlo-sampled real residents (${score.citywide.sampleSize} sampled, stopped because "${score.citywide.stopReason}", 95% CI ±${score.citywide.ciHalfWidth.toFixed(3)}) scored by the trained opinion model, not simulated public opinion or ridership. Weak local scores should trigger trying other sites. Pass neighbourhoodCodes to restrict sampling to specific areas instead of the whole city.`,
       };
     }
     case TOOL_NAMES.RUN_PYTHON: {

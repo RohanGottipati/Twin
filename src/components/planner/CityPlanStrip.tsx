@@ -113,7 +113,7 @@ function traceLineFor(event: { type: string; [key: string]: unknown }): CityPlan
         id: "",
         label: `map ← ${(event.actions as unknown[]).length} action(s)`,
         status: "info",
-        resultDetail: detail ?? JSON.stringify(event.actions)?.slice(0, 500),
+        resultDetail: detail ?? JSON.stringify(event.actions, null, 2),
       };
     case "status":
       return { id: "", label: event.message as string, status: "info" };

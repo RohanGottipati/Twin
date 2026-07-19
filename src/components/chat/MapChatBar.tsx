@@ -411,7 +411,7 @@ export function MapChatBar({
                           </span>
                         </button>
                         {openTraceIds[`${message.id}:reasoning`] && (
-                          <pre className="mt-0.5 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-sm bg-black/25 px-1.5 py-1 text-[9px] text-white/40">
+                          <pre className="mt-0.5 overflow-auto whitespace-pre-wrap break-words rounded-sm bg-black/25 px-1.5 py-1 text-[9px] text-white/40">
                             {message.reasoning}
                           </pre>
                         )}
@@ -459,7 +459,7 @@ export function MapChatBar({
                                 </span>
                               </button>
                               {open && hasDetail && (
-                                <pre className="mt-0.5 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-sm bg-black/25 px-1.5 py-1 text-[9px] text-white/45">
+                                <pre className="mt-0.5 overflow-auto whitespace-pre-wrap break-all rounded-sm bg-black/25 px-1.5 py-1 text-[9px] text-white/45">
                                   {[line.argsDetail, line.resultDetail].filter(Boolean).join("\n───\n")}
                                 </pre>
                               )}

@@ -135,7 +135,7 @@ async function harvestScores(
 ): Promise<CityCandidateResult[]> {
   return Promise.all(
     patches.map(async (patch) => {
-      const score = await scoreRealPolicyAcceptance(patch.id, policyTextForPatch(patch), undefined, onPersonaScored);
+      const score = await scoreRealPolicyAcceptance(patch.id, policyTextForPatch(patch), { onPersonaScored });
       return { patch, score };
     }),
   );
@@ -288,7 +288,8 @@ export async function runCityOrchestration(
     "You have many tool rounds; use them. Prefer explore → score → revise → recommend over a one-shot guess.",
     "For location / siting questions (stations, parks, facilities, corridors):",
     "- Screen multiple geographically distinct Toronto neighbourhoods (not just one corridor or the first hit).",
-    "- Use query_city_layer / search_neighbourhoods / generate_station_candidates / propose_scenarios as needed.",
+    "- Prefer run_python (pandas on DATA_DIR/census_profile.csv or Mongo) for ranking/filtering; use search_neighbourhoods / generate_station_candidates / propose_scenarios for shortlists.",
+    "- Avoid query_city_layer dumps: only use it for a named neighbourhood or tiny top-N (limit ≤ 3). Big screens belong in run_python RESULT.",
     "- Score acceptance on the shortlist with score_population BEFORE recommending.",
     "- If scores look weak (low mean/support, or byNeighbourhood opposition at the proposed site), discard and try other areas; do not recommend a poorly accepted site unless the user wants that tradeoff.",
     "- While comparing, compose_map_actions may show several candidate markers; for the final pick, leave one marker, fly_to_center, and highlight that neighbourhood.",

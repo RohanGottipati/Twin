@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 
 import { getMongoDb } from "@/lib/mongodb/client";
 import { COLLECTIONS } from "@/lib/mongodb/collections";
-import { generateOpinion } from "@/lib/citizen-reaction/flash-opinion-client";
+import { generateOpinion, formatPolicyTextForModel } from "@/lib/citizen-reaction/flash-opinion-client";
 
 /**
  * Get-or-generate cache for real per-persona opinion generations, keyed by
@@ -37,9 +37,10 @@ export function hashPolicyText(policyText: string): string {
 export async function getOrGenerateOpinion(
   personaId: string,
   personaText: string,
-  policyText: string,
+  rawPolicyText: string,
 ): Promise<string> {
   await ensureIndex();
+  const policyText = formatPolicyTextForModel(rawPolicyText);
   const policyHash = hashPolicyText(policyText);
   const db = await getMongoDb();
   const collection = db.collection<OpinionCacheDoc>(COLLECTIONS.opinionReactionsCache);
