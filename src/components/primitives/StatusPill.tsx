@@ -13,8 +13,8 @@ const toneClasses: Record<
   NonNullable<StatusPillProps["tone"]>,
   { dot: string; text: string }
 > = {
-  ready: { dot: "bg-[#5B8DEF]", text: "text-[#5B8DEF]" },
-  loading: { dot: "bg-[#5B8DEF] animate-pulse", text: "text-[#5B8DEF]" },
+  ready: { dot: "bg-[#007ACC]", text: "text-[#007ACC]" },
+  loading: { dot: "bg-[#007ACC] animate-pulse", text: "text-[#007ACC]" },
   warning: { dot: "bg-[#E3A83B]", text: "text-[#E3A83B]" },
   error: { dot: "bg-[#FF6B6B]", text: "text-[#FF6B6B]" },
 };

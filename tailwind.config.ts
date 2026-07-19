@@ -15,6 +15,11 @@ const config: Config = {
         hairline: "rgba(226, 236, 228, 0.09)",
         oppose: "#db6055",
         support: "#38ad6b",
+        // Interactive-UI blue-with-magenta-accent palette.
+        accent: {
+          DEFAULT: "#007ACC",
+          magenta: "#C200D6",
+        },
         // TechTO transit demo surface (TTC-adjacent charcoal + signal colors).
         techto: {
           ink: "#0b0d10",

@@ -24,7 +24,7 @@ export function TopNavigation({ statusSlot, contextSlot, leadingSlot }: TopNavig
         {leadingSlot}
         <div className="leading-tight">
           <p className="flex items-center gap-1.5 text-sm font-semibold tracking-wide text-techto-text">
- <span className="inline-block h-2 w-2 bg-techto-red"aria-hidden="true"/>
+            <span className="inline-block h-2 w-2 bg-techto-red" aria-hidden="true" />
             TechTO
           </p>
           <p className="text-[10px] uppercase tracking-widest text-techto-muted">

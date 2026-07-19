@@ -33,10 +33,10 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         aria-pressed={active}
         className={cn(
 "inline-flex h-11 w-11 items-center justify-center border text-[#F5F7FA] transition-colors",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B8DEF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0D14]",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ACC] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0D14]",
           "disabled:cursor-not-allowed disabled:opacity-40",
           active
-            ? "border-[#5B8DEF]/60 bg-[#5B8DEF]/15 text-[#5B8DEF]"
+            ? "border-[#007ACC]/60 bg-[#007ACC]/15 text-[#007ACC]"
             : "border-white/10 bg-white/[0.04] hover:bg-white/[0.08]",
           className
         )}

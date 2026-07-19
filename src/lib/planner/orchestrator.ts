@@ -231,17 +231,15 @@ export async function runCityOrchestration(
     "Tools are available and optional; use them only when they help.",
     "For location screening, use query_city_layer before choosing an official Toronto neighbourhood.",
     "Never invent ScenarioPatches or fake rankings just to fill a pipeline.",
-    "If you score population acceptance, say it is simulated day-one feel, not ridership.",
     "When recommending a single place, compose_map_actions with exactly one show_candidate_markers entry (the chosen site), fly_to_center on it, and highlight that one neighbourhood. Do not put multiple candidate markers on the map unless the user explicitly asked to compare alternatives.",
     "When comparing places or proposing geometry, use compose_map_actions to fly/highlight/draw on the map so the user can see it.",
-    "For recommendations, use concise Markdown sections when relevant: Recommendation, Why this area, Sustainability potential, Screening metrics, ROI and value case, Success KPIs to validate, and What to validate next. Include every section that applies; do not truncate to a one-line summary.",
-    "Separate measured screening indicators from proposed KPIs. Sustainability outcomes are potential mechanisms until validated, not forecasts or promises.",
-    "For capital or operating recommendations where a value case is material, invoke the feasibility specialist when lifecycle cost or monetized-benefit evidence is needed.",
-    "In ROI and value case, separate measured inputs, modeled monetized benefits, unvalidated assumptions, and scenario ranges. Calculate ROI as (validated monetized benefits - lifecycle costs) / lifecycle costs only when both sides are evidenced. Otherwise state that no ROI figure is claimed until demand, lifecycle cost, and benefit assumptions are validated. Include NPV, benefit-cost ratio, payback period, discount rate, analysis horizon, and sensitivity range when evidence supports them.",
+    "Be concise. Lead with the answer in 1-3 sentences. Only add a short bullet list below it for the handful of details that actually change the decision (e.g. a key metric, a tradeoff, a risk) -- skip sections that would just restate the same point differently. Never pad with boilerplate section headers (no 'Sustainability potential', 'Screening metrics', 'Success KPIs to validate', etc.) unless the user is specifically asking for that level of detail.",
+    "If you score population acceptance or ROI, state the one-line caveat (simulated day-one feel, not ridership; no ROI claimed until inputs are validated) only once, briefly -- do not repeat it in multiple sections.",
+    "For capital or operating recommendations where a value case is material, invoke the feasibility specialist when lifecycle cost or monetized-benefit evidence is needed, then summarize its result in a sentence or two rather than reproducing its full breakdown.",
     hintPatches.length
       ? `Caller supplied optional starter patches (use or ignore):\n${JSON.stringify(hintPatches)}`
       : "",
-    "Final reply: concise Markdown to the user with the full recommendation sections above when recommending. Lead with the answer; no rambling.",
+    "Final reply: short, plain Markdown. No rambling, no restating the question, no closing summary paragraph.",
   ]
     .filter(Boolean)
     .join("\n");

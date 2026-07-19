@@ -56,7 +56,7 @@ export function MobileBottomSheet({
                   type="button"
                   aria-label={`Close ${title}`}
                   onClick={onClose}
- className="inline-flex h-9 w-9 items-center justify-center text-[#9AA7B5] transition-colors hover:bg-white/[0.06] hover:text-[#F5F7FA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B8DEF]"
+ className="inline-flex h-9 w-9 items-center justify-center text-[#9AA7B5] transition-colors hover:bg-white/[0.06] hover:text-[#F5F7FA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#007ACC]"
                 >
                   <X className="h-4 w-4" />
                 </button>

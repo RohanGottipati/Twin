@@ -77,10 +77,10 @@ export function CitizenDensityLayer({ map }: { map: MapLibreMap | null }) {
       source: SOURCE_ID,
       paint: {
         "circle-radius": ["interpolate", ["linear"], ["get", "weight"], 0.5, 4, 15, 34],
-        "circle-color": "#5B8DEF",
+        "circle-color": "#007ACC",
         "circle-opacity": 0.16,
         "circle-stroke-width": 1,
-        "circle-stroke-color": "#5B8DEF",
+        "circle-stroke-color": "#007ACC",
         "circle-stroke-opacity": 0.4,
       },
     });

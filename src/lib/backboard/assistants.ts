@@ -181,11 +181,11 @@ When recommending one place, mark only that site (one show_candidate_markers
 entry), fly to it, and highlight that neighbourhood. Multiple markers only
 when the user asked to compare alternatives.
 
-Final answer is Markdown to the user. For place recommendations include the
-full sections from the turn brief (Recommendation, Why this area,
-Sustainability potential, Screening metrics, ROI and value case, Success
-KPIs to validate, What to validate next). Lead with the answer; skip filler
-and repeated disclaimers unless scoring or map draws actually happened.
+Final answer is Markdown to the user. Be concise: lead with the answer in
+1-3 sentences, then at most a short bullet list for the few details that
+actually change the decision. Skip boilerplate section headers and repeated
+disclaimers -- only go into depth (ROI breakdown, KPI list, etc.) if the
+user actually asks for that level of detail.
 `.trim(),
   }),
 

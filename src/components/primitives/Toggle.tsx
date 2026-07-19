@@ -27,7 +27,7 @@ export function Toggle({
       onClick={() => onChange(!checked)}
       className={cn(
 "flex w-full items-center justify-between gap-3 px-3 py-2 text-left transition-colors",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B8DEF]",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#C200D6]",
         "disabled:cursor-not-allowed disabled:opacity-40",
         "hover:bg-white/[0.04]"
       )}
@@ -44,7 +44,7 @@ export function Toggle({
         className={cn(
 "relative inline-flex h-6 w-11 shrink-0 items-center border transition-colors",
           checked
-            ? "border-[#5B8DEF]/60 bg-[#5B8DEF]/30"
+            ? "border-[#C200D6]/60 bg-[#C200D6]/30"
             : "border-white/10 bg-white/[0.06]"
         )}
       >
@@ -52,7 +52,7 @@ export function Toggle({
           className={cn(
 "inline-block h-4 w-4 transform transition-transform",
             checked
-              ? "translate-x-6 bg-[#5B8DEF]"
+              ? "translate-x-6 bg-[#C200D6]"
               : "translate-x-1 bg-[#9AA7B5]"
           )}
         />
