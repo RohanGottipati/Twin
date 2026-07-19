@@ -7,8 +7,6 @@ import {
   Loader2,
   Maximize2,
   Minimize2,
-  Plus,
-  SlidersHorizontal,
 } from "lucide-react";
 import type { CityCopilotResponse } from "@/lib/chat/schemas";
 import { parseMapActions } from "@/lib/techto/map-actions";
@@ -18,7 +16,7 @@ import { useTechTOStore } from "@/store/useTechTOStore";
 import type { UseBackboardRunResult } from "@/lib/techto/use-backboard-run";
 import { FLAGSHIP_SCENARIO_ID } from "@/data/transit/scenarios";
 import { cn } from "@/lib/utils/cn";
-import type { CityPlanRankingRow } from "@/components/planner/CityPlanStrip";
+import type { CityPlanRankingRow, CityPlanRunHandlers } from "@/components/planner/CityPlanStrip";
 import { ChatMarkdown } from "@/components/chat/ChatMarkdown";
 import { PdfExportButton } from "@/components/chat/PdfExportButton";
 
@@ -26,6 +24,10 @@ interface ChatMessage {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
+  /** Live tool/agent/scoring trace lines for a city-plan run, shown above the prose. */
+  trace?: string[];
+  /** True while this message is still streaming in. */
+  streaming?: boolean;
 }
 
 const EXAMPLE_ASK =
@@ -37,9 +39,12 @@ export interface MapChatBarProps {
   includeWebSearch?: boolean;
   /** When false, chat answers only (no Backboard planning kickoff). Default true if `run` is provided. */
   enablePlanningRun?: boolean;
-  /** Coolness open-city planner via /api/planner/run (orchestrator agent). */
+  /** Coolness open-city planner via /api/planner/stream (orchestrator agent). */
   enableCityPlanRun?: boolean;
-  onCityPlanQuestion?: (question: string) => Promise<{
+  onCityPlanQuestion?: (
+    question: string,
+    handlers: CityPlanRunHandlers,
+  ) => Promise<{
     summary?: string;
     ranking?: CityPlanRankingRow[];
     chosenId?: string;
@@ -146,9 +151,26 @@ export function MapChatBar({
       .map(([key]) => key);
 
     try {
-      // Open-city path: Planning Orchestrator agent (tools + optional subagents)
+      // Open-city path: Planning Orchestrator agent (tools + optional subagents),
+      // streamed live -- tokens, tool calls, subagent starts, and scoring results
+      // all appear as they happen instead of a spinner followed by one final blob.
       if (enableCityPlanRun && onCityPlanQuestion) {
-        const payload = await onCityPlanQuestion(text);
+        const liveId = `plan-${Date.now()}`;
+        setMessages((prev) => [...prev, { id: liveId, role: "assistant", content: "", trace: [], streaming: true }]);
+
+        const payload = await onCityPlanQuestion(text, {
+          onDelta: (chunk) => {
+            setMessages((prev) =>
+              prev.map((m) => (m.id === liveId ? { ...m, content: m.content + chunk } : m)),
+            );
+          },
+          onTrace: (line) => {
+            setMessages((prev) =>
+              prev.map((m) => (m.id === liveId ? { ...m, trace: [...(m.trace ?? []), line.text] } : m)),
+            );
+          },
+        });
+
         const mapParsed = parseMapActions(payload?.mapActions ?? []);
         if (mapParsed.ok) applyMapActions(mapParsed.actions);
         const ranking = payload?.ranking ?? [];
@@ -163,19 +185,11 @@ export function MapChatBar({
           payload?.summary?.trim() ||
           "The planning agent finished without a written reply. Try asking again.";
         if (ranking.length) {
-          body +=
-            `\n\nRanked scenarios:\n${rankLines}` +
-            (payload?.chosenId ? `\n\nLeading: ${payload.chosenId}` : "") +
-            "\n\n(Simulated day-one acceptance; not real public opinion or ridership.)";
+          body += `\n\nRanked scenarios:\n${rankLines}` + (payload?.chosenId ? `\n\nLeading: ${payload.chosenId}` : "");
         }
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: `plan-${Date.now()}`,
-            role: "assistant",
-            content: body,
-          },
-        ]);
+        setMessages((prev) =>
+          prev.map((m) => (m.id === liveId ? { ...m, content: body, streaming: false } : m)),
+        );
         return;
       }
 
@@ -310,34 +324,53 @@ export function MapChatBar({
                 key={message.id}
                 className={
                   message.role === "user"
- ?"ml-8 bg-white/25 px-3 py-2 text-white"
- :"mr-4 bg-white/10 px-3 py-2 text-white/90"
+                    ? "ml-8 bg-white/25 px-3 py-2 text-white"
+                    : "mr-4 bg-white/10 px-3 py-2 text-white/90"
                 }
               >
                 {message.role === "user" ? (
                   <p className="whitespace-pre-wrap text-[12px] leading-relaxed">{message.content}</p>
                 ) : (
                   <>
-                    <ChatMarkdown content={message.content} />
-                    <div className="mt-1.5 flex justify-end border-t border-white/10 pt-1">
-                      <PdfExportButton
-                        report={{
-                          title: "TechTO planning answer",
-                          subtitle: "Question and response",
-                          messages: answerReportMessages(index),
-                        }}
-                        compact
-                        testId={`city-answer-export-pdf-${index}`}
-                      />
-                    </div>
+                    {message.trace && message.trace.length > 0 && (
+                      <ul className="mb-1.5 space-y-0.5 border-b border-white/10 pb-1.5 font-mono text-[10px] leading-snug text-white/50">
+                        {message.trace.map((line, i) => (
+                          <li key={i}>{line}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {message.streaming && !message.content ? (
+                      <div className="inline-flex items-center gap-2 text-white/70">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        working…
+                      </div>
+                    ) : (
+                      <ChatMarkdown content={message.content} />
+                    )}
+                    {message.streaming && message.content && (
+                      <span className="ml-0.5 inline-block h-3 w-1.5 animate-pulse bg-white/60 align-text-bottom" />
+                    )}
+                    {!message.streaming && (
+                      <div className="mt-1.5 flex justify-end border-t border-white/10 pt-1">
+                        <PdfExportButton
+                          report={{
+                            title: "TechTO planning answer",
+                            subtitle: "Question and response",
+                            messages: answerReportMessages(index),
+                          }}
+                          compact
+                          testId={`city-answer-export-pdf-${index}`}
+                        />
+                      </div>
+                    )}
                   </>
                 )}
               </div>
             ))}
-            {(isRunning || busy) && (
+            {busy && !enableCityPlanRun && (
               <div className="inline-flex items-center gap-2 text-white/80">
                 <Loader2 className="h-3 w-3 animate-spin" />
-                {busy ? "Thinking…" : "Running the preview…"}
+                Thinking…
               </div>
             )}
           </div>
@@ -351,22 +384,6 @@ export function MapChatBar({
           "bg-white/14 backdrop-blur-2xl backdrop-saturate-150",
         )}
       >
-        <button
-          type="button"
- className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-white/70 transition hover:bg-white/15 hover:text-white"
-          aria-label="Add"
-        >
-          <Plus className="h-4 w-4" strokeWidth={1.75} />
-        </button>
-        <button
-          type="button"
-          onClick={() => setExpanded((value) => !value)}
- className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-white/70 transition hover:bg-white/15 hover:text-white"
-          aria-label="Chat options"
-        >
-          <SlidersHorizontal className="h-4 w-4" strokeWidth={1.75} />
-        </button>
-
         <div
           className="relative min-w-0 flex-1 cursor-text"
           onClick={() => inputRef.current?.focus()}

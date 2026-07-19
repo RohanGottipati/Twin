@@ -297,8 +297,8 @@ export function Dashboard() {
             enablePlanningRun={false}
             enableCityPlanRun
             cityPlanRunning={cityPlan.isRunning}
-            onCityPlanQuestion={async (q) => {
-              const payload = await cityPlan.start(q);
+            onCityPlanQuestion={async (q, handlers) => {
+              const payload = await cityPlan.start(q, handlers);
               return payload;
             }}
           />
