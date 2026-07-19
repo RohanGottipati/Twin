@@ -162,7 +162,10 @@ def build_and_write(dry_run: bool = False) -> int:
     before_count = target.count_documents({})
     target.delete_many({})
     target.insert_many(cohorts)
-    target.create_index("cohortId", unique=True)
+    if "cohortId_1" not in target.index_information() and not any(
+        info["key"] == [("cohortId", 1)] for info in target.index_information().values()
+    ):
+        target.create_index("cohortId", unique=True)
     after_count = target.count_documents({})
     print(f"Replaced {TARGET_COLLECTION}: {before_count} -> {after_count} documents.")
     return after_count
