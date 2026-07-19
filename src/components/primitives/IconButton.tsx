@@ -32,7 +32,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         aria-label={label}
         aria-pressed={active}
         className={cn(
-          "inline-flex h-11 w-11 items-center justify-center rounded-xl border text-[#F5F7FA] transition-colors",
+"inline-flex h-11 w-11 items-center justify-center border text-[#F5F7FA] transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B8DEF] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0A0D14]",
           "disabled:cursor-not-allowed disabled:opacity-40",
           active

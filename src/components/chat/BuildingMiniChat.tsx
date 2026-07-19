@@ -173,14 +173,14 @@ export function BuildingMiniChat({
         placement === "floating"
           ? "absolute bottom-28 right-4 w-[min(92vw,340px)] md:bottom-32"
           : "relative w-[288px] max-w-[calc(100vw-2rem)]",
-        "rounded-[26px] border border-white/30",
-        "bg-black/35 shadow-[0_18px_50px_-18px_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.35)]",
+"border border-white/30",
+"bg-black/35 _18px_50px_-18px_rgba(0,0,0,0.65),inset_0_1px_0_rgba(255,255,255,0.35)]",
         "backdrop-blur-2xl backdrop-saturate-150",
       )}
       data-testid="building-mini-chat"
     >
       <header className="flex items-start gap-2 border-b border-white/15 px-3 py-2.5">
-        <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/15 text-white">
+ <div className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center bg-white/15 text-white">
           <MapPin className="h-3.5 w-3.5" />
         </div>
         <div className="min-w-0 flex-1">
@@ -203,7 +203,7 @@ export function BuildingMiniChat({
           <button
             type="button"
             onClick={() => setExpanded((value) => !value)}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-white/60 transition hover:bg-white/15 hover:text-white"
+ className="inline-flex h-7 w-7 items-center justify-center text-white/60 transition hover:bg-white/15 hover:text-white"
             aria-label={expanded ? "Restore place chat size" : "Expand place chat"}
             aria-pressed={expanded}
           >
@@ -216,7 +216,7 @@ export function BuildingMiniChat({
           <button
             type="button"
             onClick={() => clearPlaceSelection()}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-full text-white/60 transition hover:bg-white/15 hover:text-white"
+ className="inline-flex h-7 w-7 items-center justify-center text-white/60 transition hover:bg-white/15 hover:text-white"
             aria-label="Close place chat"
           >
             <X className="h-3.5 w-3.5" />
@@ -235,8 +235,8 @@ export function BuildingMiniChat({
             key={message.id}
             className={
               message.role === "user"
-                ? "ml-6 rounded-2xl bg-white/20 px-2.5 py-1.5 text-white"
-                : "mr-4 rounded-2xl bg-white/10 px-2.5 py-1.5 text-white/90"
+ ?"ml-6 bg-white/20 px-2.5 py-1.5 text-white"
+ :"mr-4 bg-white/10 px-2.5 py-1.5 text-white/90"
             }
           >
             {message.role === "user" ? (
@@ -287,7 +287,7 @@ export function BuildingMiniChat({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about this area…"
-            className="chat-glass-input relative w-full rounded-full bg-white/10 px-3 py-2 text-sm outline-none"
+ className="chat-glass-input relative w-full bg-white/10 px-3 py-2 text-sm outline-none"
             data-testid="building-mini-chat-input"
             aria-label="Ask about this area"
           />
@@ -295,7 +295,7 @@ export function BuildingMiniChat({
         <button
           type="submit"
           disabled={busy || !input.trim()}
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-white disabled:opacity-40"
+ className="inline-flex h-9 w-9 shrink-0 items-center justify-center bg-white/20 text-white disabled:opacity-40"
           data-testid="building-mini-chat-send"
           aria-label="Send"
         >

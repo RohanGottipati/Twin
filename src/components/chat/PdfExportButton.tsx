@@ -35,7 +35,7 @@ export function PdfExportButton({
       type="button"
       onClick={onExport}
       className={cn(
-        "inline-flex items-center justify-center gap-1.5 rounded-full text-white/60 transition hover:bg-white/15 hover:text-white",
+"inline-flex items-center justify-center gap-1.5 text-white/60 transition hover:bg-white/15 hover:text-white",
         compact ? "h-6 w-6" : "h-7 px-2 text-[11px]",
         className,
       )}

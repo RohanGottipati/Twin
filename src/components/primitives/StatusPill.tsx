@@ -30,12 +30,12 @@ export function StatusPill({
     <span
       data-testid={dataTestId}
       className={cn(
-        "inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium",
+"inline-flex items-center gap-2 border border-white/10 bg-white/[0.04] px-3 py-1 text-xs font-medium",
         classes.text,
         className
       )}
     >
-      <span className={cn("h-1.5 w-1.5 rounded-full", classes.dot)} />
+ <span className={cn("h-1.5 w-1.5", classes.dot)} />
       {children}
     </span>
   );

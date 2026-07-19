@@ -56,7 +56,7 @@ export function ScenarioPanel() {
               >
                 <span
                   aria-hidden
-                  className="h-[18px] w-[3px] shrink-0 rounded-full transition-colors"
+ className="h-[18px] w-[3px] shrink-0 transition-colors"
                   style={{
                     backgroundColor: isActive ? s.accent : "transparent",
                   }}

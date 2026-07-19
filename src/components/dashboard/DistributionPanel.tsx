@@ -127,7 +127,7 @@ export function DistributionPanel() {
         </svg>
         {hover !== null && (
           <div
-            className="pointer-events-none absolute -top-1 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded-sm border border-white/10 bg-[#14181a]/95 px-2 py-1 font-mono text-[10px] text-ink-dim"
+ className="pointer-events-none absolute -top-1 -translate-x-1/2 -translate-y-full whitespace-nowrap border border-white/10 bg-[#14181a]/95 px-2 py-1 font-mono text-[10px] text-ink-dim"
             style={{
               left: `${(((hover + 0.5) * (barW + GAP)) / W) * 100}%`,
             }}
@@ -156,7 +156,7 @@ function Stat({
       {color && (
         <span
           aria-hidden
-          className="inline-block h-[7px] w-[7px] rounded-full"
+ className="inline-block h-[7px] w-[7px]"
           style={{ backgroundColor: color }}
         />
       )}

@@ -46,8 +46,8 @@ export function MobileBottomSheet({
             aria-label={title}
             data-testid={testId}
           >
-            <GlassPanel className="max-h-[70vh] overflow-y-auto rounded-b-none p-4">
-              <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-white/20" />
+ <GlassPanel className="max-h-[70vh] overflow-y-auto p-4">
+ <div className="mx-auto mb-3 h-1 w-10 bg-white/20"/>
               <div className="mb-3 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-[#F5F7FA]">
                   {title}
@@ -56,7 +56,7 @@ export function MobileBottomSheet({
                   type="button"
                   aria-label={`Close ${title}`}
                   onClick={onClose}
-                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-[#9AA7B5] transition-colors hover:bg-white/[0.06] hover:text-[#F5F7FA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B8DEF]"
+ className="inline-flex h-9 w-9 items-center justify-center text-[#9AA7B5] transition-colors hover:bg-white/[0.06] hover:text-[#F5F7FA] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#5B8DEF]"
                 >
                   <X className="h-4 w-4" />
                 </button>

@@ -1177,7 +1177,7 @@ export function MapCanvas({
       )}
       {tooltip && (
         <div
-          className="pointer-events-none absolute z-20 max-w-[240px] -translate-y-full rounded-sm border border-white/10 bg-[#14181a]/95 px-2.5 py-1.5"
+ className="pointer-events-none absolute z-20 max-w-[240px] -translate-y-full border border-white/10 bg-[#14181a]/95 px-2.5 py-1.5"
           style={{ left: tooltip.x + 12, top: tooltip.y - 8 }}
         >
           <div className="font-ui text-[12px] font-semibold leading-tight text-[#e8ede9]">

@@ -180,20 +180,25 @@ export function Dashboard() {
     return index;
   }, [data]);
 
-  // Whenever the scenario changes: get sweepKm (positional only, for the
-  // reveal animation) from the local engine, show neutral dots immediately
-  // (never the fake formula's acceptance -- see engine.ts's own header),
-  // then stream in real Monte-Carlo-sampled acceptance resident by resident
-  // as it arrives -- only the residents actually sampled get lit.
+  // Whenever the scenario changes to an actual proposed intervention (never
+  // on initial load, where scenarioId is still "baseline" and there's
+  // nothing yet to react to): get sweepKm (positional only, for the reveal
+  // animation) from the local engine, show neutral dots immediately (never
+  // the fake formula's acceptance -- see engine.ts's own header), then
+  // stream in real Monte-Carlo-sampled acceptance resident by resident as it
+  // arrives -- only the residents actually sampled get lit.
   useEffect(() => {
     const city = dataRef.current;
     if (!city) return;
-    const controller = new AbortController();
 
     const { sweepKm } = runScenario(scenarioId, city.personas, city.routes);
     const acceptance = new Float32Array(city.personas.length).fill(0.5);
-    const opinions = new Map<number, string>();
     useSimStore.getState().setResult(aggregate(scenarioId, city.personas, acceptance, sweepKm));
+
+    if (scenarioId === "baseline") return;
+
+    const controller = new AbortController();
+    const opinions = new Map<number, string>();
     useSimStore.getState().setAcceptanceLoading(true);
 
     streamRealAcceptance(
@@ -335,9 +340,6 @@ function Wordmark() {
       <h1 className="font-ui text-[13px] font-bold uppercase tracking-[0.26em] text-ink-bright">
         TechTO
       </h1>
-      <span className="font-mono text-[9.5px] uppercase tracking-wider text-muted">
-        Toronto · Backboard planning dept · real residents
-      </span>
     </header>
   );
 }

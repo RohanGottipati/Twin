@@ -27,7 +27,7 @@ export function MapLegend() {
       <ul className="mt-2 space-y-1">
         {ROUTE_SWATCHES.map(({ label, color, icon: Icon }) => (
           <li key={label} className="flex items-center gap-2 text-xs text-techto-text">
-            <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
+ <span className="inline-block h-2.5 w-2.5"style={{ backgroundColor: color }} />
             <Icon className="h-3.5 w-3.5 text-techto-muted" />
             {label}
           </li>

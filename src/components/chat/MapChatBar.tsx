@@ -265,9 +265,9 @@ export function MapChatBar({
       {showTranscript && (
         <div
           className={cn(
-            "mb-3 flex min-h-0 flex-col rounded-[28px] border border-white/25 px-4 py-3 text-[13px]",
+"mb-3 flex min-h-0 flex-col border border-white/25 px-4 py-3 text-[13px]",
             maximized ? "h-[min(72vh,720px)]" : "max-h-[28rem]",
-            "bg-white/18 shadow-[0_12px_40px_-16px_rgba(15,40,80,0.45)] backdrop-blur-2xl backdrop-saturate-150",
+"bg-white/18 _12px_40px_-16px_rgba(15,40,80,0.45)] backdrop-blur-2xl backdrop-saturate-150",
           )}
         >
           <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
@@ -284,7 +284,7 @@ export function MapChatBar({
               <button
                 type="button"
                 onClick={() => setMaximized((value) => !value)}
-                className="inline-flex h-7 items-center gap-1.5 rounded-full px-2 text-[11px] text-white/55 transition hover:bg-white/10 hover:text-white"
+ className="inline-flex h-7 items-center gap-1.5 px-2 text-[11px] text-white/55 transition hover:bg-white/10 hover:text-white"
                 aria-label={maximized ? "Restore conversation size" : "Expand conversation"}
                 aria-pressed={maximized}
               >
@@ -298,7 +298,7 @@ export function MapChatBar({
               <button
                 type="button"
                 onClick={() => setExpanded(false)}
-                className="h-7 rounded-full px-2 text-[11px] text-white/55 transition hover:bg-white/10 hover:text-white"
+ className="h-7 px-2 text-[11px] text-white/55 transition hover:bg-white/10 hover:text-white"
               >
                 Collapse
               </button>
@@ -310,8 +310,8 @@ export function MapChatBar({
                 key={message.id}
                 className={
                   message.role === "user"
-                    ? "ml-8 rounded-2xl bg-white/25 px-3 py-2 text-white"
-                    : "mr-4 rounded-2xl bg-white/10 px-3 py-2 text-white/90"
+ ?"ml-8 bg-white/25 px-3 py-2 text-white"
+ :"mr-4 bg-white/10 px-3 py-2 text-white/90"
                 }
               >
                 {message.role === "user" ? (
@@ -347,14 +347,14 @@ export function MapChatBar({
       <form
         onSubmit={onSubmit}
         className={cn(
-          "flex items-center gap-2 rounded-full border border-white/35 px-3 py-2",
-          "bg-white/14 shadow-[0_10px_36px_-12px_rgba(40,80,140,0.55),inset_0_1px_0_rgba(255,255,255,0.35)]",
+"flex items-center gap-2 border border-white/35 px-3 py-2",
+"bg-white/14 _10px_36px_-12px_rgba(40,80,140,0.55),inset_0_1px_0_rgba(255,255,255,0.35)]",
           "backdrop-blur-2xl backdrop-saturate-150",
         )}
       >
         <button
           type="button"
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-white/15 hover:text-white"
+ className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-white/70 transition hover:bg-white/15 hover:text-white"
           aria-label="Add"
         >
           <Plus className="h-4 w-4" strokeWidth={1.75} />
@@ -362,7 +362,7 @@ export function MapChatBar({
         <button
           type="button"
           onClick={() => setExpanded((value) => !value)}
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-white/15 hover:text-white"
+ className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-white/70 transition hover:bg-white/15 hover:text-white"
           aria-label="Chat options"
         >
           <SlidersHorizontal className="h-4 w-4" strokeWidth={1.75} />
@@ -387,7 +387,7 @@ export function MapChatBar({
           <button
             type="button"
             onClick={() => useTechTOStore.getState().setPanelFocus("chat")}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-white/15 hover:text-white"
+ className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-white/70 transition hover:bg-white/15 hover:text-white"
             aria-label="Open council panel"
           >
             <Columns2 className="h-4 w-4" strokeWidth={1.75} />
@@ -396,7 +396,7 @@ export function MapChatBar({
           <button
             type="button"
             onClick={() => setExpanded((value) => !value)}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white/70 transition hover:bg-white/15 hover:text-white"
+ className="inline-flex h-9 w-9 shrink-0 items-center justify-center text-white/70 transition hover:bg-white/15 hover:text-white"
             aria-label="Toggle conversation"
           >
             <Columns2 className="h-4 w-4" strokeWidth={1.75} />
@@ -406,7 +406,7 @@ export function MapChatBar({
         <button
           type="submit"
           disabled={isRunning || busy || !input.trim()}
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/25 text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] transition hover:bg-white/40 disabled:opacity-40"
+ className="inline-flex h-10 w-10 shrink-0 items-center justify-center bg-white/25 text-white _0_1px_0_rgba(255,255,255,0.45)] transition hover:bg-white/40 disabled:opacity-40"
           data-testid="city-copilot-send"
           aria-label="Send"
         >
