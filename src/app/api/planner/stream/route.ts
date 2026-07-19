@@ -68,6 +68,10 @@ export async function POST(request: Request) {
             send("planner.delta", { content: event.content }, event.runId);
             return;
           }
+          if (event.type === "assistant.reasoning") {
+            send("planner.reasoning", { content: event.content }, event.runId);
+            return;
+          }
           if (event.type === "assistant.clear") {
             send("planner.clear", {}, event.runId);
             return;
@@ -79,6 +83,20 @@ export async function POST(request: Request) {
           if (event.type === "map.actions") {
             // Apply as soon as the agent composes them (don't wait for turn end).
             send("planner.map_actions", { actions: event.actions }, event.runId);
+            return;
+          }
+          if (event.type === "persona.scored") {
+            // Colour the sampled resident's dot on the map as soon as this one real model call resolves.
+            send(
+              "planner.persona_scored",
+              {
+                personaId: event.personaId,
+                code: event.code,
+                acceptance: event.acceptance,
+                opinionText: event.opinionText,
+              },
+              event.runId,
+            );
             return;
           }
           // coarse lifecycle for the strip / debug

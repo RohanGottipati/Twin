@@ -23,6 +23,7 @@ export type CityRunEvent =
   | { type: "run.started"; runId: string; question: string }
   | { type: "agent.started"; runId: string; role: TechTOAssistantKey; name: string }
   | { type: "assistant.delta"; runId: string; content: string }
+  | { type: "assistant.reasoning"; runId: string; content: string }
   | { type: "assistant.clear"; runId: string }
   | { type: "status"; runId: string; message: string }
   | {
@@ -45,6 +46,14 @@ export type CityRunEvent =
       detail?: string;
     }
   | { type: "scenarios.proposed"; runId: string; patches: ScenarioPatch[] }
+  | {
+      type: "persona.scored";
+      runId: string;
+      personaId: string;
+      code: string;
+      acceptance: number;
+      opinionText: string;
+    }
   | {
       type: "citizens.scored";
       runId: string;
@@ -120,10 +129,13 @@ function emit(
   onEvent?.(event);
 }
 
-async function harvestScores(patches: ScenarioPatch[]): Promise<CityCandidateResult[]> {
+async function harvestScores(
+  patches: ScenarioPatch[],
+  onPersonaScored?: (result: { personaId: string; code: string; acceptance: number; opinionText: string }) => void,
+): Promise<CityCandidateResult[]> {
   return Promise.all(
     patches.map(async (patch) => {
-      const score = await scoreRealPolicyAcceptance(patch.id, policyTextForPatch(patch));
+      const score = await scoreRealPolicyAcceptance(patch.id, policyTextForPatch(patch), undefined, onPersonaScored);
       return { patch, score };
     }),
   );
@@ -251,6 +263,9 @@ export async function runCityOrchestration(
       emitToolStart(call, (role as TechTOAssistantKey) ?? "planning-orchestrator"),
     onNestedToolEnd: (outcome, role) =>
       emitToolEnd(outcome, (role as TechTOAssistantKey) ?? "planning-orchestrator"),
+    onPersonaScored: (result) => {
+      emit(events, onEvent, { type: "persona.scored", runId, ...result });
+    },
   });
 
   const hintPatches = input.patches?.length ? input.patches : [];
@@ -270,14 +285,18 @@ export async function runCityOrchestration(
     "",
     "Respond as TechTO's planning agent (Claude Code for the city).",
     "You decide the whole turn: reply in prose, call tools, invoke specialists, or any mix.",
-    "Tools are available and optional; use them only when they help.",
-    "For location screening, use query_city_layer before choosing an official Toronto neighbourhood.",
+    "You have many tool rounds; use them. Prefer explore → score → revise → recommend over a one-shot guess.",
+    "For location / siting questions (stations, parks, facilities, corridors):",
+    "- Screen multiple geographically distinct Toronto neighbourhoods (not just one corridor or the first hit).",
+    "- Use query_city_layer / search_neighbourhoods / generate_station_candidates / propose_scenarios as needed.",
+    "- Score acceptance on the shortlist with score_population BEFORE recommending.",
+    "- If scores look weak (low mean/support, or byNeighbourhood opposition at the proposed site), discard and try other areas; do not recommend a poorly accepted site unless the user wants that tradeoff.",
+    "- While comparing, compose_map_actions may show several candidate markers; for the final pick, leave one marker, fly_to_center, and highlight that neighbourhood.",
     "Never invent ScenarioPatches or fake rankings just to fill a pipeline.",
-    "When recommending a single place, compose_map_actions with exactly one show_candidate_markers entry (the chosen site), fly_to_center on it, and highlight that one neighbourhood. Do not put multiple candidate markers on the map unless the user explicitly asked to compare alternatives.",
-    "When comparing places or proposing geometry, use compose_map_actions to fly/highlight/draw on the map so the user can see it.",
-    "Be concise. Lead with the answer in 1-3 sentences. Only add a short bullet list below it for the handful of details that actually change the decision (e.g. a key metric, a tradeoff, a risk) -- skip sections that would just restate the same point differently. Never pad with boilerplate section headers (no 'Sustainability potential', 'Screening metrics', 'Success KPIs to validate', etc.) unless the user is specifically asking for that level of detail.",
-    "If you score population acceptance or ROI, state the one-line caveat (simulated day-one feel, not ridership; no ROI claimed until inputs are validated) only once, briefly -- do not repeat it in multiple sections.",
-    "For capital or operating recommendations where a value case is material, invoke the feasibility specialist when lifecycle cost or monetized-benefit evidence is needed, then summarize its result in a sentence or two rather than reproducing its full breakdown.",
+    "When comparing places or proposing geometry, use compose_map_actions so the user can see the search on the map.",
+    "Be concise. Lead with the answer in 1-3 sentences. Only add a short bullet list below it for the handful of details that actually change the decision (e.g. acceptance, a key tradeoff). Never pad with boilerplate section headers unless the user asks for that depth.",
+    "If you score population acceptance or ROI, state the one-line caveat (simulated day-one feel, not ridership; no ROI claimed until inputs are validated) only once, briefly.",
+    "For capital or operating recommendations where a value case is material, invoke the feasibility specialist when lifecycle cost or monetized-benefit evidence is needed, then summarize its result in a sentence or two.",
     hintPatches.length
       ? `Caller supplied optional starter patches (use or ignore):\n${JSON.stringify(hintPatches)}`
       : "",
@@ -300,13 +319,21 @@ export async function runCityOrchestration(
     thinking: orch.role.thinking,
     memory: orch.role.memory,
     context,
-    maxRounds: 12,
+    maxRounds: 18,
     jsonOutput: false,
     onEvent: (streamEvent) => {
       if (streamEvent.type === "content_delta" && streamEvent.content) {
         streamedAssistantText += streamEvent.content;
         emit(events, onEvent, {
           type: "assistant.delta",
+          runId,
+          content: streamEvent.content,
+        });
+      }
+      // model thinking tokens (Backboard reasoning_streaming); was dropped before
+      if (streamEvent.type === "reasoning_delta" && streamEvent.content) {
+        emit(events, onEvent, {
+          type: "assistant.reasoning",
           runId,
           content: streamEvent.content,
         });
@@ -335,7 +362,9 @@ export async function runCityOrchestration(
       runId,
       message: "Scoring real citizen acceptance…",
     });
-    candidates = await harvestScores(patches);
+    candidates = await harvestScores(patches, (result) => {
+      emit(events, onEvent, { type: "persona.scored", runId, ...result });
+    });
     emit(events, onEvent, {
       type: "status",
       runId,

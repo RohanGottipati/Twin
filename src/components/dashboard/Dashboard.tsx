@@ -139,6 +139,9 @@ export function Dashboard() {
   const placeChatOpen = useMapStore((s) => s.buildingMiniChatOpen);
   const dataRef = useRef<CityData | null>(null);
   const cityPlan = useCityPlanRun();
+  const acceptanceRef = useRef<Float32Array | null>(null);
+  const opinionsRef = useRef<Map<number, string>>(new Map());
+  const sweepKmRef = useRef<Float32Array | null>(null);
 
   // Load the real geodata once, then load the real resident population.
   useEffect(() => {
@@ -193,12 +196,15 @@ export function Dashboard() {
 
     const { sweepKm } = runScenario(scenarioId, city.personas, city.routes);
     const acceptance = new Float32Array(city.personas.length).fill(0.5);
+    const opinions = new Map<number, string>();
+    acceptanceRef.current = acceptance;
+    opinionsRef.current = opinions;
+    sweepKmRef.current = sweepKm;
     useSimStore.getState().setResult(aggregate(scenarioId, city.personas, acceptance, sweepKm));
 
     if (scenarioId === "baseline") return;
 
     const controller = new AbortController();
-    const opinions = new Map<number, string>();
     useSimStore.getState().setAcceptanceLoading(true);
 
     streamRealAcceptance(
@@ -298,7 +304,23 @@ export function Dashboard() {
             enableCityPlanRun
             cityPlanRunning={cityPlan.isRunning}
             onCityPlanQuestion={async (q, handlers) => {
-              const payload = await cityPlan.start(q, handlers);
+              const payload = await cityPlan.start(q, {
+                ...handlers,
+                onPersonaScored: (result) => {
+                  handlers.onPersonaScored?.(result);
+                  const city = dataRef.current;
+                  const acceptance = acceptanceRef.current;
+                  const sweepKm = sweepKmRef.current;
+                  if (!city || !acceptance || !sweepKm) return;
+                  const index = personaIndexById.get(result.personaId);
+                  if (index === undefined) return;
+                  acceptance[index] = result.acceptance;
+                  if (result.opinionText) opinionsRef.current.set(index, result.opinionText);
+                  const merged = aggregate(scenarioId, city.personas, acceptance, sweepKm);
+                  merged.opinions = opinionsRef.current;
+                  useSimStore.getState().setResult(merged);
+                },
+              });
               return payload;
             }}
           />

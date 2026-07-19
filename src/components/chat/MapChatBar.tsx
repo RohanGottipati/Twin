@@ -31,6 +31,8 @@ interface ChatMessage {
   content: string;
   /** Live tool/agent/scoring trace lines for a city-plan run, shown above the prose. */
   trace?: CityPlanTraceLine[];
+  /** Accumulated model thinking tokens for this turn (click to expand). */
+  reasoning?: string;
   /** True while this message is still streaming in. */
   streaming?: boolean;
 }
@@ -75,8 +77,8 @@ export function MapChatBar({
   const [busy, setBusy] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [maximized, setMaximized] = useState(false);
-  /** Show tool args / outputs under each trace line. */
-  const [showTraceDetail, setShowTraceDetail] = useState(false);
+  /** Which trace line ids are expanded (click the row to toggle). */
+  const [openTraceIds, setOpenTraceIds] = useState<Record<string, boolean>>({});
   const inputRef = useRef<HTMLInputElement>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const appliedMapMidstream = useRef(false);
@@ -174,6 +176,13 @@ export function MapChatBar({
               prev.map((m) => (m.id === liveId ? { ...m, content: m.content + chunk } : m)),
             );
           },
+          onReasoning: (chunk) => {
+            setMessages((prev) =>
+              prev.map((m) =>
+                m.id === liveId ? { ...m, reasoning: (m.reasoning ?? "") + chunk } : m,
+              ),
+            );
+          },
           onClear: () => {
             setMessages((prev) =>
               prev.map((m) => (m.id === liveId ? { ...m, content: "" } : m)),
@@ -181,7 +190,22 @@ export function MapChatBar({
           },
           onTrace: (line) => {
             setMessages((prev) =>
-              prev.map((m) => (m.id === liveId ? { ...m, trace: [...(m.trace ?? []), line] } : m)),
+              prev.map((m) => {
+                if (m.id !== liveId) return m;
+                const trace = m.trace ?? [];
+                const idx = trace.findIndex((t) => t.id === line.id);
+                if (idx < 0) return { ...m, trace: [...trace, line] };
+                const prevLine = trace[idx];
+                const next = [...trace];
+                next[idx] = {
+                  ...prevLine,
+                  ...line,
+                  // keep args from the running row when the done event only sends result
+                  argsDetail: line.argsDetail ?? prevLine.argsDetail,
+                  resultDetail: line.resultDetail ?? prevLine.resultDetail,
+                };
+                return { ...m, trace: next };
+              }),
             );
           },
           onMapActions: (actions) => {
@@ -319,18 +343,6 @@ export function MapChatBar({
           <div className="mb-2 flex shrink-0 items-center justify-between gap-2">
             <p className="text-[11px] font-medium text-white">TechTO</p>
             <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => setShowTraceDetail((v) => !v)}
-                className={cn(
-                  "h-7 px-2 text-[11px] transition hover:bg-white/10",
-                  showTraceDetail ? "text-white" : "text-white/55 hover:text-white",
-                )}
-                aria-pressed={showTraceDetail}
-                title="Show tool args and outputs"
-              >
-                {showTraceDetail ? "Hide details" : "Details"}
-              </button>
               <PdfExportButton
                 report={{
                   title: "TechTO conversation",
@@ -376,18 +388,84 @@ export function MapChatBar({
                   <p className="whitespace-pre-wrap text-[12px] leading-relaxed">{message.content}</p>
                 ) : (
                   <>
+                    {message.reasoning && (
+                      <div className="mb-1.5 border-b border-white/10 pb-1.5 font-mono text-[10px] leading-snug text-white/45">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setOpenTraceIds((prev) => ({
+                              ...prev,
+                              [`${message.id}:reasoning`]: !prev[`${message.id}:reasoning`],
+                            }))
+                          }
+                          className="flex w-full items-start gap-1.5 text-left hover:text-white/70"
+                          aria-expanded={Boolean(openTraceIds[`${message.id}:reasoning`])}
+                        >
+                          <span className="shrink-0">…</span>
+                          <span>
+                            Thinking
+                            {message.streaming && !message.content ? "…" : ""}
+                            <span className="ml-1 text-white/30">
+                              {openTraceIds[`${message.id}:reasoning`] ? "▾" : "▸"}
+                            </span>
+                          </span>
+                        </button>
+                        {openTraceIds[`${message.id}:reasoning`] && (
+                          <pre className="mt-0.5 max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-sm bg-black/25 px-1.5 py-1 text-[9px] text-white/40">
+                            {message.reasoning}
+                          </pre>
+                        )}
+                      </div>
+                    )}
                     {message.trace && message.trace.length > 0 && (
                       <ul className="mb-1.5 space-y-0.5 border-b border-white/10 pb-1.5 font-mono text-[10px] leading-snug text-white/50">
-                        {message.trace.map((line) => (
-                          <li key={line.id}>
-                            <span>{line.text}</span>
-                            {showTraceDetail && line.detail && (
-                              <pre className="mt-0.5 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-sm bg-black/25 px-1.5 py-1 text-[9px] text-white/45">
-                                {line.detail}
-                              </pre>
-                            )}
-                          </li>
-                        ))}
+                        {message.trace.map((line) => {
+                          const hasDetail = Boolean(line.argsDetail || line.resultDetail);
+                          const open = Boolean(openTraceIds[line.id]);
+                          const icon =
+                            line.status === "running"
+                              ? "⚙"
+                              : line.status === "ok"
+                                ? "✓"
+                                : line.status === "fail"
+                                  ? "✗"
+                                  : "·";
+                          return (
+                            <li key={line.id}>
+                              <button
+                                type="button"
+                                disabled={!hasDetail}
+                                onClick={() =>
+                                  setOpenTraceIds((prev) => ({
+                                    ...prev,
+                                    [line.id]: !prev[line.id],
+                                  }))
+                                }
+                                className={cn(
+                                  "flex w-full items-start gap-1.5 text-left",
+                                  hasDetail
+                                    ? "cursor-pointer hover:text-white/75"
+                                    : "cursor-default",
+                                )}
+                                aria-expanded={hasDetail ? open : undefined}
+                              >
+                                <span className="shrink-0 tabular-nums">{icon}</span>
+                                <span>
+                                  {line.label}
+                                  {line.status === "running" ? "…" : ""}
+                                  {hasDetail && (
+                                    <span className="ml-1 text-white/30">{open ? "▾" : "▸"}</span>
+                                  )}
+                                </span>
+                              </button>
+                              {open && hasDetail && (
+                                <pre className="mt-0.5 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded-sm bg-black/25 px-1.5 py-1 text-[9px] text-white/45">
+                                  {[line.argsDetail, line.resultDetail].filter(Boolean).join("\n───\n")}
+                                </pre>
+                              )}
+                            </li>
+                          );
+                        })}
                       </ul>
                     )}
                     {message.streaming && !message.content ? (

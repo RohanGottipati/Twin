@@ -2,7 +2,7 @@
 
 import { useRef, useState } from "react";
 import { CANNED_CITY_ASKS } from "@/lib/planner/canned";
-import { toolDoneLabel, toolRunningLabel } from "@/lib/planner/step-messages";
+import { toolRunningLabel } from "@/lib/planner/step-messages";
 import { cn } from "@/lib/utils/cn";
 import { useMapStore } from "@/store/useMapStore";
 import { createRunStreamClient } from "@/lib/backboard/stream-parser";
@@ -29,20 +29,31 @@ export interface CityPlanRunSummary {
 /** One line of the live trace: agent lifecycle, tool calls, or scoring. */
 export interface CityPlanTraceLine {
   id: string;
-  text: string;
-  /** Args / output preview; shown when the user toggles details. */
-  detail?: string;
+  /** Human label without status icon (icon comes from `status`). */
+  label: string;
+  status: "running" | "ok" | "fail" | "info";
+  /** Args preview (tool start). */
+  argsDetail?: string;
+  /** Output preview (tool end); keeps args so expand can show both. */
+  resultDetail?: string;
 }
 
 export interface CityPlanRunHandlers {
   /** Fired for every text token as the agent composes its reply. */
   onDelta?: (chunk: string) => void;
+  /** Model thinking / reasoning tokens (separate from the user-facing reply). */
+  onReasoning?: (chunk: string) => void;
   /** Wipe partial prose when a mid-turn tool round starts. */
   onClear?: () => void;
-  /** Fired whenever a new trace line (tool call, subagent, scoring result) is ready. */
+  /**
+   * Upsert a trace line. Same `id` (e.g. toolCallId) updates in place so
+   * running → ok/fail does not duplicate the row.
+   */
   onTrace?: (line: CityPlanTraceLine) => void;
   /** Mid-stream map actions: apply as soon as compose_map_actions accepts them. */
   onMapActions?: (actions: MapAction[]) => void;
+  /** Fired for each real Monte-Carlo-sampled resident as score_population/run_twin_analysis scores them, so the map can colour that one dot live. */
+  onPersonaScored?: (result: { personaId: string; code: string; acceptance: number; opinionText: string }) => void;
 }
 
 function rolePrefix(role: unknown): string {
@@ -54,40 +65,58 @@ function traceLineFor(event: { type: string; [key: string]: unknown }): CityPlan
   const detail = typeof event.detail === "string" ? event.detail : undefined;
   switch (event.type) {
     case "agent.started":
-      return { id: "", text: `→ ${event.name as string} started` };
-    case "tool.requested":
       return {
-        id: "",
-        text: `⚙ ${rolePrefix(event.role)}${toolRunningLabel(event.toolName as string)}…`,
-        detail,
+        id: `agent-${event.role ?? "main"}`,
+        label: `${event.name as string} started`,
+        status: "info",
       };
-    case "tool.completed":
+    case "tool.requested": {
+      const toolCallId = String(event.toolCallId ?? "");
+      if (!toolCallId) return null;
       return {
-        id: "",
-        text: `${rolePrefix(event.role)}${toolDoneLabel(event.toolName as string, Boolean(event.ok))}`,
-        detail,
+        id: toolCallId,
+        label: `${rolePrefix(event.role)}${toolRunningLabel(event.toolName as string)}`,
+        status: "running",
+        argsDetail: detail,
       };
+    }
+    case "tool.completed": {
+      const toolCallId = String(event.toolCallId ?? "");
+      if (!toolCallId) return null;
+      return {
+        id: toolCallId,
+        label: `${rolePrefix(event.role)}${toolRunningLabel(event.toolName as string)}`,
+        status: event.ok ? "ok" : "fail",
+        resultDetail: detail,
+      };
+    }
     case "scenarios.proposed":
-      return { id: "", text: `${(event.patches as unknown[]).length} scenario patch(es) proposed` };
+      return {
+        id: "",
+        label: `${(event.patches as unknown[]).length} scenario patch(es) proposed`,
+        status: "info",
+      };
     case "citizens.scored": {
       const mean = Number(event.mean).toFixed(2);
       const support = (Number(event.supportShare) * 100).toFixed(0);
       return {
         id: "",
-        text: `real acceptance scored: mean ${mean}, ${support}% support (${event.provider as string})`,
+        label: `real acceptance scored: mean ${mean}, ${support}% support (${event.provider as string})`,
+        status: "info",
       };
     }
     case "recommendation.ready":
-      return { id: "", text: "recommendation ready" };
+      return { id: "", label: "recommendation ready", status: "info" };
     case "map.actions":
     case "planner.map_actions":
       return {
         id: "",
-        text: `map ← ${(event.actions as unknown[]).length} action(s)`,
-        detail: detail ?? JSON.stringify(event.actions)?.slice(0, 500),
+        label: `map ← ${(event.actions as unknown[]).length} action(s)`,
+        status: "info",
+        resultDetail: detail ?? JSON.stringify(event.actions)?.slice(0, 500),
       };
     case "status":
-      return { id: "", text: event.message as string };
+      return { id: "", label: event.message as string, status: "info" };
     default:
       return null;
   }
@@ -114,19 +143,39 @@ export function useCityPlanRun() {
             handlers.onDelta?.(payload.content);
             return;
           }
+          if (envelope.type === "planner.reasoning" && typeof payload.content === "string") {
+            handlers.onReasoning?.(payload.content);
+            return;
+          }
           if (envelope.type === "planner.clear") {
             handlers.onClear?.();
             return;
           }
           if (envelope.type === "planner.status" && typeof payload.message === "string") {
-            handlers.onTrace?.({ id: `t-${traceSeq.current++}`, text: payload.message });
+            handlers.onTrace?.({
+              id: `t-${traceSeq.current++}`,
+              label: payload.message,
+              status: "info",
+            });
             return;
           }
           if (envelope.type === "planner.map_actions") {
             const actions = (payload.actions as MapAction[]) ?? [];
             if (actions.length) handlers.onMapActions?.(actions);
-            const line = traceLineFor({ type: "planner.map_actions", ...payload });
-            if (line) handlers.onTrace?.({ ...line, id: `t-${traceSeq.current++}` });
+            // no extra trace row: the compose_map_actions line already updates in place
+            return;
+          }
+          if (envelope.type === "planner.persona_scored") {
+            const { personaId, code, acceptance, opinionText } = payload as {
+              personaId?: string;
+              code?: string;
+              acceptance?: number;
+              opinionText?: string;
+            };
+            if (typeof personaId === "string" && typeof code === "string" && typeof acceptance === "number") {
+              handlers.onPersonaScored?.({ personaId, code, acceptance, opinionText: opinionText ?? "" });
+            }
+            // no trace row: this is a per-resident sampling detail, not a lifecycle line
             return;
           }
           if (envelope.type === "planner.completed") {
@@ -152,7 +201,12 @@ export function useCityPlanRun() {
             return;
           }
           const line = traceLineFor({ type: envelope.type, ...payload });
-          if (line) handlers.onTrace?.({ ...line, id: `t-${traceSeq.current++}` });
+          if (line) {
+            handlers.onTrace?.({
+              ...line,
+              id: line.id || `t-${traceSeq.current++}`,
+            });
+          }
         },
         onError: (err) => {
           setIsRunning(false);

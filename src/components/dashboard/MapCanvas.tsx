@@ -224,14 +224,6 @@ export function MapCanvas({
     });
     map.touchZoomRotate.disableRotation();
     map.addControl(
-      new maplibregl.AttributionControl({
-        compact: true,
-        customAttribution:
-          "Boundaries & census: open.toronto.ca · Routes: TTC GTFS",
-      }),
-      "bottom-left"
-    );
-    map.addControl(
       new maplibregl.NavigationControl({ showCompass: false }),
       "bottom-right"
     );
