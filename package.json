@@ -23,6 +23,7 @@
     "test:backboard": "vitest run tests/backboard"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
     "@tanstack/react-query": "^5.101.2",
     "framer-motion": "11.5.4",
     "lucide-react": "0.441.0",

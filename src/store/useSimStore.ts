@@ -12,12 +12,15 @@ interface SimState {
   selectedCode: string | null;
   result: ScenarioResult | null;
   personaCount: number;
+  /** True while real per-neighbourhood acceptance is being Monte-Carlo-sampled for the current scenario. */
+  acceptanceLoading: boolean;
   setStatus: (status: SimState["status"]) => void;
   setScenario: (id: string) => void;
   toggleLayer: (key: LayerKey) => void;
   select: (code: string | null) => void;
   setResult: (result: ScenarioResult) => void;
   setPersonaCount: (n: number) => void;
+  setAcceptanceLoading: (loading: boolean) => void;
 }
 
 export const useSimStore = create<SimState>((set) => ({
@@ -27,6 +30,7 @@ export const useSimStore = create<SimState>((set) => ({
   selectedCode: null,
   result: null,
   personaCount: 0,
+  acceptanceLoading: false,
   setStatus: (status) => set({ status }),
   setScenario: (scenarioId) => set({ scenarioId }),
   toggleLayer: (key) =>
@@ -34,4 +38,5 @@ export const useSimStore = create<SimState>((set) => ({
   select: (selectedCode) => set({ selectedCode }),
   setResult: (result) => set({ result }),
   setPersonaCount: (personaCount) => set({ personaCount }),
+  setAcceptanceLoading: (acceptanceLoading) => set({ acceptanceLoading }),
 }));

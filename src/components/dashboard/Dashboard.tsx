@@ -8,7 +8,7 @@ import { MapChatBar } from "@/components/chat/MapChatBar";
 import { BuildingMiniChat } from "@/components/chat/BuildingMiniChat";
 import { CityPlanStrip, useCityPlanRun } from "@/components/planner/CityPlanStrip";
 import { buildPersonas } from "@/lib/sim/personas";
-import { runScenario } from "@/lib/sim/engine";
+import { runScenario, aggregate } from "@/lib/sim/engine";
 import { useSimStore } from "@/store/useSimStore";
 import { useMapStore } from "@/store/useMapStore";
 import type {
@@ -17,6 +17,32 @@ import type {
   RouteCollection,
 } from "@/lib/sim/types";
 import { CANNED_CITY_ASKS } from "@/lib/planner/canned";
+
+/**
+ * Real per-neighbourhood acceptance (src/app/api/neighbourhood-acceptance/route.ts,
+ * Monte-Carlo-sampled from real resident_personas against the real trained
+ * opinion model), fanned out to every persona sharing that neighbourhood
+ * code. `sweepKm` (purely positional -- distance for the reveal animation,
+ * not a prediction) is kept from the local engine; `acceptance` is real or,
+ * for a code with no data yet, neutral (0.5) rather than a guess.
+ */
+async function fetchRealAcceptance(
+  scenarioId: string,
+  personas: Persona[],
+  signal: AbortSignal,
+): Promise<{ scenarioId: string; acceptance: Float32Array } | null> {
+  const response = await fetch(`/api/neighbourhood-acceptance?scenarioId=${encodeURIComponent(scenarioId)}`, {
+    signal,
+  });
+  if (!response.ok) return null;
+  const data = (await response.json()) as { acceptance: Record<string, number> };
+
+  const acceptance = new Float32Array(personas.length);
+  for (let i = 0; i < personas.length; i++) {
+    acceptance[i] = data.acceptance[personas[i].code] ?? 0.5;
+  }
+  return { scenarioId, acceptance };
+}
 
 interface CityData {
   neighbourhoods: NeighbourhoodCollection;
@@ -48,6 +74,7 @@ export function Dashboard() {
   const [mapReady, setMapReady] = useState(false);
   const status = useSimStore((s) => s.status);
   const scenarioId = useSimStore((s) => s.scenarioId);
+  const acceptanceLoading = useSimStore((s) => s.acceptanceLoading);
   const selectedCode = useSimStore((s) => s.selectedCode);
   const selectedPlace = useMapStore((s) => s.selectedPlace);
   const placeChatOpen = useMapStore((s) => s.buildingMiniChatOpen);
@@ -86,12 +113,33 @@ export function Dashboard() {
     };
   }, []);
 
-  // Re-run the preview engine whenever the scenario changes.
+  // Whenever the scenario changes: get sweepKm (positional only, for the
+  // reveal animation) from the local engine, show neutral dots immediately
+  // (never the fake formula's acceptance -- see engine.ts's own header),
+  // then replace with real Monte-Carlo-sampled acceptance once it arrives.
   useEffect(() => {
     const city = dataRef.current;
     if (!city) return;
-    const result = runScenario(scenarioId, city.personas, city.routes);
-    useSimStore.getState().setResult(result);
+    const controller = new AbortController();
+
+    const { sweepKm } = runScenario(scenarioId, city.personas, city.routes);
+    const neutral = new Float32Array(city.personas.length).fill(0.5);
+    useSimStore.getState().setResult(aggregate(scenarioId, city.personas, neutral, sweepKm));
+    useSimStore.getState().setAcceptanceLoading(true);
+
+    fetchRealAcceptance(scenarioId, city.personas, controller.signal)
+      .then((real) => {
+        if (!real || controller.signal.aborted) return;
+        useSimStore.getState().setResult(aggregate(real.scenarioId, city.personas, real.acceptance, sweepKm));
+      })
+      .catch(() => {
+        // Aborted (scenario changed again) or the request failed; neutral dots stay, no fake fallback.
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) useSimStore.getState().setAcceptanceLoading(false);
+      });
+
+    return () => controller.abort();
   }, [scenarioId, data]);
 
   useEffect(() => {
@@ -137,6 +185,11 @@ export function Dashboard() {
       {/* Left rail: identity and map layers */}
       <div className="pointer-events-none absolute left-4 top-4 z-10 hidden w-[288px] flex-col gap-3 md:flex">
         <Wordmark />
+        {acceptanceLoading && (
+          <div className="border border-hairline bg-panel px-3 py-2 font-mono text-[10px] text-muted">
+            Computing real citizen reactions from resident opinions…
+          </div>
+        )}
         <LayersPanel />
       </div>
 

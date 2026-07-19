@@ -1,6 +1,6 @@
-import { TwinTOClient } from "@/components/twinto/TwinTOClient";
+import { TechTOClient } from "@/components/techto/TechTOClient";
 
-/** Separate route for the self-contained TwinTO planning-department demo. */
-export default function TwinTOPage() {
-  return <TwinTOClient />;
+/** Separate route for the self-contained TechTO planning-department demo. */
+export default function TechTOPage() {
+  return <TechTOClient />;
 }

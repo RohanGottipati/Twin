@@ -12,7 +12,7 @@ import type {
 } from "@/lib/citizen-reaction/schemas";
 import { archetypeKey, samplePersonasForArchetype } from "@/lib/citizen-reaction/persona-sampler";
 import { getOrGenerateOpinion } from "@/lib/citizen-reaction/opinion-cache";
-import { scoreOpinion } from "@/lib/citizen-reaction/opinion-score";
+import { scoreOpinionWithEmbeddingProbe } from "@/lib/citizen-reaction/embedding-probe-score";
 import { runWithLimit } from "@/lib/citizen-reaction/concurrency";
 
 /**
@@ -21,9 +21,10 @@ import { runWithLimit } from "@/lib/citizen-reaction/concurrency";
  * note in src/lib/citizen-reaction/persona-sampler.ts), Monte-Carlo-samples
  * a handful of real `resident_personas`, calls the actual trained model
  * (model/sft, model/grpo) for each, scores the returned opinion prose with
- * the placeholder lexicon scorer, and reuses that archetype's result
- * across every cohort sharing it. Sampling is adaptive: if the initial
- * samples disagree a lot, a few more are drawn before settling.
+ * a real-data-trained embedding probe (embedding-probe-score.ts), and
+ * reuses that archetype's result across every cohort sharing it. Sampling
+ * is adaptive: if the initial samples disagree a lot, a few more are
+ * drawn before settling.
  */
 
 const MIN_SAMPLES = Number(process.env.TECHTO_OPINION_SAMPLE_SIZE ?? 3);
@@ -95,7 +96,7 @@ async function resolveArchetype(
     for (const opinion of opinions) {
       seenPersonaIds.add(opinion.personaId);
       texts.push(opinion.text);
-      scores.push(scoreOpinion(opinion.text));
+      scores.push(await scoreOpinionWithEmbeddingProbe(opinion.text));
     }
   }
 
