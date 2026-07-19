@@ -1,5 +1,5 @@
 /**
- * Resolves the TwinTO 54-assistant roster against Backboard (creating or
+ * Resolves the TechTO 54-assistant roster against Backboard (creating or
  * updating each named assistant) and uploads each role's knowledge
  * documents. Safe to re-run: assistant upsert is idempotent by name, but
  * document upload is not (Backboard exposes no per-assistant document list

@@ -1,12 +1,12 @@
 /**
- * Synthetic Toronto TTC network fixture for the TwinTO transit domain layer.
+ * Synthetic Toronto TTC network fixture for the TechTO transit domain layer.
  *
  * Station names, route names, and approximate downtown positions are drawn
  * from real TTC geography for narrative plausibility, but every operational
  * figure here (vehicle capacity, headway, entrance flags) is a synthetic
  * assumption chosen for this demo. This is NOT a live GTFS feed and NOT a
  * measured TTC capacity table; see AGENTS.md section 2 and
- * docs/twinto-implementation.md section 8.1 for the offline-first,
+ * docs/techto-implementation.md section 8.1 for the offline-first,
  * fixture-first rule this file follows.
  */
 

@@ -17,13 +17,13 @@ def test_is_reachable_false_for_dead_port():
 
 
 def test_resolve_base_url_raises_when_override_unreachable(monkeypatch):
-    monkeypatch.setenv("TORONTWIN_LLM_BASE_URL", UNREACHABLE_URL)
+    monkeypatch.setenv("TECHTO_LLM_BASE_URL", UNREACHABLE_URL)
     with pytest.raises(NoLLMBackendAvailable):
         resolve_base_url()
 
 
 def test_resolve_base_url_raises_cleanly_when_nothing_reachable(monkeypatch):
-    monkeypatch.delenv("TORONTWIN_LLM_BASE_URL", raising=False)
+    monkeypatch.delenv("TECHTO_LLM_BASE_URL", raising=False)
     monkeypatch.setattr("model.serving.DEFAULT_LOCAL_BASE_URL", UNREACHABLE_URL)
     with pytest.raises(NoLLMBackendAvailable):
         resolve_base_url()

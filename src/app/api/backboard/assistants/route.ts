@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getBackboardAdapter } from "@/lib/backboard/adapter";
 import { getAssistantManifest } from "@/lib/backboard/assistant-manifest";
-import { INTENT_BUNDLES, TWINTO_ASSISTANT_KEYS, listAssistantRoles } from "@/lib/backboard/assistants";
+import { INTENT_BUNDLES, TECHTO_ASSISTANT_KEYS, listAssistantRoles } from "@/lib/backboard/assistants";
 import {
   MANIFEST_PRODUCT,
   MANIFEST_ROSTER_VERSION,
@@ -14,7 +14,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Lists the TwinTO consolidated assistant roster and resolved Backboard ids.
+ * Lists the TechTO consolidated assistant roster and resolved Backboard ids.
  */
 export async function GET() {
   try {
@@ -40,12 +40,12 @@ export async function GET() {
       rosterVersion: MANIFEST_ROSTER_VERSION,
       mode: adapter.mode,
       assistantCount: assistants.length,
-      expectedKeys: TWINTO_ASSISTANT_KEYS,
+      expectedKeys: TECHTO_ASSISTANT_KEYS,
       intentBundles: INTENT_BUNDLES,
       assistants,
     });
   } catch (error) {
-    console.error("Failed to list TwinTO assistants:", error);
-    return jsonError("Failed to list TwinTO assistants.", 500, { detail: errorMessage(error) });
+    console.error("Failed to list TechTO assistants:", error);
+    return jsonError("Failed to list TechTO assistants.", 500, { detail: errorMessage(error) });
   }
 }

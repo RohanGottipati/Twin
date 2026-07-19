@@ -1,9 +1,9 @@
 """Aggregate `resident_personas` into 158 real neighbourhood cohort documents
 and write them into the `citizen_cohorts` collection, replacing the 11
-hand-authored synthetic fixture cohorts the TwinTO web app previously used
+hand-authored synthetic fixture cohorts the TechTO web app previously used
 for its citizen density map, citizen-reaction prompts, and equity-gap /
 car-switch-probability simulation math (see AGENTS.md 6.1 and the plan this
-implements: "wire resident_personas into the TwinTO web app").
+implements: "wire resident_personas into the TechTO web app").
 
 Every field below is either a direct real aggregate over the census-grounded
 persona records, a documented derived proxy, or an explicit honest gap (left

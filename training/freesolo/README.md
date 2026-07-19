@@ -1,6 +1,6 @@
 # FreeSolo CitizenReactionLM training scaffold
 
-This folder is the TwinTO training entrypoint for FreeSolo (SFT → optional OPD → GRPO).
+This folder is the TechTO training entrypoint for FreeSolo (SFT → optional OPD → GRPO).
 
 ## Layout
 
@@ -13,4 +13,4 @@ This folder is the TwinTO training entrypoint for FreeSolo (SFT → optional OPD
 
 - RL must train only on past-policy / held-out scenario splits (AGENTS.md 5.3).
 - Never present trained outputs as real Toronto public opinion.
-- Demo path today uses `TWINTO_CITIZEN_REACTION_PROVIDER=mock` or `freesolo` with API fallback.
+- Demo path today uses `TECHTO_CITIZEN_REACTION_PROVIDER=mock` or `freesolo` with API fallback.

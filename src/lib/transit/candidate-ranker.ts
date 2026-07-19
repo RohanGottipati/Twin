@@ -2,7 +2,7 @@ import type { PolicyCandidate, TransitIntervention, TransitSimulationResult } fr
 
 /**
  * Deterministic, locally computed ranking of candidate interventions
- * (docs/twinto-implementation.md section 12.4 reward weighting, adapted to
+ * (docs/techto-implementation.md section 12.4 reward weighting, adapted to
  * the metrics this simulator actually produces). Backboard never assigns
  * this score; it only ever sees the resulting rank and breakdown as
  * evidence, consistent with AGENTS.md 3.2 (the scorer is never co-adapted

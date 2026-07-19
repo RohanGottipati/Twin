@@ -4,14 +4,14 @@ import { useEffect, useRef } from "react";
 import type { Map as MapLibreMap, MapLayerMouseEvent } from "maplibre-gl";
 import { useMapStore } from "@/store/useMapStore";
 import { listRoutes, listStations, listStops } from "@/data/transit/network";
-import { placeFromStation } from "@/lib/twinto/place-context";
+import { placeFromStation } from "@/lib/techto/place-context";
 
-const ROUTES_SOURCE_ID = "twinto-routes";
-const ROUTES_LINE_LAYER_ID = "twinto-routes-line";
-const STATIONS_SOURCE_ID = "twinto-stations";
-const STATIONS_CIRCLE_LAYER_ID = "twinto-stations-circle";
-const STATIONS_LABEL_LAYER_ID = "twinto-stations-label";
-const SELECTED_LAYER_ID = "twinto-stations-selected";
+const ROUTES_SOURCE_ID = "techto-routes";
+const ROUTES_LINE_LAYER_ID = "techto-routes-line";
+const STATIONS_SOURCE_ID = "techto-stations";
+const STATIONS_CIRCLE_LAYER_ID = "techto-stations-circle";
+const STATIONS_LABEL_LAYER_ID = "techto-stations-label";
+const SELECTED_LAYER_ID = "techto-stations-selected";
 
 function routesGeoJson(): GeoJSON.FeatureCollection<GeoJSON.LineString> {
   return {

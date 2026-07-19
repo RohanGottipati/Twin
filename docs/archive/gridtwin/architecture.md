@@ -3,7 +3,7 @@
 GridTwin is a self-contained subsystem inside this repository: a simulated
 grid-battery control room that uses [Backboard](https://backboard.io) as its
 only AI infrastructure provider. It has no relationship to MongoDB, FreeSolo,
-or the broader ToronTwin population-simulator design described elsewhere in
+or the broader TechTO population-simulator design described elsewhere in
 this repo's planning documents; see the note at the top of `AGENTS.md`.
 
 ## Layers

@@ -1,10 +1,10 @@
 import { z } from "zod";
 
 import { getBackboardAdapter } from "@/lib/backboard/adapter";
-import { runTwinTOOrchestration, type TwinTORunEvent } from "@/lib/backboard/orchestrator";
+import { runTechTOOrchestration, type TechTORunEvent } from "@/lib/backboard/orchestrator";
 import { errorMessage, jsonError } from "@/lib/backboard/route-helpers";
 import { clientKeyFor, isRunRateLimited } from "@/lib/backboard/run-rate-limit";
-import { createSseResponse, createSseStream, toTwinTORunEventEnvelope } from "@/lib/backboard/sse";
+import { createSseResponse, createSseStream, toTechTORunEventEnvelope } from "@/lib/backboard/sse";
 import { requireScenario } from "@/data/transit/scenarios";
 import { persistPlanningRunEvent } from "@/lib/mongodb/planning-store";
 
@@ -22,7 +22,7 @@ const runRequestSchema = z
   .strict();
 
 /**
- * Starts one TwinTO planning run and streams its lifecycle as SSE. The
+ * Starts one TechTO planning run and streams its lifecycle as SSE. The
  * response body is a live ReadableStream, so every check that can fail
  * cheaply (rate limit, body size, schema, unknown scenario) happens before
  * the stream is created; once streaming starts, an orchestration failure is
@@ -67,18 +67,18 @@ export async function POST(request: Request) {
 
   let sequence = 0;
   const stream = createSseStream(async (writer) => {
-    await runTwinTOOrchestration({
+    await runTechTOOrchestration({
       scenarioId,
       includeWebSearch,
       adapter,
-      onEvent: (event: TwinTORunEvent) => {
+      onEvent: (event: TechTORunEvent) => {
         if (aborted || writer.closed) return;
         sequence += 1;
-        writer.send(toTwinTORunEventEnvelope(event, sequence));
+        writer.send(toTechTORunEventEnvelope(event, sequence));
         void persistPlanningRunEvent({ event, sequence });
       },
     }).catch(() => {
-      // runTwinTOOrchestration already emitted a run.failed event with the
+      // runTechTOOrchestration already emitted a run.failed event with the
       // error message via onEvent above (see orchestrator.ts); swallow the
       // rethrow here so it does not surface as an unhandled stream.error.
     });

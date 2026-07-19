@@ -39,22 +39,17 @@ export interface RouteCollection {
   features: RouteFeature[];
 }
 
-export interface StreetFeature {
-  type: "Feature";
-  properties: Record<string, never>;
-  geometry: { type: "LineString"; coordinates: LngLat[] };
-}
-
-/** Toronto Centreline links (streets, lanes, trails), citywide. */
-export interface StreetCollection {
-  type: "FeatureCollection";
-  features: StreetFeature[];
-}
-
 /**
- * One synthetic resident. Each persona stands in for ~PERSONS_PER_DOT real
- * residents of its neighbourhood; home locations are sampled inside the real
- * neighbourhood polygon, weighted by census population.
+ * One resident dot. Real personas (from `/api/personas`, backed by
+ * MongoDB's `resident_personas` -- StatCan-census-grounded individual
+ * records, see `population/generate_and_store_personas.py`) each stand in
+ * for one real adult resident, positioned by rejection sampling inside its
+ * real neighbourhood polygon (no real home coordinate exists, so placement
+ * within the boundary is illustrative, not measured). `incomeZ` is derived
+ * from the persona's real household income decile; `transitAffinity` and
+ * `carDependence` are derived from its real commute mode. `buildPersonas()`
+ * (`@/lib/sim/personas`) is a fully-synthetic fallback used only if the API
+ * is unavailable.
  */
 export interface Persona {
   id: number;
@@ -62,12 +57,25 @@ export interface Persona {
   lat: number;
   /** Neighbourhood code (zero-padded, matches AREA_SHORT_CODE). */
   code: string;
-  /** Standardized neighbourhood median-income score, roughly [-2, 2]. */
+  /** Income-decile-derived z-score, roughly [-2, 2]. */
   incomeZ: number;
   /** Propensity to ride transit, [0, 1]. */
   transitAffinity: number;
   /** Reliance on driving, [0, 1]. */
   carDependence: number;
+  /**
+   * Real fields, present only when this persona came from `/api/personas`
+   * (absent for the synthetic `buildPersonas()` fallback). All raw
+   * StatCan-census-grounded categorical values -- not derived proxies.
+   */
+  ageBand?: string;
+  gender?: string;
+  education?: string;
+  tenure?: string;
+  commuteMode?: string | null;
+  incomeBand?: string;
+  /** The persona's LLM-rendered profile description (see population/persona_text.py). */
+  profileText?: string;
 }
 
 export interface NeighbourhoodAggregate {

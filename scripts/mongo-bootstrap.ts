@@ -1,5 +1,5 @@
 /**
- * Creates TwinTO MongoDB collections/indexes and seeds demo fixtures from
+ * Creates TechTO MongoDB collections/indexes and seeds demo fixtures from
  * src/data/transit. Idempotent. Never prints MONGODB_URI or passwords.
  *
  * Usage: npm run mongo:bootstrap
@@ -41,7 +41,7 @@ async function main(): Promise<void> {
   const { seedMongoFromFixtures } = await import("@/lib/mongodb/seed");
   const { closeMongoClient } = await import("@/lib/mongodb/client");
 
-  console.log("TwinTO / MongoDB bootstrap");
+  console.log("TechTO / MongoDB bootstrap");
   console.log("==========================");
   console.log(`URI configured:    ${isMongoConfigured() ? "yes" : "no"} (value never printed)`);
   console.log(`Database:          ${getMongoDatabaseName()}`);
@@ -65,7 +65,7 @@ async function main(): Promise<void> {
     }
 
     console.log("\nStatus:             BOOTSTRAPPED");
-    console.log("Set TWINTO_REPOSITORY_PROVIDER=mongo so agents read from Atlas.");
+    console.log("Set TECHTO_REPOSITORY_PROVIDER=mongo so agents read from Atlas.");
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     console.log(`\nStatus:             FAILED`);

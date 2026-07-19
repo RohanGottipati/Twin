@@ -1,6 +1,6 @@
 import { assertServerOnly } from "@/lib/backboard/env";
 
-const DEFAULT_DATABASE = "twinto";
+const DEFAULT_DATABASE = "techto";
 
 export class MongoConfigError extends Error {}
 
@@ -16,12 +16,12 @@ export function getMongoDatabaseName(): string {
 
 export function getMongoSearchIndex(): string {
   assertServerOnly("MongoDB env");
-  return process.env.MONGODB_SEARCH_INDEX?.trim() || "twinto-search";
+  return process.env.MONGODB_SEARCH_INDEX?.trim() || "techto-search";
 }
 
 export function getMongoVectorIndex(): string {
   assertServerOnly("MongoDB env");
-  return process.env.MONGODB_VECTOR_INDEX?.trim() || "twinto-memory-vector";
+  return process.env.MONGODB_VECTOR_INDEX?.trim() || "techto-memory-vector";
 }
 
 /** True when a URI is present. Does not assert server-only (safe for gated no-ops). */

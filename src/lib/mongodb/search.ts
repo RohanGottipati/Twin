@@ -15,7 +15,7 @@ export interface SearchHit {
  * back to case-insensitive regex across key demo collections so local/demo
  * paths keep working without Atlas Search setup.
  */
-export async function searchTwinTO(query: string, limit = 10): Promise<{
+export async function searchTechTO(query: string, limit = 10): Promise<{
   mode: "atlas-search" | "regex-fallback";
   hits: SearchHit[];
 }> {

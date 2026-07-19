@@ -10,7 +10,7 @@ reading for real public opinion (AGENTS.md section 2).
 A per-cohort language-model persona, conditioned on a cohort's demographics
 and the deterministic before/after effect features a candidate intervention
 produces, asked to write a legible opinion and produce an acceptance reading
-derived from that opinion (AGENTS.md section 3.1). The TwinTO product path uses
+derived from that opinion (AGENTS.md section 3.1). The TechTO product path uses
 the live FreeSolo provider; `provider` in every result records the source.
 
 ## What it is not

@@ -15,6 +15,17 @@ const config: Config = {
         hairline: "rgba(226, 236, 228, 0.09)",
         oppose: "#db6055",
         support: "#38ad6b",
+        // TechTO transit demo surface (TTC-adjacent charcoal + signal colors).
+        techto: {
+          ink: "#0b0d10",
+          text: "#e8edf2",
+          muted: "#8b95a1",
+          accent: "#5b9fd4",
+          red: "#c8102e",
+          amber: "#e0a106",
+          teal: "#2bb673",
+          error: "#e35d6a",
+        },
       },
       fontFamily: {
         ui: ["var(--font-ui)", "system-ui", "sans-serif"],

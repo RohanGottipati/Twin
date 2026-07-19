@@ -1,11 +1,11 @@
 import { randomUUID } from "node:crypto";
 
-import type { TwinTORunEvent, TwinTORunResult } from "@/lib/backboard/orchestrator";
+import type { TechTORunEvent, TechTORunResult } from "@/lib/backboard/orchestrator";
 import { getMongoDb } from "@/lib/mongodb/client";
 import { COLLECTIONS, DEMO_PROVENANCE } from "@/lib/mongodb/collections";
 import { isMongoConfigured } from "@/lib/mongodb/env";
 
-function summarizeEvent(event: TwinTORunEvent): Record<string, unknown> {
+function summarizeEvent(event: TechTORunEvent): Record<string, unknown> {
   switch (event.type) {
     case "run.started":
       return { scenarioId: event.scenarioId };
@@ -51,7 +51,7 @@ function summarizeEvent(event: TwinTORunEvent): Record<string, unknown> {
 
 /** Append one planning SSE event and keep the run shell document in sync. */
 export async function persistPlanningRunEvent(input: {
-  event: TwinTORunEvent;
+  event: TechTORunEvent;
   sequence: number;
 }): Promise<void> {
   if (!isMongoConfigured()) return;
@@ -142,7 +142,7 @@ export async function persistPlanningRunEvent(input: {
 export async function finalizePlanningRun(input: {
   runId: string;
   status: "completed" | "failed";
-  result?: TwinTORunResult;
+  result?: TechTORunResult;
   error?: string;
 }): Promise<void> {
   if (!isMongoConfigured()) return;

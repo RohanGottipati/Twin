@@ -35,7 +35,7 @@ async function ensureIndexes(db: Db, name: string, indexes: IndexDescription[]):
 }
 
 /**
- * Creates TwinTO collections and core indexes. Idempotent.
+ * Creates TechTO collections and core indexes. Idempotent.
  * Atlas Search / Vector Search indexes are configured in Atlas UI using
  * MONGODB_SEARCH_INDEX / MONGODB_VECTOR_INDEX env names; they are not
  * created here (require Atlas admin APIs).

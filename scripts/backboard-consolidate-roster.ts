@@ -1,6 +1,6 @@
 /**
  * Dry-run (default) or confirmed cleanup of obsolete Backboard assistants
- * after the TwinTO roster consolidated from 54 specialists to 16.
+ * after the TechTO roster consolidated from 54 specialists to 16.
  *
  * Usage:
  *   npm run backboard:consolidate-roster
@@ -34,13 +34,13 @@ function loadDotEnv(repoRoot: string): void {
 const repoRoot = path.resolve(__dirname, "..");
 loadDotEnv(repoRoot);
 
-type Classification = "KEEP" | "CREATE" | "UPDATE" | "REMOVE_OLD_TWINTO" | "REMOVE_GRIDTWIN" | "UNKNOWN";
+type Classification = "KEEP" | "CREATE" | "UPDATE" | "REMOVE_OLD_TECHTO" | "REMOVE_GRIDTWIN" | "UNKNOWN";
 
 async function main(): Promise<void> {
   const confirm = process.argv.includes("--confirm");
   const { getBackboardBaseUrl } = await import("@/lib/backboard/env");
   const { getBackboardAdapter } = await import("@/lib/backboard/adapter");
-  const { ASSISTANT_ROSTER, TWINTO_ASSISTANT_KEYS } = await import("@/lib/backboard/assistants");
+  const { ASSISTANT_ROSTER, TECHTO_ASSISTANT_KEYS } = await import("@/lib/backboard/assistants");
   const { getAssistantManifest } = await import("@/lib/backboard/assistant-manifest");
   const { MANIFEST_ROSTER_VERSION, buildAssistantManifestFile } = await import(
     "@/lib/backboard/manifest-schema"
@@ -49,7 +49,7 @@ async function main(): Promise<void> {
   console.log(`Backboard mode: LIVE`);
   console.log(`Base URL: ${getBackboardBaseUrl()}`);
   console.log(`Mode: ${confirm ? "CONFIRM DELETE" : "DRY RUN"}`);
-  console.log(`Target roster: ${MANIFEST_ROSTER_VERSION} (${TWINTO_ASSISTANT_KEYS.length} assistants)`);
+  console.log(`Target roster: ${MANIFEST_ROSTER_VERSION} (${TECHTO_ASSISTANT_KEYS.length} assistants)`);
   console.log("");
 
   const adapter = getBackboardAdapter();
@@ -61,13 +61,13 @@ async function main(): Promise<void> {
     let classification: Classification = "UNKNOWN";
     if (keepNames.has(assistant.name)) classification = "UPDATE";
     else if (assistant.name.startsWith("GridTwin")) classification = "REMOVE_GRIDTWIN";
-    else if (assistant.name.startsWith("TwinTO —") || assistant.name.startsWith("TwinTO -")) {
-      classification = "REMOVE_OLD_TWINTO";
+    else if (assistant.name.startsWith("TechTO —") || assistant.name.startsWith("TechTO -")) {
+      classification = "REMOVE_OLD_TECHTO";
     }
     rows.push({ name: assistant.name, id: assistant.assistantId, classification });
   }
 
-  for (const key of TWINTO_ASSISTANT_KEYS) {
+  for (const key of TECHTO_ASSISTANT_KEYS) {
     const name = ASSISTANT_ROSTER[key].name;
     if (!existing.some((assistant) => assistant.name === name)) {
       rows.push({ name, id: "(missing)", classification: "CREATE" });
@@ -79,7 +79,7 @@ async function main(): Promise<void> {
     "KEEP",
     "CREATE",
     "UPDATE",
-    "REMOVE_OLD_TWINTO",
+    "REMOVE_OLD_TECHTO",
     "REMOVE_GRIDTWIN",
     "UNKNOWN",
   ] as Classification[]) {
@@ -125,7 +125,7 @@ async function main(): Promise<void> {
     throw new Error(`Cannot confirm cleanup while ${missing.length} new assistant(s) are missing. Run bootstrap first.`);
   }
 
-  const toDelete = [...byClass("REMOVE_OLD_TWINTO"), ...byClass("REMOVE_GRIDTWIN")];
+  const toDelete = [...byClass("REMOVE_OLD_TECHTO"), ...byClass("REMOVE_GRIDTWIN")];
   console.log(`Deleting ${toDelete.length} obsolete assistant(s)...`);
   for (const row of toDelete) {
     if (row.id === "(missing)") continue;

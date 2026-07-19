@@ -1,4 +1,4 @@
-"""GRPO reward sketch for CitizenReactionLM (docs/twinto-implementation.md §10.6)."""
+"""GRPO reward sketch for CitizenReactionLM (docs/techto-implementation.md §10.6)."""
 
 from __future__ import annotations
 

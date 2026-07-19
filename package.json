@@ -1,5 +1,5 @@
 {
-  "name": "torontwin-dashboard",
+  "name": "techto-dashboard",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -20,8 +20,7 @@
     "mongo:status": "tsx scripts/mongo-status.ts",
     "mongo:bootstrap": "tsx scripts/mongo-bootstrap.ts",
     "mongo:ingest": "tsx scripts/mongo-ingest.ts",
-    "test:backboard": "vitest run tests/backboard",
-    "test:e2e:twinto": "playwright test e2e/twinto.spec.ts"
+    "test:backboard": "vitest run tests/backboard"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.101.2",

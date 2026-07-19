@@ -10,7 +10,7 @@ export const DashboardClient = dynamic(
     loading: () => (
       <div className="flex h-dvh w-screen items-center justify-center bg-ink">
         <span className="font-ui text-[13px] font-semibold uppercase tracking-[0.3em] text-ink-bright">
-          ToronTwin
+          TechTO
         </span>
       </div>
     ),

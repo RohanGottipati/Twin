@@ -15,7 +15,6 @@ import type {
   NeighbourhoodCollection,
   Persona,
   RouteCollection,
-  StreetCollection,
 } from "@/lib/sim/types";
 import { CANNED_CITY_ASKS } from "@/lib/planner/canned";
 
@@ -23,8 +22,25 @@ interface CityData {
   neighbourhoods: NeighbourhoodCollection;
   routes: RouteCollection;
   busRoutes: RouteCollection;
-  streets: StreetCollection;
   personas: Persona[];
+}
+
+/**
+ * Loads real residents from `/api/personas` (backed by MongoDB's
+ * `resident_personas`). Falls back to fully-synthetic `buildPersonas()`
+ * only if the API is unreachable, so the map still renders during an
+ * outage -- this fallback path is not the intended steady state.
+ */
+async function loadPersonas(neighbourhoods: NeighbourhoodCollection): Promise<Persona[]> {
+  try {
+    const response = await fetch("/api/personas");
+    if (!response.ok) throw new Error("personas fetch failed");
+    const data = (await response.json()) as { personas: Persona[] };
+    if (data.personas?.length) return data.personas;
+    throw new Error("personas response empty");
+  } catch {
+    return buildPersonas(neighbourhoods);
+  }
 }
 
 export function Dashboard() {
@@ -38,27 +54,26 @@ export function Dashboard() {
   const dataRef = useRef<CityData | null>(null);
   const cityPlan = useCityPlanRun();
 
-  // Load the real geodata once, then synthesize the census-weighted population.
+  // Load the real geodata once, then load the real resident population.
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const [nbhdRes, routeRes, busRouteRes, streetRes] = await Promise.all([
+        const [nbhdRes, routeRes, busRouteRes] = await Promise.all([
           fetch("/data/neighbourhoods.geojson"),
           fetch("/data/ttc-routes.geojson"),
           fetch("/data/ttc-bus-routes.geojson"),
-          fetch("/data/streets.geojson"),
         ]);
-        if (!nbhdRes.ok || !routeRes.ok || !busRouteRes.ok || !streetRes.ok)
+        if (!nbhdRes.ok || !routeRes.ok || !busRouteRes.ok)
           throw new Error("geodata fetch failed");
         const neighbourhoods =
           (await nbhdRes.json()) as NeighbourhoodCollection;
         const routes = (await routeRes.json()) as RouteCollection;
         const busRoutes = (await busRouteRes.json()) as RouteCollection;
-        const streets = (await streetRes.json()) as StreetCollection;
         if (cancelled) return;
-        const personas = buildPersonas(neighbourhoods);
-        const city = { neighbourhoods, routes, busRoutes, streets, personas };
+        const personas = await loadPersonas(neighbourhoods);
+        if (cancelled) return;
+        const city = { neighbourhoods, routes, busRoutes, personas };
         dataRef.current = city;
         setData(city);
         useSimStore.getState().setPersonaCount(personas.length);
@@ -114,7 +129,6 @@ export function Dashboard() {
           neighbourhoods={data.neighbourhoods}
           routes={data.routes}
           busRoutes={data.busRoutes}
-          streets={data.streets}
           personas={data.personas}
           onReady={() => setMapReady(true)}
         />
@@ -179,7 +193,7 @@ export function Dashboard() {
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-ink">
           <div className="text-center">
             <div className="font-ui text-[13px] font-semibold uppercase tracking-[0.3em] text-ink-bright">
-              ToronTwin
+              TechTO
             </div>
             <div className="mt-2 font-mono text-[11px] text-muted">
               loading Toronto geodata…
@@ -208,10 +222,10 @@ function Wordmark() {
   return (
     <header className="pointer-events-auto flex items-baseline gap-2.5 border border-hairline bg-panel px-4 py-2.5">
       <h1 className="font-ui text-[13px] font-bold uppercase tracking-[0.26em] text-ink-bright">
-        ToronTwin
+        TechTO
       </h1>
       <span className="font-mono text-[9.5px] uppercase tracking-wider text-muted">
-        Toronto · Backboard planning dept · synthetic citizens
+        Toronto · Backboard planning dept · real residents
       </span>
     </header>
   );

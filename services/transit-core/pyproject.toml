@@ -1,7 +1,7 @@
 [project]
-name = "twinto-transit-core"
+name = "techto-transit-core"
 version = "0.1.0"
-description = "TwinTO FastAPI transit-core stub (health, network, cohorts, optimization hooks)"
+description = "TechTO FastAPI transit-core stub (health, network, cohorts, optimization hooks)"
 requires-python = ">=3.12"
 dependencies = [
   "fastapi>=0.115,<1",
@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [project.scripts]
-twinto-transit-core = "app.main:run"
+techto-transit-core = "app.main:run"
 
 [build-system]
 requires = ["setuptools>=68"]

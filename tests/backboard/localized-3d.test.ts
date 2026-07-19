@@ -9,7 +9,7 @@ import {
   localizedBuildingFilter,
   localizedBuildingLayer,
 } from "@/lib/map/localized-3d";
-import { parseMapActions, type MapAction } from "@/lib/twinto/map-actions";
+import { parseMapActions, type MapAction } from "@/lib/techto/map-actions";
 
 function actions(input: unknown[]): MapAction[] {
   const parsed = parseMapActions(input);
@@ -136,7 +136,7 @@ describe("localized agent 3D focus", () => {
   it("returns an impossible filter without a focus or matching geometry", () => {
     const hidden = [
       "==",
-      ["get", "__torontwin_never_3d__"],
+      ["get", "__techto_never_3d__"],
       true,
     ];
     expect(localizedBuildingFilter(null, neighbourhoods)).toEqual(hidden);

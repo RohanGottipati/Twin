@@ -6,10 +6,10 @@ import {
   deleteRun,
   loadRunHistory,
   upsertRun,
-  type StoredTwinTORun,
-} from "@/lib/twinto/run-history";
+  type StoredTechTORun,
+} from "@/lib/techto/run-history";
 
-function makeRun(overrides: Partial<StoredTwinTORun> = {}): StoredTwinTORun {
+function makeRun(overrides: Partial<StoredTechTORun> = {}): StoredTechTORun {
   return {
     runId: "run-1",
     scenarioId: "departure-406-412",
@@ -89,7 +89,7 @@ describe("run-history (jsdom localStorage)", () => {
     expect(loadRunHistory()).toEqual([]);
   });
 
-  it("filters out entries that do not look like a StoredTwinTORun", () => {
+  it("filters out entries that do not look like a StoredTechTORun", () => {
     window.localStorage.setItem(RUN_HISTORY_STORAGE_KEY, JSON.stringify([{ notARun: true }, makeRun({ runId: "run-good" })]));
     const loaded = loadRunHistory();
     expect(loaded).toHaveLength(1);

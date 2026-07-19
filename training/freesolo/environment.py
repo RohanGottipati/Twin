@@ -1,4 +1,4 @@
-"""FreeSolo / Flash environment stub for TwinTO citizen-reaction GRPO."""
+"""FreeSolo / Flash environment stub for TechTO citizen-reaction GRPO."""
 
 from __future__ import annotations
 

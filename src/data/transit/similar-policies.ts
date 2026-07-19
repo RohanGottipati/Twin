@@ -1,6 +1,6 @@
 /**
  * Synthetic past-intervention records for the find_similar_interventions
- * tool (docs/twinto-implementation.md section 13.6). These are illustrative
+ * tool (docs/techto-implementation.md section 13.6). These are illustrative
  * precedents written for this demo, not a record of real TTC service
  * changes or a public consultation archive; see AGENTS.md section 2 on
  * never presenting simulated content as real Toronto history.

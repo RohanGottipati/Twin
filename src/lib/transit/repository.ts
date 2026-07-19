@@ -36,8 +36,8 @@ import { simulateTransit, TRANSFER_DEMAND_PER_ROUTE } from "@/lib/transit/simula
 import type { ArrivalPoint, DepartureLoad, TransitScenario, TransitStressOverlay } from "@/lib/transit/schemas";
 
 /**
- * Read-side data access for the TwinTO transit domain (backs the
- * get_* Backboard tools in docs/twinto-implementation.md section 13.6).
+ * Read-side data access for the TechTO transit domain (backs the
+ * get_* Backboard tools in docs/techto-implementation.md section 13.6).
  * Implementations: `FixtureTransitRepository` (local TS modules) and
  * `MongoTransitRepository` (Atlas-backed cache). Both serve synthetic demo
  * data with provenance; neither is a live TTC feed.
@@ -410,7 +410,7 @@ let cachedRepository: TransitRepository | null = null;
 let warmPromise: Promise<TransitRepository> | null = null;
 
 /**
- * Resolves the active repository from `TWINTO_REPOSITORY_PROVIDER`
+ * Resolves the active repository from `TECHTO_REPOSITORY_PROVIDER`
  * (`fixture` | `mongo`). Unknown values throw rather than silently falling
  * back, so a misconfigured live deploy fails loudly instead of quietly
  * serving TypeScript modules as if they were Atlas state.
@@ -420,7 +420,7 @@ export async function getTransitRepository(): Promise<TransitRepository> {
   if (warmPromise) return warmPromise;
 
   warmPromise = (async () => {
-    const provider = process.env.TWINTO_REPOSITORY_PROVIDER?.trim().toLowerCase() || "fixture";
+    const provider = process.env.TECHTO_REPOSITORY_PROVIDER?.trim().toLowerCase() || "fixture";
 
     if (provider === "fixture") {
       cachedRepository = new FixtureTransitRepository();
@@ -436,7 +436,7 @@ export async function getTransitRepository(): Promise<TransitRepository> {
     }
 
     throw new TransitRepositoryConfigError(
-      `Unknown TWINTO_REPOSITORY_PROVIDER "${provider}". Supported: "fixture", "mongo".`,
+      `Unknown TECHTO_REPOSITORY_PROVIDER "${provider}". Supported: "fixture", "mongo".`,
     );
   })().finally(() => {
     warmPromise = null;

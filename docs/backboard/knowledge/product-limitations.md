@@ -5,15 +5,15 @@ Planning Orchestrator.** Restates AGENTS.md section 2's non-negotiable
 framing so it is available as a retrievable document, not only a build-time
 rule.
 
-## What TwinTO predicts
+## What TechTO predicts
 
-TwinTO predicts simulated day-one **acceptance**: how a modeled population of
+TechTO predicts simulated day-one **acceptance**: how a modeled population of
 personas reacts to a policy change on the day it takes effect, conditioned on
 deterministic, physically-computed effect features. Every output is a
 distribution over a population with uncertainty attached, never a single
 confident number and never a claim about one specific real person.
 
-## What TwinTO does not predict
+## What TechTO does not predict
 
 - **Not** ridership, revenue, or long-run demand forecasts.
 - **Not** land-value shifts, induced demand, or traffic re-routing equilibria.

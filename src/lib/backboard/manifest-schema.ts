@@ -1,5 +1,5 @@
-import type { TwinTOAssistantKey } from "@/lib/backboard/assistants";
-import { TWINTO_ASSISTANT_KEYS } from "@/lib/backboard/assistants";
+import type { TechTOAssistantKey } from "@/lib/backboard/assistants";
+import { TECHTO_ASSISTANT_KEYS } from "@/lib/backboard/assistants";
 import type { ResolvedAssistant } from "@/lib/backboard/assistant-manifest";
 
 /**
@@ -8,12 +8,12 @@ import type { ResolvedAssistant } from "@/lib/backboard/assistant-manifest";
  */
 export const MANIFEST_SCHEMA_VERSION = 4;
 
-export const MANIFEST_PRODUCT = "torontwin";
+export const MANIFEST_PRODUCT = "techto";
 
 export const MANIFEST_ROSTER_VERSION = "principled-11";
 
 export interface AssistantManifestEntry {
-  role: TwinTOAssistantKey;
+  role: TechTOAssistantKey;
   name: string;
   assistantId: string;
   toolCount: number;
@@ -31,14 +31,14 @@ export interface AssistantManifestFile {
   rosterVersion: typeof MANIFEST_ROSTER_VERSION;
   createdAt: string;
   assistantCount: number;
-  assistants: Record<TwinTOAssistantKey, AssistantManifestEntry>;
+  assistants: Record<TechTOAssistantKey, AssistantManifestEntry>;
 }
 
 export function buildAssistantManifestFile(
-  manifest: Map<TwinTOAssistantKey, ResolvedAssistant> | ResolvedAssistant[],
+  manifest: Map<TechTOAssistantKey, ResolvedAssistant> | ResolvedAssistant[],
 ): AssistantManifestFile {
   const resolved = manifest instanceof Map ? Array.from(manifest.values()) : manifest;
-  const assistants = {} as Record<TwinTOAssistantKey, AssistantManifestEntry>;
+  const assistants = {} as Record<TechTOAssistantKey, AssistantManifestEntry>;
 
   for (const entry of resolved) {
     const key = entry.role.key;
@@ -56,7 +56,7 @@ export function buildAssistantManifestFile(
     };
   }
 
-  for (const key of TWINTO_ASSISTANT_KEYS) {
+  for (const key of TECHTO_ASSISTANT_KEYS) {
     if (!assistants[key]) {
       throw new Error(`Manifest is missing required assistant key "${key}".`);
     }
@@ -67,7 +67,7 @@ export function buildAssistantManifestFile(
     product: MANIFEST_PRODUCT,
     rosterVersion: MANIFEST_ROSTER_VERSION,
     createdAt: new Date().toISOString(),
-    assistantCount: TWINTO_ASSISTANT_KEYS.length,
+    assistantCount: TECHTO_ASSISTANT_KEYS.length,
     assistants,
   };
 }

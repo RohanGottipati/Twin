@@ -9,7 +9,7 @@ import type {
 
 /**
  * Adversarial stress testing for a candidate intervention
- * (docs/twinto-implementation.md section 2.5 and section 13, "Adversarial
+ * (docs/techto-implementation.md section 2.5 and section 13, "Adversarial
  * Stress-Test Agent"). Runs the same intervention twice, once under normal
  * conditions and once with a combined event overlay (concert surge plus
  * entrance closure plus delays) layered on top, and flags any candidate

@@ -267,8 +267,20 @@ function mapToolCall(wire: { id: string; function: { name: string; arguments: st
   };
 }
 
+/** First non-empty string among candidates (empty string is not usable content). */
+export function firstNonEmptyText(
+  ...candidates: Array<string | null | undefined>
+): string | null {
+  for (const candidate of candidates) {
+    if (typeof candidate === "string" && candidate.trim().length > 0) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
 /** Accumulates SSE chunks from /threads/messages or /threads/tool-outputs into one ChatRunResult. */
-class StreamAccumulator {
+export class StreamAccumulator {
   private content = "";
   private reasoning = "";
   private toolCalls: ChatToolCall[] = [];
@@ -302,9 +314,26 @@ class StreamAccumulator {
         return false;
       }
       case "content_streaming": {
-        const delta = (event as { content?: string }).content ?? "";
-        this.content += delta;
-        onEvent?.({ type: "content_delta", content: delta });
+        const wire = event as {
+          content?: string;
+          accumulated_content?: string;
+        };
+        // Prefer snapshot when present: some providers send full text in
+        // accumulated_content and leave content empty or as a tiny delta.
+        const snapshot = firstNonEmptyText(wire.accumulated_content);
+        if (snapshot) {
+          const delta = snapshot.startsWith(this.content)
+            ? snapshot.slice(this.content.length)
+            : (firstNonEmptyText(wire.content) ?? snapshot);
+          this.content = snapshot;
+          if (delta) onEvent?.({ type: "content_delta", content: delta });
+        } else {
+          const delta = wire.content ?? "";
+          if (delta) {
+            this.content += delta;
+            onEvent?.({ type: "content_delta", content: delta });
+          }
+        }
         return false;
       }
       case "reasoning_streaming": {
@@ -330,9 +359,10 @@ class StreamAccumulator {
       case "run_ended": {
         const wire = event as Extract<BackboardSseEventWire, { type: "run_ended" }>;
         this.status = mapRunStatus(wire.status);
-        if (wire.content ?? wire.final_content) {
-          this.content = (wire.content ?? wire.final_content) as string;
-        }
+        // Prefer final_content; never let empty-string `content` hide it
+        // (`"" ?? final` is "" because ?? only skips null/undefined).
+        const ended = firstNonEmptyText(wire.final_content, wire.content);
+        if (ended) this.content = ended;
         if (wire.reasoning) this.reasoning = wire.reasoning;
         this.modelProvider = wire.model_provider ?? this.modelProvider;
         this.modelName = wire.model_name ?? this.modelName;

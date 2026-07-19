@@ -4,10 +4,10 @@ import type {
   LayerSpecification,
 } from "maplibre-gl";
 
-import type { MapAction } from "@/lib/twinto/map-actions";
+import type { MapAction } from "@/lib/techto/map-actions";
 
 export const LOCALIZED_BUILDINGS_3D_LAYER =
-  "torontwin-localized-buildings-3d";
+  "techto-localized-buildings-3d";
 export const LOCALIZED_3D_PITCH = 58;
 export const LOCALIZED_3D_BEARING = -35;
 export const LOCALIZED_3D_MIN_ZOOM = 12.75;
@@ -223,7 +223,7 @@ export function deriveAgent3DFocus(
 
 const NO_BUILDINGS_FILTER = [
   "==",
-  ["get", "__torontwin_never_3d__"],
+  ["get", "__techto_never_3d__"],
   true,
 ] as FilterSpecification;
 

@@ -1,10 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-test.describe("ToronTwin dashboard", () => {
+test.describe("TechTO dashboard", () => {
   test("loads the map and core panels", async ({ page }) => {
     await page.goto("/");
     await expect(
-      page.getByRole("heading", { name: "ToronTwin" })
+      page.getByRole("heading", { name: "TechTO" })
     ).toBeVisible();
     // Map layers appear once geodata is loaded. Scenario controls, the map
     // legend, and the artificial idle caret are intentionally absent.

@@ -3,7 +3,7 @@
 Status: **synthetic fixture, demo scope only.** Station names, route names, and
 approximate downtown positions are drawn from real TTC geography for narrative
 plausibility. Every operational figure below (capacity, headway, entrance
-flags) is a synthetic assumption chosen for the TwinTO demo, not a live GTFS
+flags) is a synthetic assumption chosen for the TechTO demo, not a live GTFS
 feed or a measured TTC capacity table.
 
 ## Scope
@@ -42,4 +42,4 @@ count.
 This is not a live network state, not a full-city network, and not a
 substitute for TTC's actual service standards. Use it only to interpret
 `get_network_snapshot`, `get_route_schedule`, and `get_vehicle_capacity`
-results inside the TwinTO demo.
+results inside the TechTO demo.

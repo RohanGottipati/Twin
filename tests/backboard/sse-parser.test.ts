@@ -1,9 +1,9 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { createSseResponse, createSseStream, encodeSseEvent, toTwinTORunEventEnvelope } from "@/lib/backboard/sse";
+import { createSseResponse, createSseStream, encodeSseEvent, toTechTORunEventEnvelope } from "@/lib/backboard/sse";
 import { createRunStreamClient, parseSseChunk } from "@/lib/backboard/stream-parser";
-import type { TwinTORunEvent } from "@/lib/backboard/orchestrator";
-import { twinTORunEventEnvelopeSchema } from "@/lib/transit/schemas";
+import type { TechTORunEvent } from "@/lib/backboard/orchestrator";
+import { techTORunEventEnvelopeSchema } from "@/lib/transit/schemas";
 
 async function readAllText(stream: ReadableStream<Uint8Array>): Promise<string> {
   const reader = stream.getReader();
@@ -45,15 +45,15 @@ describe("createSseResponse", () => {
   });
 });
 
-describe("toTwinTORunEventEnvelope", () => {
-  it("hoists type and runId to the envelope and carries the full TwinTO event verbatim as payload", () => {
-    const event: TwinTORunEvent = {
+describe("toTechTORunEventEnvelope", () => {
+  it("hoists type and runId to the envelope and carries the full TechTO event verbatim as payload", () => {
+    const event: TechTORunEvent = {
       type: "simulation.completed",
       runId: "run-123",
       candidateId: "balanced-retime",
       summary: "meanWaitMinutes=3.20, deniedBoardings=0, valid=true",
     };
-    const envelope = toTwinTORunEventEnvelope(event, 3);
+    const envelope = toTechTORunEventEnvelope(event, 3);
     expect(envelope).toEqual({
       eventId: "run-123:3",
       runId: "run-123",
@@ -67,15 +67,15 @@ describe("toTwinTORunEventEnvelope", () => {
         summary: "meanWaitMinutes=3.20, deniedBoardings=0, valid=true",
       },
     });
-    expect(twinTORunEventEnvelopeSchema.safeParse(envelope).success).toBe(true);
+    expect(techTORunEventEnvelopeSchema.safeParse(envelope).success).toBe(true);
   });
 
-  it("never carries a reasoning or thinking field in the payload for any TwinTO event", () => {
-    const event: TwinTORunEvent = { type: "run.failed", runId: "run-456", error: "boom" };
-    const envelope = toTwinTORunEventEnvelope(event, 1);
+  it("never carries a reasoning or thinking field in the payload for any TechTO event", () => {
+    const event: TechTORunEvent = { type: "run.failed", runId: "run-456", error: "boom" };
+    const envelope = toTechTORunEventEnvelope(event, 1);
     expect(envelope.payload).not.toHaveProperty("reasoning");
     expect(envelope.payload).not.toHaveProperty("thinking");
-    expect(twinTORunEventEnvelopeSchema.safeParse(envelope).success).toBe(true);
+    expect(techTORunEventEnvelopeSchema.safeParse(envelope).success).toBe(true);
   });
 
   it("rejects an envelope whose payload smuggles a reasoning field, via the schema's own refinement", () => {
@@ -87,7 +87,7 @@ describe("toTwinTORunEventEnvelope", () => {
       timestamp: new Date().toISOString(),
       payload: { type: "agent.completed", runId: "r1", role: "safety", name: "Safety Agent", summary: "ok", reasoning: "leaked chain of thought" },
     };
-    expect(twinTORunEventEnvelopeSchema.safeParse(contaminated).success).toBe(false);
+    expect(techTORunEventEnvelopeSchema.safeParse(contaminated).success).toBe(false);
   });
 });
 

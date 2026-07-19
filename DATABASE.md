@@ -1,5 +1,5 @@
 # Database — MongoDB Atlas Setup Summary
-### HackThe6ix 2026 · TwinTO + Backhaul Exchange
+### HackThe6ix 2026 · TechTO + Backhaul Exchange
 
 ---
 
@@ -10,7 +10,7 @@ Two logical database workstreams were built and wired into the project, both run
 | Database | Purpose |
 |---|---|
 | `backhaul_exchange` | Freight/logistics layer — nodes, truck routes, live events, match proposals |
-| `twinto` (transit + census) | City simulation layer — TTC stops/routes, Toronto census neighbourhoods |
+| `techto` (transit + census) | City simulation layer — TTC stops/routes, Toronto census neighbourhoods |
 
 ---
 
@@ -63,7 +63,7 @@ Two logical database workstreams were built and wired into the project, both run
 
 ---
 
-## Part 2 — TwinTO (Transit + Census)
+## Part 2 — TechTO (Transit + Census)
 
 ### Collections
 
@@ -121,10 +121,10 @@ Embeddings are 1536-dimensional vectors generated via OpenAI `text-embedding-3-s
 cd db
 npm run run-all
 
-# 2. TwinTO — Transit
+# 2. TechTO — Transit
 npm run run-transit
 
-# 3. TwinTO — Census
+# 3. TechTO — Census
 npm run run-census
 
 # 4. Atlas Search + Vector Search indexes (create in Atlas UI or via script)

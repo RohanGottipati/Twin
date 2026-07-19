@@ -7,7 +7,7 @@ import {
   INTENT_BUNDLES,
   MODEL_PROFILES,
   PRINCIPLED_CITY_BUNDLE,
-  TWINTO_ASSISTANT_KEYS,
+  TECHTO_ASSISTANT_KEYS,
   getAssistantRole,
   listAssistantRoles,
   selectAssistantsForIntent,
@@ -30,19 +30,19 @@ const OLD_SPECIALIST_KEYS = [
 
 describe("ASSISTANT_ROSTER principled city department", () => {
   it("has exactly 11 unique principled role keys", () => {
-    expect(TWINTO_ASSISTANT_KEYS).toHaveLength(11);
+    expect(TECHTO_ASSISTANT_KEYS).toHaveLength(11);
     expect(Object.keys(ASSISTANT_ROSTER)).toHaveLength(11);
     expect(new Set(Object.keys(ASSISTANT_ROSTER)).size).toBe(11);
-    for (const key of TWINTO_ASSISTANT_KEYS) {
+    for (const key of TECHTO_ASSISTANT_KEYS) {
       expect(ASSISTANT_ROSTER[key]).toBeDefined();
     }
   });
 
-  it("has unique ToronTwin names and no GridTwin or battery roles", () => {
+  it("has unique TechTO names and no GridTwin or battery roles", () => {
     const names = Object.values(ASSISTANT_ROSTER).map((role) => role.name);
     expect(new Set(names).size).toBe(11);
     for (const role of Object.values(ASSISTANT_ROSTER)) {
-      expect(role.name).toMatch(/^ToronTwin —/);
+      expect(role.name).toMatch(/^TechTO —/);
       expect(role.name).not.toMatch(/gridtwin/i);
       expect(role.name).not.toMatch(/battery/i);
     }

@@ -2,7 +2,7 @@
 
 Writes to a NEW collection, `resident_personas` -- deliberately NOT the
 existing `citizen_cohorts` collection (src/lib/mongodb/collections.ts),
-which holds 11 hand-authored synthetic fixture cohorts for the TwinTO demo
+which holds 11 hand-authored synthetic fixture cohorts for the TechTO demo
 (src/data/transit/cohorts.ts, dataMode: "synthetic-fixture") at a coarse
 aggregate-cohort level with an incompatible schema. Overwriting that
 collection would break its existing consumers
@@ -37,7 +37,7 @@ COLLECTION_NAME = "resident_personas"
 
 def _load_mongo_config() -> tuple[str, str]:
     """Read the *second* MONGODB_URI/MONGODB_DATABASE pair in .env -- the
-    real TwinTO cluster (db name 'twinto'), not the stray first pair
+    real TechTO cluster (db name 'techto'), not the stray first pair
     (paired with MONGODB_DB/MONGODB_PASSWORD, an unrelated project's
     database, 'backhaul_exchange')."""
     lines = (REPO_ROOT / ".env").read_text().splitlines()
@@ -47,7 +47,7 @@ def _load_mongo_config() -> tuple[str, str]:
         raise RuntimeError(
             "Expected 2 MONGODB_URI entries and 1 MONGODB_DATABASE entry in "
             ".env (see AGENTS.md 6.1) -- .env has changed shape, re-check "
-            "which URI is the real TwinTO cluster before running this."
+            "which URI is the real TechTO cluster before running this."
         )
     uri = uri_lines[1].split("=", 1)[1]
     db_name = db_lines[0].split("=", 1)[1]

@@ -90,7 +90,7 @@ export class MongoTransitRepository implements TransitRepository {
 
     if (routes.length === 0 || stops.length === 0 || scenarioDocs.length === 0) {
       throw new Error(
-        "MongoDB TwinTO collections are empty. Run `npm run mongo:bootstrap` to create indexes and seed demo fixtures.",
+        "MongoDB TechTO collections are empty. Run `npm run mongo:bootstrap` to create indexes and seed demo fixtures.",
       );
     }
     if (cohortDocs.length === 0) {

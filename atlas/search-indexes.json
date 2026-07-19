@@ -1,9 +1,9 @@
 {
-  "database": "twinto",
+  "database": "techto",
   "indexes": [
     {
       "collectionName": "documents",
-      "name": "twinto-search",
+      "name": "techto-search",
       "type": "search",
       "definition": {
         "mappings": {
@@ -19,7 +19,7 @@
     },
     {
       "collectionName": "document_chunks",
-      "name": "twinto-memory-vector",
+      "name": "techto-memory-vector",
       "type": "vectorSearch",
       "definition": {
         "fields": [
@@ -39,7 +39,7 @@
   ],
   "notes": [
     "Create these in Atlas UI: Database → Search → Create Index, or via Atlas Admin API.",
-    "Core TwinTO search falls back to regex when Atlas Search is unavailable.",
+    "Core TechTO search falls back to regex when Atlas Search is unavailable.",
     "Vector index is reserved for FreeSolo / memory embeddings; not required for the fixture demo."
   ]
 }

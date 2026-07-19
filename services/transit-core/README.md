@@ -1,6 +1,6 @@
-# TwinTO transit-core (FastAPI stub)
+# TechTO transit-core (FastAPI stub)
 
-Minimal Phase-3+ service surface from the TwinTO spec:
+Minimal Phase-3+ service surface from the TechTO spec:
 
 - `GET /health`
 - `GET /ready`
@@ -18,4 +18,4 @@ pip install -e .
 uvicorn app.main:app --reload --port 8000
 ```
 
-Point `NEXT_PUBLIC_TRANSIT_API_BASE_URL` or `TWINTO_NEXT_BASE_URL` at the Next app (default `http://localhost:3000`).
+Point `NEXT_PUBLIC_TRANSIT_API_BASE_URL` or `TECHTO_NEXT_BASE_URL` at the Next app (default `http://localhost:3000`).

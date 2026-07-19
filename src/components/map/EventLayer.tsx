@@ -5,9 +5,9 @@ import type { Map as MapLibreMap } from "maplibre-gl";
 import { getConcertEvent, getServiceIncidents } from "@/data/transit/events";
 import { getStation } from "@/data/transit/network";
 
-const SOURCE_ID = "twinto-events";
-const LAYER_ID = "twinto-events-marker";
-const LABEL_LAYER_ID = "twinto-events-label";
+const SOURCE_ID = "techto-events";
+const LAYER_ID = "techto-events-marker";
+const LABEL_LAYER_ID = "techto-events-label";
 
 function eventsGeoJson(): GeoJSON.FeatureCollection<GeoJSON.Point> {
   const features: GeoJSON.Feature<GeoJSON.Point>[] = [];
@@ -39,7 +39,7 @@ function eventsGeoJson(): GeoJSON.FeatureCollection<GeoJSON.Point> {
 
 /**
  * Concert and service-incident markers used by the extenuating-circumstances
- * stress test (docs/twinto-implementation.md section 2.5). Every source here
+ * stress test (docs/techto-implementation.md section 2.5). Every source here
  * is the synthetic fixture bundle in `@/data/transit/events`, never a live
  * events feed or a real TTC alert.
  */

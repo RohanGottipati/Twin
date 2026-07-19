@@ -1,5 +1,5 @@
 /**
- * PPO stub for TwinTO numeric schedule tuning (§12.2–12.4).
+ * PPO stub for TechTO numeric schedule tuning (§12.2–12.4).
  * Not a trained policy: returns a heuristic action suggestion so the
  * Simulation and Optimization agent has a stable interface before a real
  * Gymnasium / Stable-Baselines3 loop is wired in services/transit-core.

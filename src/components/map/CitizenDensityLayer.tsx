@@ -5,9 +5,9 @@ import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import type { TransitCohortFixture } from "@/data/transit/cohorts";
 import { computeNeighbourhoodCentroids, type NeighbourhoodGeoJson } from "@/lib/geo/centroid";
 
-const SOURCE_ID = "twinto-citizen-density";
-const LAYER_ID = "twinto-citizen-density-circle";
-const LABEL_LAYER_ID = "twinto-citizen-density-label";
+const SOURCE_ID = "techto-citizen-density";
+const LAYER_ID = "techto-citizen-density-circle";
+const LABEL_LAYER_ID = "techto-citizen-density-label";
 
 function densityGeoJson(
   cohorts: TransitCohortFixture[],

@@ -1,4 +1,4 @@
-# PPO / bounded optimization (TwinTO)
+# PPO / bounded optimization (TechTO)
 
 ## Implemented
 

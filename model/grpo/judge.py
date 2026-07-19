@@ -11,16 +11,16 @@ from concurrent.futures import ThreadPoolExecutor
 from openai import APIStatusError, OpenAI, RateLimitError
 
 JUDGE_BASE_URL = os.environ.get(
-    "TORONTWIN_JUDGE_BASE_URL",
+    "TECHTO_JUDGE_BASE_URL",
     "https://openrouter.ai/api/v1",
 )
 JUDGE_MODEL = os.environ.get(
-    "TORONTWIN_JUDGE_MODEL",
+    "TECHTO_JUDGE_MODEL",
     "qwen/qwen-2.5-7b-instruct",
 )
 # default wide: one GRPO step is 128 comps; keep many in flight
-JUDGE_MAX_WORKERS = int(os.environ.get("TORONTWIN_JUDGE_WORKERS", "32"))
-JUDGE_MAX_RETRIES = int(os.environ.get("TORONTWIN_JUDGE_RETRIES", "6"))
+JUDGE_MAX_WORKERS = int(os.environ.get("TECHTO_JUDGE_WORKERS", "32"))
+JUDGE_MAX_RETRIES = int(os.environ.get("TECHTO_JUDGE_RETRIES", "6"))
 _CHOICE_RE = re.compile(r"\b(A|B|C|D|none)\b", re.IGNORECASE)
 
 _PROVIDER = {
@@ -35,7 +35,7 @@ _pool: ThreadPoolExecutor | None = None
 def _client_get() -> OpenAI:
     global _client
     if _client is None:
-        key = os.environ.get("OPENROUTER_API_KEY") or os.environ.get("TORONTWIN_LLM_API_KEY")
+        key = os.environ.get("OPENROUTER_API_KEY") or os.environ.get("TECHTO_LLM_API_KEY")
         if not key:
             raise RuntimeError("OPENROUTER_API_KEY missing for reward judge")
         _client = OpenAI(base_url=JUDGE_BASE_URL, api_key=key, timeout=60.0, max_retries=0)

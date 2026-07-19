@@ -157,7 +157,7 @@ export function buildChatReportHtml(input: ChatReportInput): string {
         message.role === "user"
           ? "Question"
           : message.role === "assistant"
-            ? "ToronTwin response"
+            ? "TechTO response"
             : "Context";
       const sources = message.citedEvidence?.filter(Boolean) ?? [];
       const sourceMarkup = sources.length
@@ -221,14 +221,14 @@ export function buildChatReportHtml(input: ChatReportInput): string {
 <body>
   <main>
     <header>
-      <div class="eyebrow">ToronTwin planning report</div>
+      <div class="eyebrow">TechTO planning report</div>
       <h1>${escapeHtml(input.title)}</h1>
       ${input.subtitle ? `<div class="subtitle">${escapeHtml(input.subtitle)}</div>` : ""}
       <div class="meta">Toronto, Ontario · Exported ${escapeHtml(exportedAt.toLocaleString("en-CA", { timeZone: "America/Toronto", timeZoneName: "short" }))}</div>
     </header>
     ${content || "<p>No conversation content was available to export.</p>"}
     <aside class="notice"><strong>Decision-support limitation:</strong> Simulated day-one acceptance is not public consultation. Potential accessibility, ridership, cost, carbon, economic, and ROI effects are not consequence forecasts. Validate assumptions, lifecycle costs, monetized benefits, uncertainty ranges, and local evidence before making a decision.</aside>
-    <footer>Generated from ToronTwin. Geographic scope: City of Toronto.</footer>
+    <footer>Generated from TechTO. Geographic scope: City of Toronto.</footer>
   </main>
 </body>
 </html>`;

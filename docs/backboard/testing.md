@@ -1,4 +1,4 @@
-# ToronTwin testing
+# TechTO testing
 
 ## Unit and static checks
 
@@ -21,10 +21,10 @@ They do not silently enable a product mock mode and do not call live Backboard.
 
 ```bash
 npm run test:e2e
-npm run test:e2e:twinto
+npm run test:e2e:techto
 ```
 
-Playwright checks the open-city map, chat behavior, map actions, TwinTO shell,
+Playwright checks the open-city map, chat behavior, map actions, TechTO shell,
 scenario playback, and visible provider labels. Network routes are stubbed only
 where the test is validating browser behavior instead of live model quality.
 The `.next-playwright` build directory is isolated from a running development

@@ -37,10 +37,10 @@ export class OrchestrationError extends Error {}
 
 export type EvidenceSource = "agent" | "local_fallback";
 
-/** The TwinTO agent-role key. Identical to AssistantRoleKey; kept as a named alias so orchestration code reads in domain terms. */
-export type TwinTOAgentRole = AssistantRoleKey;
+/** The TechTO agent-role key. Identical to AssistantRoleKey; kept as a named alias so orchestration code reads in domain terms. */
+export type TechTOAgentRole = AssistantRoleKey;
 
-export interface TwinTOIntervention {
+export interface TechTOIntervention {
   id: string;
   title: string;
   description: string;
@@ -48,14 +48,14 @@ export interface TwinTOIntervention {
 }
 
 /**
- * Frontend-safe lifecycle stream for one TwinTO planner-agent run: problem
+ * Frontend-safe lifecycle stream for one TechTO planner-agent run: problem
  * framing -> baseline -> parallel context gathering -> policy generation ->
  * citizen reaction -> simulation -> parallel impact review -> stress test ->
  * debate -> final judgment, mirrored by generic agent/tool events. Coarse by
  * design (AGENTS.md "keep the scored thing legible"): never carries raw
  * reasoning/thinking content, only lifecycle markers and domain evidence.
  */
-export type TwinTORunEvent =
+export type TechTORunEvent =
   | { type: "run.started"; runId: string; scenarioId: string }
   | { type: "problem.started"; runId: string }
   | { type: "problem.completed"; runId: string; summary: string }
@@ -82,13 +82,13 @@ export type TwinTORunEvent =
       overrideReason?: string;
     }
   | { type: "operator.ready"; runId: string; question: string }
-  | { type: "run.completed"; runId: string; result: TwinTORunResult }
+  | { type: "run.completed"; runId: string; result: TechTORunResult }
   | { type: "run.failed"; runId: string; error: string }
-  | { type: "agent.started"; runId: string; role: TwinTOAgentRole; name: string }
-  | { type: "agent.completed"; runId: string; role: TwinTOAgentRole; name: string; summary: string }
-  | { type: "agent.failed"; runId: string; role: TwinTOAgentRole; name: string; error: string }
-  | { type: "tool.requested"; runId: string; role: TwinTOAgentRole; toolName: string }
-  | { type: "tool.completed"; runId: string; role: TwinTOAgentRole; toolName: string; ok: boolean };
+  | { type: "agent.started"; runId: string; role: TechTOAgentRole; name: string }
+  | { type: "agent.completed"; runId: string; role: TechTOAgentRole; name: string; summary: string }
+  | { type: "agent.failed"; runId: string; role: TechTOAgentRole; name: string; error: string }
+  | { type: "tool.requested"; runId: string; role: TechTOAgentRole; toolName: string }
+  | { type: "tool.completed"; runId: string; role: TechTOAgentRole; toolName: string; ok: boolean };
 
 export interface CandidateEvaluation {
   candidateId: string;
@@ -101,7 +101,7 @@ export interface CandidateEvaluation {
   citizenReactionsSource: EvidenceSource;
 }
 
-export interface TwinTORunResult {
+export interface TechTORunResult {
   runId: string;
   scenarioId: string;
   problemSummary: string;
@@ -120,14 +120,14 @@ export interface TwinTORunResult {
   judgeAssistantId: string;
   judgeThreadId: string;
   /** Every assistant role that actually took part in this run, in invocation order (deduplicated). */
-  participatingAgents: TwinTOAgentRole[];
+  participatingAgents: TechTOAgentRole[];
 }
 
 export interface RunOrchestrationInput {
   scenarioId: string;
   includeWebSearch?: boolean;
   adapter?: BackboardAdapter;
-  onEvent?: (event: TwinTORunEvent) => void;
+  onEvent?: (event: TechTORunEvent) => void;
 }
 
 function generateRunId(): string {
@@ -263,7 +263,7 @@ interface FindingAgentParams {
   role: AssistantRoleKey;
   runId: string;
   prompt: string;
-  emit: (event: TwinTORunEvent) => void;
+  emit: (event: TechTORunEvent) => void;
   maxRounds?: number;
   fallbackSummary: string;
 }
@@ -598,7 +598,7 @@ function applyFinalAuthority(params: {
 // Main entry point
 // ---------------------------------------------------------------------------
 
-export async function runTwinTOOrchestration(input: RunOrchestrationInput): Promise<TwinTORunResult> {
+export async function runTechTOOrchestration(input: RunOrchestrationInput): Promise<TechTORunResult> {
   const adapter = input.adapter ?? getBackboardAdapter();
   const emit = input.onEvent ?? (() => {});
   const runId = generateRunId();
@@ -1117,7 +1117,7 @@ Respond with ONLY JSON matching:
           : "Ask the TTC Operator Explanation Agent anything about this recommendation.",
     });
 
-    const result: TwinTORunResult = {
+    const result: TechTORunResult = {
       runId,
       scenarioId: input.scenarioId,
       problemSummary: problemOutcome.finding.summary,

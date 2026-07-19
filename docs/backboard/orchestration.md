@@ -1,4 +1,4 @@
-# ToronTwin orchestration
+# TechTO orchestration
 
 ## Open-city planning turn
 
@@ -24,9 +24,9 @@ one appropriate general specialist. The answer is grounded in the selected map
 context and recent conversation. It uses the same recommendation and ROI
 evidence rules without triggering a full department run for a simple question.
 
-## TwinTO staged run
+## TechTO staged run
 
-TwinTO retains a staged schedule and stress-test workflow for its labelled
+TechTO retains a staged schedule and stress-test workflow for its labelled
 synthetic flagship scenario. Its Backboard department proposes and critiques
 interventions, while deterministic simulation and hard constraints remain the
 operational numerical authority. Simulated reactions are never described as

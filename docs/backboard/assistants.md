@@ -1,6 +1,6 @@
-# ToronTwin assistants
+# TechTO assistants
 
-ToronTwin uses exactly 11 named Backboard roles under `rosterVersion:
+TechTO uses exactly 11 named Backboard roles under `rosterVersion:
 principled-11` and manifest schema version 4. The design keeps competence in
 general city tools and avoids one-use-case specialists.
 
@@ -25,7 +25,7 @@ The exact keys and prompts live in `src/lib/backboard/assistants.ts`.
 
 The open-city Planning Orchestrator can answer directly or invoke only the roles
 needed for the turn. Simple navigation uses a small bundle. A full intervention
-can use the principled city bundle. The TwinTO flagship scenario can use all 11
+can use the principled city bundle. The TechTO flagship scenario can use all 11
 roles, but no role is activated merely to make a run appear more elaborate.
 
 ROI does not require another assistant. The feasibility role already owns cost,

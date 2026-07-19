@@ -3,8 +3,8 @@ import { z } from "zod";
 import type { TransitCohortFixture } from "@/data/transit/cohorts";
 
 /**
- * Zod contracts for the TwinTO deterministic transit domain layer (see
- * docs/twinto-implementation.md sections 2 and 11). These schemas are the
+ * Zod contracts for the TechTO deterministic transit domain layer (see
+ * docs/techto-implementation.md sections 2 and 11). These schemas are the
  * boundary every Backboard-facing tool, simulator input, and simulator
  * result must satisfy: unknown fields are rejected with .strict() so a
  * model or caller cannot smuggle unvalidated fields through. Everything
@@ -339,13 +339,13 @@ export type FinalPolicyRecommendation = z.output<typeof finalPolicyRecommendatio
 // ---------------------------------------------------------------------------
 
 /**
- * Frontend-safe envelope every TwinTO transit run stream wraps its events
+ * Frontend-safe envelope every TechTO transit run stream wraps its events
  * in. payload is deliberately a plain record: the concrete shape varies per
- * event `type` and is validated further upstream (see src/lib/twinto/types.ts
- * TwinTORunEvent), but the envelope itself only needs to guarantee it never
+ * event `type` and is validated further upstream (see src/lib/techto/types.ts
+ * TechTORunEvent), but the envelope itself only needs to guarantee it never
  * carries a raw reasoning/thinking field across the wire.
  */
-export const twinTORunEventEnvelopeSchema = z
+export const techTORunEventEnvelopeSchema = z
   .object({
     eventId: z.string().min(1),
     runId: z.string().min(1),
@@ -363,7 +363,7 @@ export const twinTORunEventEnvelopeSchema = z
     },
   );
 
-export type TwinTORunEventEnvelope = z.output<typeof twinTORunEventEnvelopeSchema>;
+export type TechTORunEventEnvelope = z.output<typeof techTORunEventEnvelopeSchema>;
 
 // ---------------------------------------------------------------------------
 // Analyst findings (Backboard council evidence, transit-flavored)
@@ -384,7 +384,7 @@ export type TransitAnalystFinding = z.output<typeof transitAnalystFindingSchema>
 
 // ---------------------------------------------------------------------------
 // Cohort reaction summary (CitizenReactionLM output contract, see
-// docs/twinto-implementation.md section 10.3, and its population-level
+// docs/techto-implementation.md section 10.3, and its population-level
 // aggregate for the Backboard council)
 // ---------------------------------------------------------------------------
 
@@ -471,9 +471,9 @@ export const operatorExplanationSchema = z
 export type OperatorExplanation = z.output<typeof operatorExplanationSchema>;
 
 /**
- * The city-planner-facing brief for one completed TwinTO run. The metric
+ * The city-planner-facing brief for one completed TechTO run. The metric
  * fields and safetyResult are always populated server-side straight from
- * TwinTORunResult / TransitMetrics, never from a model's own arithmetic;
+ * TechTORunResult / TransitMetrics, never from a model's own arithmetic;
  * only mainRisk, majorAssumption, limitations, and summary are ever
  * generated text (see src/lib/backboard/executive.ts).
  */

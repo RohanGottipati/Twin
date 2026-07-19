@@ -1,7 +1,7 @@
 /**
  * Lists every Backboard assistant whose name starts with "GridTwin" (the
  * old battery-control product this repo has migrated away from; see
- * AGENTS.md and docs/twinto-implementation.md section 5.2) and, only when
+ * AGENTS.md and docs/techto-implementation.md section 5.2) and, only when
  * `--confirm` is passed, deletes them.
  *
  * Without `--confirm` this is a dry run: it only lists what it would

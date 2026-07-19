@@ -1,5 +1,5 @@
 /**
- * Offline-first TwinTO ingest pipeline into MongoDB Atlas.
+ * Offline-first TechTO ingest pipeline into MongoDB Atlas.
  * Usage: npm run mongo:ingest
  */
 import { existsSync, readFileSync } from "node:fs";
@@ -34,7 +34,7 @@ async function main(): Promise<void> {
   const { runOfflineIngestPipeline } = await import("@/lib/mongodb/ingest");
   const { closeMongoClient } = await import("@/lib/mongodb/client");
 
-  console.log("TwinTO / MongoDB ingest");
+  console.log("TechTO / MongoDB ingest");
   console.log("=======================");
   try {
     const result = await runOfflineIngestPipeline();

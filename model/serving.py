@@ -7,7 +7,7 @@ no working Flash credentials/reachability were confirmed. Rather than
 hardcode either, `get_client()` picks whichever OpenAI-compatible endpoint
 is actually configured and reachable, in this order:
 
-  1. `TORONTWIN_LLM_BASE_URL` env var, if set (explicit override -- points
+  1. `TECHTO_LLM_BASE_URL` env var, if set (explicit override -- points
      at either a local vLLM server or a Flash endpoint, caller's choice).
   2. A local vLLM server on `http://localhost:8000/v1` (the default this
      session used: `vllm serve Qwen/Qwen2.5-7B-Instruct`).
@@ -45,20 +45,20 @@ def _is_reachable(base_url: str, timeout: float = 3.0) -> bool:
 
 
 def resolve_base_url() -> str:
-    override = os.environ.get("TORONTWIN_LLM_BASE_URL")
+    override = os.environ.get("TECHTO_LLM_BASE_URL")
     if override:
         if not _is_reachable(override):
-            raise NoLLMBackendAvailable(f"TORONTWIN_LLM_BASE_URL={override!r} is set but not reachable")
+            raise NoLLMBackendAvailable(f"TECHTO_LLM_BASE_URL={override!r} is set but not reachable")
         return override
 
     if _is_reachable(DEFAULT_LOCAL_BASE_URL):
         return DEFAULT_LOCAL_BASE_URL
 
     raise NoLLMBackendAvailable(
-        "No LLM backend reachable: TORONTWIN_LLM_BASE_URL is unset and "
+        "No LLM backend reachable: TECHTO_LLM_BASE_URL is unset and "
         f"{DEFAULT_LOCAL_BASE_URL} (local vLLM) did not respond. "
         "Start a local server (`vllm serve <model>`) or set "
-        "TORONTWIN_LLM_BASE_URL to a reachable OpenAI-compatible endpoint."
+        "TECHTO_LLM_BASE_URL to a reachable OpenAI-compatible endpoint."
     )
 
 
@@ -69,8 +69,8 @@ def get_client(model: str | None = None):
     import openai
 
     base_url = resolve_base_url()
-    client = openai.OpenAI(base_url=base_url, api_key=os.environ.get("TORONTWIN_LLM_API_KEY", "not-needed"))
-    resolved_model = model or os.environ.get("TORONTWIN_LLM_MODEL", DEFAULT_MODEL)
+    client = openai.OpenAI(base_url=base_url, api_key=os.environ.get("TECHTO_LLM_API_KEY", "not-needed"))
+    resolved_model = model or os.environ.get("TECHTO_LLM_MODEL", DEFAULT_MODEL)
     return client, resolved_model
 
 

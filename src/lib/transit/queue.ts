@@ -2,7 +2,7 @@
  * Deterministic queue primitives for the transit simulator. Everything here
  * is plain arithmetic over integers, no I/O, so the same inputs always
  * produce the same outputs. A seeded PRNG is included for forward
- * compatibility with future stochastic extensions (docs/twinto-implementation.md
+ * compatibility with future stochastic extensions (docs/techto-implementation.md
  * section 11.4: "use deterministic random seeds"), but the current
  * simulator does not need randomness to reproduce the flagship scenario.
  */

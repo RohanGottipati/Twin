@@ -18,7 +18,7 @@ export class FreeSoloCitizenReactionProvider implements CitizenReactionProvider 
     return {
       baseUrl: baseUrl.replace(/\/$/, ""),
       apiKey,
-      model: process.env.FREESOLO_REACTION_MODEL_ALIAS?.trim() || "twinto-citizen-reaction",
+      model: process.env.FREESOLO_REACTION_MODEL_ALIAS?.trim() || "techto-citizen-reaction",
       timeoutMs: Number(process.env.FREESOLO_TIMEOUT_SECONDS ?? 45) * 1000,
     };
   }
@@ -53,7 +53,7 @@ export class FreeSoloCitizenReactionProvider implements CitizenReactionProvider 
           {
             role: "system",
             content:
-              "You are TwinTO CitizenReactionLM. Return ONLY JSON matching the TwinTO citizen reaction batch schema. Label all outputs as simulated. Never invent impossible journeys.",
+              "You are TechTO CitizenReactionLM. Return ONLY JSON matching the TechTO citizen reaction batch schema. Label all outputs as simulated. Never invent impossible journeys.",
           },
           {
             role: "user",

@@ -1,5 +1,5 @@
 /**
- * TwinTO MongoDB Atlas collection names (docs/twinto-implementation.md §14).
+ * TechTO MongoDB Atlas collection names (docs/techto-implementation.md §14).
  * `transit_scenarios` and `stress_overlays` are demo operational collections
  * required for the flagship schedule scenario; they are not live TTC feeds.
  */
@@ -17,6 +17,8 @@ export const COLLECTIONS = {
   places: "places",
   citizenCohorts: "citizen_cohorts",
   socialContexts: "social_contexts",
+  /** Real StatCan-census-grounded individual resident records (population/generate_and_store_personas.py). */
+  residentPersonas: "resident_personas",
   activityPlans: "activity_plans",
   journeyTemplates: "journey_templates",
   interventions: "interventions",
@@ -43,6 +45,8 @@ export const COLLECTIONS = {
   rawIngestEvents: "raw_ingest_events",
   streamDeadLetters: "stream_dead_letters",
   similarInterventions: "similar_interventions",
+  /** Cache of real per-persona opinion generations, keyed by (personaId, policyHash). */
+  opinionReactionsCache: "opinion_reactions_cache",
 } as const;
 
 export type CollectionName = (typeof COLLECTIONS)[keyof typeof COLLECTIONS];
@@ -61,9 +65,9 @@ export const TIME_SERIES_COLLECTIONS = {
 
 export const DEMO_PROVENANCE = {
   sourceType: "synthetic" as const,
-  sourceName: "TwinTO demo fixtures (src/data/transit)",
+  sourceName: "TechTO demo fixtures (src/data/transit)",
   sourceUrl: null as string | null,
   retrievedAt: null as string | null,
-  transformationVersion: "twinto-demo-1",
+  transformationVersion: "techto-demo-1",
   syntheticFields: ["*"],
 };

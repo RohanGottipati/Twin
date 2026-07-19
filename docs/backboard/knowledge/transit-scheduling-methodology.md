@@ -1,6 +1,6 @@
 # Transit scheduling methodology (synthetic fixture)
 
-Status: **synthetic fixture.** Describes how TwinTO's deterministic simulator
+Status: **synthetic fixture.** Describes how TechTO's deterministic simulator
 interprets schedule interventions, not a TTC operating procedure document.
 
 ## Intervention action types

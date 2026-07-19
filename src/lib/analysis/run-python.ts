@@ -2,7 +2,7 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 
-import type { AgentMapOverlay } from "@/lib/twinto/map-overlays";
+import type { AgentMapOverlay } from "@/lib/techto/map-overlays";
 import type { TwinSnapshot } from "@/lib/planner/state";
 
 export interface RunPythonInput {
@@ -51,7 +51,7 @@ export function runAgentPython(input: RunPythonInput): Promise<RunPythonResult> 
         ...process.env,
         MONGODB_URI_READONLY:
           process.env.MONGODB_URI_READONLY?.trim() || process.env.MONGODB_URI?.trim() || "",
-        MONGODB_DATABASE: process.env.MONGODB_DATABASE?.trim() || "twinto",
+        MONGODB_DATABASE: process.env.MONGODB_DATABASE?.trim() || "techto",
       },
       stdio: ["pipe", "pipe", "pipe"],
     });

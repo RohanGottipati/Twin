@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getBackboardAdapter } from "@/lib/backboard/adapter";
 import { resolveAssistant } from "@/lib/backboard/assistant-manifest";
 import type { BackboardAdapter } from "@/lib/backboard/client";
-import type { CandidateEvaluation, TwinTORunResult } from "@/lib/backboard/orchestrator";
+import type { CandidateEvaluation, TechTORunResult } from "@/lib/backboard/orchestrator";
 import { runToolLoop } from "@/lib/backboard/run-tool-loop";
 import { createRunContext } from "@/lib/backboard/tool-dispatcher";
 import { transitExecutiveSummarySchema, type TransitExecutiveSummary } from "@/lib/transit/schemas";
@@ -11,14 +11,14 @@ import { transitExecutiveSummarySchema, type TransitExecutiveSummary } from "@/l
 export class ExecutiveSummaryError extends Error {}
 
 export interface BuildExecutiveSummaryInput {
-  result: TwinTORunResult;
+  result: TechTORunResult;
   adapter?: BackboardAdapter;
 }
 
 /**
  * Only the four prose fields a model is allowed to author. The numeric
  * fields and safetyResult on TransitExecutiveSummary are always computed
- * locally from TwinTORunResult (see buildExecutiveSummary) and never
+ * locally from TechTORunResult (see buildExecutiveSummary) and never
  * requested from, or overwritten by, the model.
  */
 const narrativeSchema = z
@@ -32,7 +32,7 @@ const narrativeSchema = z
 
 type ExecutiveNarrative = z.output<typeof narrativeSchema>;
 
-function findChosenSimulation(result: TwinTORunResult) {
+function findChosenSimulation(result: TechTORunResult) {
   const entry = result.simulations.find(
     (simulation) => simulation.candidateId === result.effectiveRecommendation.chosenCandidateId,
   );
@@ -44,7 +44,7 @@ function findChosenSimulation(result: TwinTORunResult) {
   return entry.result;
 }
 
-function computeSafetyResult(result: TwinTORunResult): TransitExecutiveSummary["safetyResult"] {
+function computeSafetyResult(result: TechTORunResult): TransitExecutiveSummary["safetyResult"] {
   if (result.recommendationOverridden) return "overridden_for_safety";
   if (result.effectiveRecommendation.recommendedAction === "hold_for_operator") return "hold_for_operator";
   return "clear";
@@ -67,7 +67,7 @@ function computeMetricFields(
   };
 }
 
-function findStress(result: TwinTORunResult): CandidateEvaluation["stress"] | null {
+function findStress(result: TechTORunResult): CandidateEvaluation["stress"] | null {
   const entry = result.stressResults.find(
     (stress) => stress.candidateId === result.effectiveRecommendation.chosenCandidateId,
   );
@@ -79,7 +79,7 @@ function findStress(result: TwinTORunResult): CandidateEvaluation["stress"] | nu
  * call involved. Used whenever a live narrative request fails or comes
  * back malformed, so buildExecutiveSummary always succeeds.
  */
-function buildLocalNarrative(result: TwinTORunResult): ExecutiveNarrative {
+function buildLocalNarrative(result: TechTORunResult): ExecutiveNarrative {
   const stress = findStress(result);
   const mainRisk = stress?.invalidated
     ? stress.invalidationReasons[0] ?? "This candidate is invalidated under the hidden stress overlay."
@@ -95,10 +95,10 @@ function buildLocalNarrative(result: TwinTORunResult): ExecutiveNarrative {
   return { mainRisk, majorAssumption, limitations, summary };
 }
 
-function buildNarrativePrompt(result: TwinTORunResult): string {
+function buildNarrativePrompt(result: TechTORunResult): string {
   const chosenSimulation = findChosenSimulation(result);
   return `
-Write the city-planner executive summary for this already-decided TwinTO run.
+Write the city-planner executive summary for this already-decided TechTO run.
 Do not restate or invent any numbers; the dashboard renders the simulated
 metrics separately from your text.
 
@@ -135,7 +135,7 @@ function parseNarrative(raw: string | null): ExecutiveNarrative | null {
 }
 
 /**
- * Produces the TransitExecutiveSummary for one completed TwinTORunResult.
+ * Produces the TransitExecutiveSummary for one completed TechTORunResult.
  * Asks the Explanation Map agent for the four prose fields; on any failure
  * falls back to a deterministic local narrative. Numbers and safetyResult
  * are always computed here, never from model output.

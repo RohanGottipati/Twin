@@ -1,5 +1,5 @@
-import type { TwinTORunEvent } from "@/lib/backboard/orchestrator";
-import type { TwinTORunEventEnvelope } from "@/lib/transit/schemas";
+import type { TechTORunEvent } from "@/lib/backboard/orchestrator";
+import type { TechTORunEventEnvelope } from "@/lib/transit/schemas";
 
 /**
  * Encodes one Server-Sent Event. With only (eventId, data) supplied, this
@@ -29,18 +29,18 @@ export function createSseResponse(stream: ReadableStream<Uint8Array>): Response 
 }
 
 /**
- * Maps one internal TwinTORunEvent to the frontend-safe envelope every
- * Backboard SSE route sends over the wire. TwinTORunEvent is already coarse
+ * Maps one internal TechTORunEvent to the frontend-safe envelope every
+ * Backboard SSE route sends over the wire. TechTORunEvent is already coarse
  * (agent/tool lifecycle and transit-domain evidence only, see
  * orchestrator.ts), so this is a reshape, not a redaction pass. `payload`
  * carries the event verbatim (type and runId included) rather than a
  * stripped-down remainder, since consumers (see
- * src/lib/twinto/use-backboard-run.ts) are written against
- * `envelope.payload` being a complete TwinTORunEvent on its own; the outer
+ * src/lib/techto/use-backboard-run.ts) are written against
+ * `envelope.payload` being a complete TechTORunEvent on its own; the outer
  * eventId/runId/sequence/type/timestamp fields are stream bookkeeping
  * layered on top, not a replacement for them.
  */
-export function toTwinTORunEventEnvelope(event: TwinTORunEvent, sequence: number): TwinTORunEventEnvelope {
+export function toTechTORunEventEnvelope(event: TechTORunEvent, sequence: number): TechTORunEventEnvelope {
   return {
     eventId: `${event.runId}:${sequence}`,
     runId: event.runId,

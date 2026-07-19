@@ -1,4 +1,4 @@
-"""Typed schema for the ToronTwin city twin (AGENTS.md section 7: the compiler).
+"""Typed schema for the TechTO city twin (AGENTS.md section 7: the compiler).
 
 All geometry is stored in NAD83 / UTM zone 17N (EPSG:26917), per the Phase 0
 gate in implementation_plan.md. Geometry is kept as a small GeoJSON-shaped

@@ -112,7 +112,7 @@ export class CensusPopulationProvider implements PopulationProvider {
 }
 
 export function getPopulationProviderMode(): string {
-  return process.env.TORONTWIN_POPULATION_PROVIDER?.trim().toLowerCase() || "synthetic";
+  return process.env.TECHTO_POPULATION_PROVIDER?.trim().toLowerCase() || "synthetic";
 }
 
 export function getPopulationProvider(): PopulationProvider {

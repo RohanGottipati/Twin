@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { parseMapActions } from "@/lib/twinto/map-actions";
-import { findCollision, type AgentMapOverlay } from "@/lib/twinto/map-overlays";
+import { parseMapActions } from "@/lib/techto/map-actions";
+import { findCollision, type AgentMapOverlay } from "@/lib/techto/map-overlays";
 
 describe("parseMapActions", () => {
   it("accepts allowlisted fly_to_center and candidate markers", () => {

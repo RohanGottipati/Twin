@@ -38,7 +38,7 @@ export function MobileToolbar({ onOpenScenario, onOpenCouncil }: MobileToolbarPr
         showTooltip={false}
       />
       {selectedStationId && (
-        <span className="ml-1 inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 text-[11px] text-twinto-muted">
+        <span className="ml-1 inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 text-[11px] text-techto-muted">
           <MapPin className="h-3.5 w-3.5" />
           {selectedStationId}
         </span>

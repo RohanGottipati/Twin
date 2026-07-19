@@ -1,4 +1,3 @@
-import { listCohorts } from "@/data/transit/cohorts";
 import {
   getConcertEvent,
   getServiceIncidents,
@@ -17,7 +16,7 @@ export interface SeedSummary {
 }
 
 /**
- * Upserts TwinTO demo fixtures into Atlas. All records carry synthetic
+ * Upserts TechTO demo fixtures into Atlas. All records carry synthetic
  * provenance; this is not a live GTFS or census load.
  */
 export async function seedMongoFromFixtures(databaseName?: string): Promise<SeedSummary> {
@@ -158,41 +157,11 @@ export async function seedMongoFromFixtures(databaseName?: string): Promise<Seed
   }
   upserted[COLLECTIONS.neighbourhoods] = n;
 
-  n = 0;
-  for (const cohort of listCohorts()) {
-    await db.collection(COLLECTIONS.citizenCohorts).updateOne(
-      { cohortId: cohort.id },
-      {
-        $set: {
-          ...cohort,
-          cohortId: cohort.id,
-          provenance: DEMO_PROVENANCE,
-          updatedAt: now,
-        },
-      },
-      { upsert: true },
-    );
-    await db.collection(COLLECTIONS.socialContexts).updateOne(
-      { cohortId: cohort.id },
-      {
-        $set: {
-          cohortId: cohort.id,
-          peerTransitAdoption: cohort.baselineModeShare.transit,
-          householdVehicleAvailability: cohort.vehicleAccessProbability,
-          coworkerDepartureConcentration: "16:05-16:12",
-          neighbourhoodPolicySupport: 0.6,
-          recentDelayExperienceCount: cohort.workSchedule === "shift" ? 3 : 1,
-          dataMode: "synthetic-fixture",
-          provenance: DEMO_PROVENANCE,
-          updatedAt: now,
-        },
-      },
-      { upsert: true },
-    );
-    n += 1;
-  }
-  upserted[COLLECTIONS.citizenCohorts] = n;
-  upserted[COLLECTIONS.socialContexts] = n;
+  // citizen_cohorts is intentionally not seeded here: Mongo should hold real
+  // resident-persona-aggregate cohorts (population/build_neighbourhood_cohorts.py),
+  // never synthetic fixtures. Fixture-mode TechTO still reads TRANSIT_COHORTS
+  // from src/data/transit/cohorts.ts via the in-memory repository. socialContexts
+  // had no live consumers beyond this seed path.
 
   n = 0;
   for (const scenario of listScenarios()) {

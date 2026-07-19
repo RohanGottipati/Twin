@@ -1,5 +1,5 @@
 /**
- * Prints the resolved TwinTO/Backboard capabilities: live mode, base URL,
+ * Prints the resolved TechTO/Backboard capabilities: live mode, base URL,
  * assistant roster with tools/memory/model selection. Never prints
  * BACKBOARD_API_KEY; only reports whether one is configured.
  *
@@ -43,7 +43,7 @@ async function main(): Promise<void> {
 
   const hasKey = getBackboardApiKey().length > 0;
 
-  console.log("TwinTO / Backboard status");
+  console.log("TechTO / Backboard status");
   console.log("==========================");
   console.log(`Mode:              LIVE`);
   console.log(`Base URL:          ${getBackboardBaseUrl()}`);

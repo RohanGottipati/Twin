@@ -51,6 +51,34 @@ body {
   outline: none;
 }
 
+/* Popups (e.g. persona click-info): dark surface, matching the app's ink theme. */
+.maplibregl-popup-content {
+  background: #12161a !important;
+  color: #cfd8d0 !important;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(226, 236, 228, 0.1);
+}
+
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  border-top-color: #12161a !important;
+}
+
+.maplibregl-popup-anchor-top .maplibregl-popup-tip {
+  border-bottom-color: #12161a !important;
+}
+
+.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: #12161a !important;
+}
+
+.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: #12161a !important;
+}
+
+.maplibregl-popup-close-button {
+  color: #cfd8d0 !important;
+}
+
 /* Map chat input: the native caret appears only while the input is focused. */
 .chat-glass-input {
   color: #ffffff;
@@ -63,6 +91,25 @@ body {
 
 .chat-glass-input:focus {
   caret-color: #ffffff;
+}
+
+.techto-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 149, 161, 0.45) transparent;
+}
+
+.techto-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.techto-scroll::-webkit-scrollbar-thumb {
+  background: rgba(139, 149, 161, 0.45);
+  border-radius: 999px;
+}
+
+.techto-scroll::-webkit-scrollbar-track {
+  background: transparent;
 }
 
 @media (prefers-reduced-motion: reduce) {

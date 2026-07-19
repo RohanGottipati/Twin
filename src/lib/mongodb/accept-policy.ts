@@ -52,7 +52,7 @@ export async function acceptPolicyIteration(input: AcceptPolicyInput): Promise<A
           recommendedAction: input.recommendedAction,
           metrics: input.metrics ?? null,
           recommendation: input.recommendation ?? null,
-          modelVersion: input.modelVersion ?? "twinto-demo-1",
+          modelVersion: input.modelVersion ?? "techto-demo-1",
           notes: input.notes ?? null,
           recordedAt: now,
           provenance: DEMO_PROVENANCE,
@@ -80,11 +80,11 @@ export async function acceptPolicyIteration(input: AcceptPolicyInput): Promise<A
     );
 
     await db.collection(COLLECTIONS.modelVersions).updateOne(
-      { modelVersionId: input.modelVersion ?? "twinto-demo-1" },
+      { modelVersionId: input.modelVersion ?? "techto-demo-1" },
       {
         $set: {
-          modelVersionId: input.modelVersion ?? "twinto-demo-1",
-          alias: "twinto-citizen-reaction",
+          modelVersionId: input.modelVersion ?? "techto-demo-1",
+          alias: "techto-citizen-reaction",
           lastAcceptedRunId: input.runId,
           updatedAt: now,
           provenance: DEMO_PROVENANCE,

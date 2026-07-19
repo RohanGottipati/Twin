@@ -1,4 +1,4 @@
-# MongoDB Atlas Features — Use Cases for TwinTO
+# MongoDB Atlas Features — Use Cases for TechTO
 
 ## Atlas Search (Full-text + Autocomplete)
 

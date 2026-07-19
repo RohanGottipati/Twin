@@ -14,14 +14,14 @@ import { AgentOverlayLayer } from "@/components/map/AgentOverlayLayer";
 import { InterventionDiffLayer } from "@/components/map/InterventionDiffLayer";
 import { MapLegend } from "@/components/map/MapLegend";
 import { DEFAULT_MAP_STYLE_URL, TORONTO_VIEW } from "@/lib/map/map-config";
-import { placeFromBuildingFeature, polygonCentroid } from "@/lib/twinto/place-context";
+import { placeFromBuildingFeature, polygonCentroid } from "@/lib/techto/place-context";
 
 export { DEFAULT_MAP_STYLE_URL, TORONTO_VIEW };
 
 const BUILDING_LAYER_ID = "building";
-const SELECTED_BUILDING_SOURCE = "twinto-selected-building";
-const SELECTED_BUILDING_FILL = "twinto-selected-building-fill";
-const SELECTED_BUILDING_LINE = "twinto-selected-building-line";
+const SELECTED_BUILDING_SOURCE = "techto-selected-building";
+const SELECTED_BUILDING_FILL = "techto-selected-building-fill";
+const SELECTED_BUILDING_LINE = "techto-selected-building-line";
 
 export interface StationCrowdLevel {
   stationId: string;
@@ -97,12 +97,12 @@ export function TorontoMap({ stationCrowd }: TorontoMapProps) {
     const onMapClick = (event: maplibregl.MapMouseEvent) => {
       if (event.defaultPrevented) return;
 
-      const stationLayerIds = ["twinto-stations-circle"].filter((id) => Boolean(instance.getLayer(id)));
+      const stationLayerIds = ["techto-stations-circle"].filter((id) => Boolean(instance.getLayer(id)));
       const stationHits =
         stationLayerIds.length > 0 ? instance.queryRenderedFeatures(event.point, { layers: stationLayerIds }) : [];
       if (stationHits.length > 0) return;
 
-      // Query the basemap building layer even when TwinTO overlays sit above it.
+      // Query the basemap building layer even when TechTO overlays sit above it.
       const buildingHits = instance.getLayer(BUILDING_LAYER_ID)
         ? instance.queryRenderedFeatures(event.point, { layers: [BUILDING_LAYER_ID] })
         : [];

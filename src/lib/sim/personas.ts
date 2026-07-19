@@ -29,7 +29,7 @@ export function buildPersonas(
 
   for (const feature of neighbourhoods.features) {
     const { code, population, income } = feature.properties;
-    const rng = mulberry32(hashString(`torontwin:${code}`));
+    const rng = mulberry32(hashString(`techto:${code}`));
     const target = Math.max(3, Math.round(population / PERSONS_PER_DOT));
     const [minX, minY, maxX, maxY] = geometryBbox(feature.geometry);
 

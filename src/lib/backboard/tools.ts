@@ -2,10 +2,10 @@ import type { ChatToolDefinition } from "@/lib/backboard/client";
 
 /**
  * Canonical tool names shared by assistant definitions (which tools an
- * assistant is offered) and the tool dispatcher (which TwinTO transit
+ * assistant is offered) and the tool dispatcher (which TechTO transit
  * function each name executes). Keeping this as a const object (not a plain
  * string union) lets both sides import the same runtime values. See
- * docs/twinto-implementation.md section 13.6 for the canonical catalogue.
+ * docs/techto-implementation.md section 13.6 for the canonical catalogue.
  */
 export const TOOL_NAMES = {
   GET_CURRENT_MAP_CONTEXT: "get_current_map_context",
@@ -236,7 +236,7 @@ export const TOOL_DEFINITIONS: Record<ToolName, ChatToolDefinition> = {
   [TOOL_NAMES.GET_CURRENT_MAP_CONTEXT]: {
     name: TOOL_NAMES.GET_CURRENT_MAP_CONTEXT,
     description:
-      "Read the current TwinTO map context: center, zoom, selected station/neighbourhood, visible layers, and any highlighted candidates. Fixture-backed when no live map state is supplied.",
+      "Read the current TechTO map context: center, zoom, selected station/neighbourhood, visible layers, and any highlighted candidates. Fixture-backed when no live map state is supplied.",
     parameters: {
       type: "object",
       properties: {
@@ -690,7 +690,7 @@ export const TOOL_DEFINITIONS: Record<ToolName, ChatToolDefinition> = {
   [TOOL_NAMES.COMPOSE_MAP_ACTIONS]: {
     name: TOOL_NAMES.COMPOSE_MAP_ACTIONS,
     description:
-      "Control the Toronto MapLibre UI: fly_to_center, fit_bounds, highlight_neighbourhoods (use neighbourhood codes), show_candidate_markers, draw_point, draw_line, draw_polygon, annotate, remove_overlays, clear_map_overlays, set_layer_visibility. Use this to show the user what you are talking about. Drawing near an existing overlay / twin POI returns a collision error (~40m); remove or move first. Frontend validates and executes; never emit arbitrary JavaScript or URLs.",
+      "Control the Toronto MapLibre UI: fly_to_center, fit_bounds, highlight_neighbourhoods (use neighbourhood codes), show_candidate_markers, draw_point, draw_line, draw_polygon, annotate, remove_overlays, clear_map_overlays, set_layer_visibility. For a single recommendation, emit exactly one show_candidate_markers entry (the chosen site), fly_to_center on it, and highlight that one neighbourhood. Multiple candidate markers only when the user asked to compare alternatives. Drawing near an existing overlay / twin POI returns a collision error (~40m); remove or move first. Frontend validates and executes; never emit arbitrary JavaScript or URLs.",
     parameters: {
       type: "object",
       properties: {
@@ -853,7 +853,7 @@ export const TOOL_DEFINITIONS: Record<ToolName, ChatToolDefinition> = {
   [TOOL_NAMES.INVOKE_ASSISTANT]: {
     name: TOOL_NAMES.INVOKE_ASSISTANT,
     description:
-      "Ask another ToronTwin Backboard assistant to do one focused task with its tools. Use when you need a specialist lens; do not invent niche one-off agents. Pass a clear task string.",
+      "Ask another TechTO Backboard assistant to do one focused task with its tools. Use when you need a specialist lens; do not invent niche one-off agents. Pass a clear task string.",
     parameters: {
       type: "object",
       properties: {

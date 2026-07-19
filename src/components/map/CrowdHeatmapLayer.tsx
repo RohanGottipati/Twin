@@ -5,8 +5,8 @@ import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import { listStations } from "@/data/transit/network";
 import type { StationCrowdLevel } from "@/components/map/TorontoMap";
 
-const SOURCE_ID = "twinto-crowd-heat";
-const LAYER_ID = "twinto-crowd-heat-circle";
+const SOURCE_ID = "techto-crowd-heat";
+const LAYER_ID = "techto-crowd-heat-circle";
 
 function crowdGeoJson(stationCrowd: StationCrowdLevel[]): GeoJSON.FeatureCollection<GeoJSON.Point> {
   const byStation = new Map(stationCrowd.map((entry) => [entry.stationId, entry.loadFactor]));

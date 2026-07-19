@@ -1,7 +1,7 @@
 # Demo scenario catalog (synthetic fixture)
 
 Status: **synthetic fixture.** Catalogs the scenarios and stress overlays
-available in the current TwinTO demo build. Illustrative precedent records
+available in the current TechTO demo build. Illustrative precedent records
 referenced by `find_similar_interventions` are demo fixtures, not a real TTC
 service-change archive; see AGENTS.md section 2.
 

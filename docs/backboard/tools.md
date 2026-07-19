@@ -1,4 +1,4 @@
-# ToronTwin Backboard tools
+# TechTO Backboard tools
 
 Canonical tool names live in `src/lib/backboard/tools.ts`. The dispatcher in
 `src/lib/backboard/tool-dispatcher.ts` validates inputs and executes calls

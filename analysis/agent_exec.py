@@ -140,7 +140,7 @@ def main() -> None:
         os.environ.get("MONGODB_URI_READONLY", "").strip()
         or os.environ.get("MONGODB_URI", "").strip()
     )
-    db_name = os.environ.get("MONGODB_DATABASE", "twinto").strip() or "twinto"
+    db_name = os.environ.get("MONGODB_DATABASE", "techto").strip() or "techto"
     mongo_client = None
     db = None
     if uri:

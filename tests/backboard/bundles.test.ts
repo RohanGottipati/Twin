@@ -6,7 +6,7 @@ import {
   selectAssistantsForIntent,
   selectAssistantBundle,
 } from "@/lib/backboard/assistants";
-import { classifyPlanningIntent } from "@/lib/twinto/intent";
+import { classifyPlanningIntent } from "@/lib/techto/intent";
 import { FLAGSHIP_SCENARIO_ID } from "@/data/transit/scenarios";
 
 describe("intent activation", () => {

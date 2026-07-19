@@ -40,9 +40,9 @@ async function main(): Promise<void> {
     await import("@/lib/mongodb/env");
   const { pingMongo, closeMongoClient } = await import("@/lib/mongodb/client");
 
-  const repoProvider = process.env.TWINTO_REPOSITORY_PROVIDER?.trim() || "fixture";
+  const repoProvider = process.env.TECHTO_REPOSITORY_PROVIDER?.trim() || "fixture";
 
-  console.log("TwinTO / MongoDB status");
+  console.log("TechTO / MongoDB status");
   console.log("========================");
   console.log(`URI configured:    ${isMongoConfigured() ? "yes" : "no"} (value never printed)`);
   console.log(`Database:          ${getMongoDatabaseName()}`);

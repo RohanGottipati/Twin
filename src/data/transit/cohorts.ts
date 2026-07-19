@@ -1,6 +1,6 @@
 /**
- * Synthetic census-weighted demographic cohorts for the TwinTO transit
- * domain layer (see AGENTS.md section 4.3 and docs/twinto-implementation.md
+ * Synthetic census-weighted demographic cohorts for the TechTO transit
+ * domain layer (see AGENTS.md section 4.3 and docs/techto-implementation.md
  * section 9.1: cohorts represent statistically similar riders, never
  * individual identified residents, and weights are illustrative, not a
  * Statistics Canada extract).

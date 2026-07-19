@@ -7,8 +7,8 @@ import {
   queryTorontoAreas,
   recommendTorontoArea,
 } from "@/lib/toronto/area-catalog";
-import { parseMapActions } from "@/lib/twinto/map-actions";
-import { isInsideToronto } from "@/lib/twinto/toronto-scope";
+import { parseMapActions } from "@/lib/techto/map-actions";
+import { isInsideToronto } from "@/lib/techto/toronto-scope";
 
 describe("Toronto area catalogue", () => {
   it("loads all official neighbourhoods with Toronto-safe screening features", () => {

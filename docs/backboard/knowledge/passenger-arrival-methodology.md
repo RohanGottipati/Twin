@@ -1,6 +1,6 @@
 # Passenger arrival methodology (synthetic fixture)
 
-Status: **synthetic fixture.** Describes how TwinTO's arrival curves and
+Status: **synthetic fixture.** Describes how TechTO's arrival curves and
 origin-destination flows are constructed, not a measured ridership study.
 
 ## Arrival curves

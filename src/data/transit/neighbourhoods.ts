@@ -1,5 +1,5 @@
 /**
- * Synthetic Toronto neighbourhood fixtures for TwinTO geospatial planning.
+ * Synthetic Toronto neighbourhood fixtures for TechTO geospatial planning.
  * Centroids and tags are illustrative; not official City of Toronto boundaries.
  */
 

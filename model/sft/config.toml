@@ -1,4 +1,4 @@
-# Flash SFT for ToronTwin persona opinions (AGENTS.md 5.1).
+# Flash SFT for TechTO persona opinions (AGENTS.md 5.1).
 # Flash 1.0.1 catalog has no Qwen2.5-7B; closest is Qwen3.5-9B.
 # Cost gate: flash train model/sft/config.toml --cost  then human OK before submit.
 

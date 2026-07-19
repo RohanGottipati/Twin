@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import { getBackboardAdapter } from "@/lib/backboard/adapter";
 import { getAssistantManifest } from "@/lib/backboard/assistant-manifest";
-import { TWINTO_ASSISTANT_KEYS } from "@/lib/backboard/assistants";
+import { TECHTO_ASSISTANT_KEYS } from "@/lib/backboard/assistants";
 import { MANIFEST_ROSTER_VERSION, MANIFEST_SCHEMA_VERSION } from "@/lib/backboard/manifest-schema";
 import { errorMessage, jsonError } from "@/lib/backboard/route-helpers";
 
@@ -10,9 +10,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 /**
- * Read-only introspection endpoint: which TwinTO assistants are configured,
+ * Read-only introspection endpoint: which TechTO assistants are configured,
  * which tools/memory/thinking settings each uses, and which model Backboard's
- * capability catalog resolved for each one. Used by the TwinTO UI status
+ * capability catalog resolved for each one. Used by the TechTO UI status
  * panel and by developers to sanity-check model routing.
  */
 export async function GET() {
@@ -38,20 +38,20 @@ export async function GET() {
     }));
 
     const configuredKeys = new Set(assistants.map((assistant) => assistant.role));
-    const missingAssistants = TWINTO_ASSISTANT_KEYS.filter((key) => !configuredKeys.has(key));
+    const missingAssistants = TECHTO_ASSISTANT_KEYS.filter((key) => !configuredKeys.has(key));
 
     return NextResponse.json({
-      product: "twinto",
+      product: "techto",
       rosterVersion: MANIFEST_ROSTER_VERSION,
       schemaVersion: MANIFEST_SCHEMA_VERSION,
-      expectedAssistants: TWINTO_ASSISTANT_KEYS.length,
+      expectedAssistants: TECHTO_ASSISTANT_KEYS.length,
       configuredAssistants: assistants.length,
       missingAssistants,
       mode: adapter.mode,
-      citizenReactionProvider: process.env.TWINTO_CITIZEN_REACTION_PROVIDER?.trim() || "freesolo",
-      repositoryProvider: process.env.TWINTO_REPOSITORY_PROVIDER?.trim() || "fixture",
+      citizenReactionProvider: process.env.TECHTO_CITIZEN_REACTION_PROVIDER?.trim() || "freesolo",
+      repositoryProvider: process.env.TECHTO_REPOSITORY_PROVIDER?.trim() || "fixture",
       mongoConfigured: Boolean(process.env.MONGODB_URI?.trim()),
-      mongoDatabase: process.env.MONGODB_DATABASE?.trim() || "twinto",
+      mongoDatabase: process.env.MONGODB_DATABASE?.trim() || "techto",
       geographicScope: {
         cityId: "toronto",
         label: "City of Toronto only",

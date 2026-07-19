@@ -274,7 +274,7 @@ closing a documented Phase 0 gap and a lint/reproducibility pass.
 - Verified end-to-end with a real chat completion before trusting it for
   anything: `complete_chat([{"role":"user","content":"Say hello in exactly
   five words."}])` -> `"Hello, nice to meet you."`
-- `model/serving.py` resolves `TORONTWIN_LLM_BASE_URL` if set, else probes
+- `model/serving.py` resolves `TECHTO_LLM_BASE_URL` if set, else probes
   local vLLM at `http://localhost:8000/v1`, else raises
   `NoLLMBackendAvailable` -- deliberately does not fall back to fabricated
   output. Nothing Flash-specific or vLLM-specific in the client itself

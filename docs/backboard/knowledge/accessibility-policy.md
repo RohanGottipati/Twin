@@ -1,6 +1,6 @@
 # Accessibility policy (synthetic fixture, demo hard-check rules)
 
-Status: **synthetic fixture.** Encodes the hard accessibility rules TwinTO's
+Status: **synthetic fixture.** Encodes the hard accessibility rules TechTO's
 deterministic checker enforces for this demo. Not a restatement of the AODA,
 the TTC's actual accessibility plan, or any real regulatory instrument.
 

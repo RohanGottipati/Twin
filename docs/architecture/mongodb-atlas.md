@@ -1,16 +1,16 @@
-# MongoDB Atlas (TwinTO)
+# MongoDB Atlas (TechTO)
 
-Operational data plane for TwinTO. Credentials are server-only (`MONGODB_URI`);
+Operational data plane for TechTO. Credentials are server-only (`MONGODB_URI`);
 never expose them to the browser.
 
 ## Setup
 
-1. Set `MONGODB_URI` and `MONGODB_DATABASE=twinto` in `.env`.
+1. Set `MONGODB_URI` and `MONGODB_DATABASE=techto` in `.env`.
 2. Run `npm run mongo:bootstrap` (creates collections/indexes and seeds demo fixtures).
-3. Set `TWINTO_REPOSITORY_PROVIDER=mongo` so Backboard tools read from Atlas.
+3. Set `TECHTO_REPOSITORY_PROVIDER=mongo` so Backboard tools read from Atlas.
 4. Verify with `npm run mongo:status`.
 
-Offline/CI: leave `TWINTO_REPOSITORY_PROVIDER=fixture` (default in tests).
+Offline/CI: leave `TECHTO_REPOSITORY_PROVIDER=fixture` (default in tests).
 
 ## What agents read
 

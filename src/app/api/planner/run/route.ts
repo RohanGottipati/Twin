@@ -1,67 +1,27 @@
 import { NextResponse } from "next/server";
-import { z } from "zod";
 
-import { scenarioPatchSchema } from "@/lib/planner/scenario";
-import { runCityOrchestration } from "@/lib/planner/orchestrator";
-import { getPopulationProviderMode } from "@/lib/population/provider";
 import { PRINCIPLED_CITY_BUNDLE } from "@/lib/backboard/assistants";
+import { runCityOrchestration } from "@/lib/planner/orchestrator";
+import { plannerRunBodySchema } from "@/lib/planner/request";
+import { getPopulationProviderMode } from "@/lib/population/provider";
 
 export const runtime = "nodejs";
-
-const overlaySchema = z.discriminatedUnion("kind", [
-  z
-    .object({
-      kind: z.literal("point"),
-      id: z.string(),
-      coordinates: z.tuple([z.number(), z.number()]),
-      label: z.string(),
-    })
-    .strict(),
-  z
-    .object({
-      kind: z.literal("line"),
-      id: z.string(),
-      coordinates: z.array(z.tuple([z.number(), z.number()])),
-      label: z.string(),
-    })
-    .strict(),
-  z
-    .object({
-      kind: z.literal("polygon"),
-      id: z.string(),
-      coordinates: z.array(z.tuple([z.number(), z.number()])),
-      label: z.string(),
-    })
-    .strict(),
-  z
-    .object({
-      kind: z.literal("annotation"),
-      id: z.string(),
-      coordinates: z.tuple([z.number(), z.number()]),
-      text: z.string(),
-    })
-    .strict(),
-]);
-
-const bodySchema = z.object({
-  question: z.string().min(1),
-  patches: z.array(scenarioPatchSchema).optional(),
-  seed: z.number().optional(),
-  agentOverlays: z.array(overlaySchema).optional(),
-});
 
 /**
  * Headless / UI city planning run: live Backboard Planning Orchestrator +
  * local twin/population score. May return mapActions for the MapLibre UI.
+ * Prefer /api/planner/stream when the chat UI wants token deltas.
  */
 export async function POST(request: Request) {
   const json = await request.json();
-  const body = bodySchema.parse(json);
+  const body = plannerRunBodySchema.parse(json);
   const result = await runCityOrchestration({
     question: body.question,
     patches: body.patches,
     seed: body.seed ?? 2262,
     agentOverlays: body.agentOverlays,
+    threadId: body.threadId,
+    history: body.history,
   });
 
   return NextResponse.json({
@@ -71,6 +31,7 @@ export async function POST(request: Request) {
     availableRoster: PRINCIPLED_CITY_BUNDLE,
     participatingAgents: result.participatingAgents,
     runId: result.runId,
+    threadId: result.threadId,
     question: result.question,
     ranking: result.ranking,
     chosenId: result.chosenId,

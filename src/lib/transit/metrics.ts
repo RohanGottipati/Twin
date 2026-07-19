@@ -108,7 +108,7 @@ export function computeEquityGap(
  * Synthetic assumption: an average downtown Toronto car trip of roughly 8
  * kilometres at roughly 0.29 kg CO2 per kilometre for a typical passenger
  * vehicle, rounded. Not a measured emissions factor; see
- * docs/twinto-implementation.md section 11.7 ("do not claim exact marginal
+ * docs/techto-implementation.md section 11.7 ("do not claim exact marginal
  * emissions").
  */
 export const AVERAGE_CAR_TRIP_CARBON_KG = 2.3;

@@ -1,6 +1,6 @@
 # Equity evaluation methodology (synthetic fixture)
 
-Status: **synthetic fixture.** Describes how TwinTO's equity-gap metric is
+Status: **synthetic fixture.** Describes how TechTO's equity-gap metric is
 constructed for the demo, not a peer-reviewed transportation-equity framework.
 
 ## Vulnerable cohort definition

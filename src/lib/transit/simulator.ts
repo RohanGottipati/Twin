@@ -24,7 +24,7 @@ import type {
 
 /**
  * The single deterministic authority for what a transit schedule
- * intervention does to riders (docs/twinto-implementation.md section 11).
+ * intervention does to riders (docs/techto-implementation.md section 11).
  * Nothing from Backboard or FreeSolo ever bypasses this: every candidate,
  * and every stress-tested variant of an accepted candidate, is scored here
  * using only local, reproducible arithmetic over the fixtures in

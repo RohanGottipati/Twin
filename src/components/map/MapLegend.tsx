@@ -18,17 +18,17 @@ export function MapLegend() {
 
   return (
     <GlassPanel className="pointer-events-auto w-[min(88vw,260px)] p-3">
-      <p className="text-[10px] font-semibold uppercase tracking-widest text-twinto-muted">
+      <p className="text-[10px] font-semibold uppercase tracking-widest text-techto-muted">
         Toronto only · synthetic-fixture
       </p>
-      <p className="mt-1 text-[10px] leading-snug text-twinto-muted">
+      <p className="mt-1 text-[10px] leading-snug text-techto-muted">
         All planning and agent suggestions stay inside the City of Toronto.
       </p>
       <ul className="mt-2 space-y-1">
         {ROUTE_SWATCHES.map(({ label, color, icon: Icon }) => (
-          <li key={label} className="flex items-center gap-2 text-xs text-twinto-text">
+          <li key={label} className="flex items-center gap-2 text-xs text-techto-text">
             <span className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: color }} />
-            <Icon className="h-3.5 w-3.5 text-twinto-muted" />
+            <Icon className="h-3.5 w-3.5 text-techto-muted" />
             {label}
           </li>
         ))}
@@ -59,7 +59,7 @@ export function MapLegend() {
         />
       </div>
 
-      <p className="mt-2 flex items-center gap-1 text-[10px] text-twinto-muted">
+      <p className="mt-2 flex items-center gap-1 text-[10px] text-techto-muted">
         <Users className="h-3 w-3" />
         Simulated citizens, not real Toronto residents.
       </p>

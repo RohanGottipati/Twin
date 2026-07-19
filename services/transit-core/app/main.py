@@ -1,6 +1,6 @@
-"""TwinTO transit-core stub.
+"""TechTO transit-core stub.
 
-Proxies demo reads to the Next.js TwinTO app where possible and exposes
+Proxies demo reads to the Next.js TechTO app where possible and exposes
 health/ready plus optimization hooks. Not a full GTFS ingest service yet.
 """
 
@@ -27,13 +27,13 @@ class OptimizeBody(BaseModel):
 
 def next_base() -> str:
     return os.getenv("NEXT_PUBLIC_TRANSIT_API_BASE_URL") or os.getenv(
-        "TWINTO_NEXT_BASE_URL", settings.next_proxy_base
+        "TECHTO_NEXT_BASE_URL", settings.next_proxy_base
     )
 
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "service": "twinto-transit-core"}
+    return {"status": "ok", "service": "techto-transit-core"}
 
 
 @app.get("/ready")
@@ -57,7 +57,7 @@ async def network() -> dict[str, Any]:
     """Placeholder network payload; prefer Next Mongo/fixture repository in the demo."""
     return {
         "dataMode": "synthetic-fixture",
-        "note": "Use Next.js TwinTO repository for authoritative demo network state.",
+        "note": "Use Next.js TechTO repository for authoritative demo network state.",
         "cityId": "toronto",
     }
 

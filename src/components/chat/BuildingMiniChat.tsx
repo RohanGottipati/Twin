@@ -3,8 +3,8 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { ArrowUp, Loader2, MapPin, Maximize2, Minimize2, X } from "lucide-react";
 import { createRunStreamClient } from "@/lib/backboard/stream-parser";
-import { parseMapActions } from "@/lib/twinto/map-actions";
-import { applyMapActions } from "@/lib/twinto/apply-map-actions";
+import { parseMapActions } from "@/lib/techto/map-actions";
+import { applyMapActions } from "@/lib/techto/apply-map-actions";
 import { FLAGSHIP_SCENARIO_ID } from "@/data/transit/scenarios";
 import { useMapStore } from "@/store/useMapStore";
 import { cn } from "@/lib/utils/cn";
@@ -226,7 +226,7 @@ export function BuildingMiniChat({
 
       <div
         className={cn(
-          "space-y-2 overflow-y-auto px-3 py-2.5 text-xs twinto-scroll",
+          "space-y-2 overflow-y-auto px-3 py-2.5 text-xs techto-scroll",
           expanded ? "max-h-[45vh]" : "max-h-64",
         )}
       >

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { selectAssistantsForIntent } from "@/lib/backboard/assistants";
-import { classifyPlanningIntent } from "@/lib/twinto/intent";
+import { classifyPlanningIntent } from "@/lib/techto/intent";
 
 describe("classifyPlanningIntent", () => {
   it("falls back safely for unknown free text to an open city planning path", () => {

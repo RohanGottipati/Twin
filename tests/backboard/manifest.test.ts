@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { ASSISTANT_ROSTER, TWINTO_ASSISTANT_KEYS } from "@/lib/backboard/assistants";
+import { ASSISTANT_ROSTER, TECHTO_ASSISTANT_KEYS } from "@/lib/backboard/assistants";
 import {
   MANIFEST_PRODUCT,
   MANIFEST_ROSTER_VERSION,
@@ -10,7 +10,7 @@ import {
 import type { ResolvedAssistant } from "@/lib/backboard/assistant-manifest";
 
 function fakeResolved(): ResolvedAssistant[] {
-  return TWINTO_ASSISTANT_KEYS.map((key, index) => ({
+  return TECHTO_ASSISTANT_KEYS.map((key, index) => ({
     role: ASSISTANT_ROSTER[key],
     record: {
       assistantId: `mock-${key}`,

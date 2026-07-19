@@ -5,7 +5,7 @@ import type { WebSearchMode } from "@/lib/backboard/client";
 import { askOperatorQuestion } from "@/lib/backboard/operator";
 import { errorMessage, jsonError } from "@/lib/backboard/route-helpers";
 import { createSseResponse, createSseStream } from "@/lib/backboard/sse";
-import type { TwinTORunEventEnvelope } from "@/lib/transit/schemas";
+import type { TechTORunEventEnvelope } from "@/lib/transit/schemas";
 import { requireScenario } from "@/data/transit/scenarios";
 import { persistOperatorThreadTurn } from "@/lib/mongodb/planning-store";
 
@@ -39,7 +39,7 @@ function envelope(
   sequence: number,
   type: string,
   payload: Record<string, unknown>,
-): TwinTORunEventEnvelope {
+): TechTORunEventEnvelope {
   return {
     eventId: `${questionId}:${sequence}`,
     runId: questionId,

@@ -1,1 +1,1 @@
-"""TwinTO transit-core FastAPI service."""
+"""TechTO transit-core FastAPI service."""

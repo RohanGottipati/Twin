@@ -1,7 +1,7 @@
 /**
- * Synthetic event, weather, and service-incident fixtures for the TwinTO
+ * Synthetic event, weather, and service-incident fixtures for the TechTO
  * transit domain layer. These back the "extenuating circumstances" stress
- * test in docs/twinto-implementation.md section 2.5 and the
+ * test in docs/techto-implementation.md section 2.5 and the
  * get_event_context / get_weather_context / get_service_incidents tools in
  * section 13.6. Nothing here is a live feed; all figures are synthetic
  * assumptions chosen for narrative plausibility in the demo.

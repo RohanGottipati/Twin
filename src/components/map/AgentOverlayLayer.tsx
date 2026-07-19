@@ -3,14 +3,14 @@
 import { useEffect } from "react";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import { useMapStore } from "@/store/useMapStore";
-import type { AgentMapOverlay } from "@/lib/twinto/map-overlays";
+import type { AgentMapOverlay } from "@/lib/techto/map-overlays";
 
-const SRC = "torontwin-agent-overlays";
-const LAYER_POINT = "torontwin-agent-points";
-const LAYER_LINE = "torontwin-agent-lines";
-const LAYER_FILL = "torontwin-agent-fills";
-const LAYER_FILL_LINE = "torontwin-agent-fill-outline";
-const LAYER_LABEL = "torontwin-agent-labels";
+const SRC = "techto-agent-overlays";
+const LAYER_POINT = "techto-agent-points";
+const LAYER_LINE = "techto-agent-lines";
+const LAYER_FILL = "techto-agent-fills";
+const LAYER_FILL_LINE = "techto-agent-fill-outline";
+const LAYER_LABEL = "techto-agent-labels";
 
 function toFc(overlays: AgentMapOverlay[]): GeoJSON.FeatureCollection {
   const features: GeoJSON.Feature[] = [];

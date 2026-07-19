@@ -35,7 +35,7 @@ OUT_PATH = PROCESSED_DIR / "neighbourhood_narratives.json"
 
 SEARCH_API = "https://en.wikipedia.org/w/api.php"
 SUMMARY_API = "https://en.wikipedia.org/api/rest_v1/page/summary/{title}"
-USER_AGENT = "ToronTwinResearch/1.0 (https://github.com/; research project, non-commercial)"
+USER_AGENT = "TechTOResearch/1.0 (https://github.com/; research project, non-commercial)"
 REQUEST_DELAY_S = 0.3  # polite rate limit
 
 MIN_EXTRACT_LENGTH = 150

@@ -23,7 +23,7 @@ Before writing code:
    ```
 4. Record the baseline result before changing anything.
 5. Preserve all working generic Cesium functionality unless this specification explicitly replaces it.
-6. Archive the obsolete ToronTwin population-sentiment documents before replacing them:
+6. Archive the obsolete TechTO population-sentiment documents before replacing them:
    ```text
    docs/archive/torontwin/AGENTS.md
    docs/archive/torontwin/implementation_plan.md

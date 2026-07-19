@@ -4,13 +4,13 @@ import { getMongoDb } from "@/lib/mongodb/client";
 import { COLLECTIONS } from "@/lib/mongodb/collections";
 import { isMongoConfigured } from "@/lib/mongodb/env";
 
-export type TwinTOWatchCollection =
+export type TechTOWatchCollection =
   | "backboard_events"
   | "simulation_runs"
   | "policy_iterations"
   | "latest_stop_state";
 
-const WATCHABLE: Record<TwinTOWatchCollection, string> = {
+const WATCHABLE: Record<TechTOWatchCollection, string> = {
   backboard_events: COLLECTIONS.backboardEvents,
   simulation_runs: COLLECTIONS.simulationRuns,
   policy_iterations: COLLECTIONS.policyIterations,
@@ -18,7 +18,7 @@ const WATCHABLE: Record<TwinTOWatchCollection, string> = {
 };
 
 export interface ChangeStreamNotice {
-  collection: TwinTOWatchCollection;
+  collection: TechTOWatchCollection;
   operationType: string;
   documentKey?: unknown;
   fullDocument?: unknown;
@@ -29,8 +29,8 @@ export interface ChangeStreamNotice {
  * Opens a MongoDB change stream for one operational collection.
  * Caller must close the stream. Requires a replica set (Atlas qualifies).
  */
-export async function openTwinTOChangeStream(
-  collection: TwinTOWatchCollection,
+export async function openTechTOChangeStream(
+  collection: TechTOWatchCollection,
   onChange: (notice: ChangeStreamNotice) => void,
   onError?: (error: Error) => void,
 ): Promise<{ close: () => Promise<void> }> {

@@ -5,7 +5,7 @@
  * server-side tests, and only depends on the Web Streams / fetch globals and
  * the zod envelope schema, both of which are safe in either environment.
  */
-import { twinTORunEventEnvelopeSchema as backboardRunEventEnvelopeSchema, type TwinTORunEventEnvelope as BackboardRunEventEnvelope } from "@/lib/transit/schemas";
+import { techTORunEventEnvelopeSchema as backboardRunEventEnvelopeSchema, type TechTORunEventEnvelope as BackboardRunEventEnvelope } from "@/lib/transit/schemas";
 
 export interface ParseSseChunkResult {
   events: BackboardRunEventEnvelope[];
@@ -108,16 +108,35 @@ export function createRunStreamClient(options: CreateRunStreamClientOptions): Ru
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
 
+      const dispatch = async (events: BackboardRunEventEnvelope[]) => {
+        // yield between events so React can paint mid-chunk (else deltas batch into one pop)
+        for (const event of events) {
+          options.onEvent(event);
+          await new Promise<void>((resolve) => {
+            if (typeof requestAnimationFrame === "function") {
+              requestAnimationFrame(() => resolve());
+            } else {
+              setTimeout(resolve, 0);
+            }
+          });
+        }
+      };
+
       while (true) {
         const { done, value } = await reader.read();
-        if (done) break;
+        if (done) {
+          // Flush decoder + any complete SSE frames left in the remainder.
+          const tail = decoder.decode();
+          const { events } = parseSseChunk(buffer, tail, seen);
+          buffer = "";
+          await dispatch(events);
+          break;
+        }
 
         const chunk = decoder.decode(value, { stream: true });
         const { events, remainder } = parseSseChunk(buffer, chunk, seen);
         buffer = remainder;
-        for (const event of events) {
-          options.onEvent(event);
-        }
+        await dispatch(events);
       }
 
       options.onDone?.();

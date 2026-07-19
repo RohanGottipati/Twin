@@ -6,7 +6,7 @@ import {
   placeFromNeighbourhoodArea,
   placeFromStation,
   nearestNeighbourhood,
-} from "@/lib/twinto/place-context";
+} from "@/lib/techto/place-context";
 
 describe("selectChatAgentForTask", () => {
   it("routes place-scoped questions to geospatial by default", () => {

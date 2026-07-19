@@ -8,15 +8,10 @@ import { useMapStore } from "@/store/useMapStore";
 import { getScenario } from "@/lib/sim/scenarios";
 import { resolveAlignment } from "@/lib/sim/engine";
 import {
-  buildStreetWalkAnchors,
-  streetWalkPosition,
-  type StreetWalkAnchor,
-} from "@/lib/sim/streets";
-import {
   placeFromBuildingFeature,
   placeFromNeighbourhoodArea,
   polygonCentroid,
-} from "@/lib/twinto/place-context";
+} from "@/lib/techto/place-context";
 import { buildTrainRouteConfigs, trainCollection } from "@/lib/map/trains";
 import {
   BUILDING_BASE_EXPRESSION,
@@ -33,7 +28,6 @@ import type {
   NeighbourhoodCollection,
   Persona,
   RouteCollection,
-  StreetCollection,
 } from "@/lib/sim/types";
 import {
   ACCEPT_NEUTRAL,
@@ -46,11 +40,19 @@ import {
 import { AgentOverlayLayer } from "@/components/map/AgentOverlayLayer";
 import { CandidateMarkerLayer } from "@/components/map/CandidateMarkerLayer";
 
-const SELECTED_BUILDING_SOURCE = "torontwin-selected-building";
-const SELECTED_BUILDING_FILL = "torontwin-selected-building-fill";
-const SELECTED_BUILDING_LINE = "torontwin-selected-building-line";
+const SELECTED_BUILDING_SOURCE = "techto-selected-building";
+const SELECTED_BUILDING_FILL = "techto-selected-building-fill";
+const SELECTED_BUILDING_LINE = "techto-selected-building-line";
 const SELECTED_BUILDING_EXTRUSION =
-  "torontwin-selected-building-extrusion";
+  "techto-selected-building-extrusion";
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
 
 function buildingLayerIds(map: maplibregl.Map): string[] {
   const style = map.getStyle();
@@ -87,37 +89,37 @@ interface MapCanvasProps {
   neighbourhoods: NeighbourhoodCollection;
   routes: RouteCollection;
   busRoutes: RouteCollection;
-  streets: StreetCollection;
   personas: Persona[];
   onReady: () => void;
 }
 
-interface WalkContext {
-  anchors: (StreetWalkAnchor | null)[];
-  t: number;
-}
-
-function personaCollection(
-  personas: Persona[],
-  acceptance: Float32Array | null,
-  walk?: WalkContext
-): GeoJSON.FeatureCollection {
+/**
+ * Built once per persona set (not per acceptance tick -- acceptance updates
+ * flow through map feature-state instead, see the results effect below, so
+ * this heavier per-persona profile payload, including full profile text for
+ * real personas, isn't re-serialized on every reveal-sweep frame).
+ */
+function personaCollection(personas: Persona[]): GeoJSON.FeatureCollection {
   return {
     type: "FeatureCollection",
-    features: personas.map((p) => {
-      let lng = p.lng;
-      let lat = p.lat;
-      const anchor = walk?.anchors[p.id];
-      if (anchor) {
-        [lng, lat] = streetWalkPosition(anchor, walk.t);
-      }
-      return {
-        type: "Feature",
-        id: p.id,
-        properties: { a: acceptance ? acceptance[p.id] : 0.5 },
-        geometry: { type: "Point", coordinates: [lng, lat] },
-      };
-    }),
+    features: personas.map((p) => ({
+      type: "Feature",
+      id: p.id,
+      properties: {
+        code: p.code,
+        incomeZ: p.incomeZ,
+        transitAffinity: p.transitAffinity,
+        carDependence: p.carDependence,
+        ageBand: p.ageBand ?? null,
+        gender: p.gender ?? null,
+        education: p.education ?? null,
+        tenure: p.tenure ?? null,
+        commuteMode: p.commuteMode ?? null,
+        incomeBand: p.incomeBand ?? null,
+        profileText: p.profileText ?? null,
+      },
+      geometry: { type: "Point", coordinates: [p.lng, p.lat] },
+    })),
   };
 }
 
@@ -158,7 +160,6 @@ export function MapCanvas({
   neighbourhoods,
   routes,
   busRoutes,
-  streets,
   personas,
   onReady,
 }: MapCanvasProps) {
@@ -177,12 +178,11 @@ export function MapCanvas({
   );
   const sweepToken = useRef(0);
   const hoveredNbhd = useRef<number | null>(null);
+  const personaPopupRef = useRef<maplibregl.Popup | null>(null);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const reducedMotion = useReducedMotion();
   const reducedMotionRef = useRef(reducedMotion);
   reducedMotionRef.current = reducedMotion;
-  const walkAnchorsRef = useRef<(StreetWalkAnchor | null)[] | null>(null);
-  const walkStartRef = useRef(0);
   const trainsLayerReadyRef = useRef(false);
   const trainsStartRef = useRef(0);
   const trainConfigs = useMemo(() => buildTrainRouteConfigs(routes), [routes]);
@@ -204,14 +204,6 @@ export function MapCanvas({
   const clearAgent3DFocus = useMapStore((s) => s.clearAgent3DFocus);
   const layersRef = useRef(layers);
   layersRef.current = layers;
-
-  // Current wander offset context, or undefined when motion should be still
-  // (reduced-motion preference, or before the walk params are built).
-  const currentWalk = (): WalkContext | undefined => {
-    const anchors = walkAnchorsRef.current;
-    if (!anchors || reducedMotionRef.current) return undefined;
-    return { anchors, t: performance.now() - walkStartRef.current };
-  };
 
   // ---- init -------------------------------------------------------------
   useEffect(() => {
@@ -256,11 +248,9 @@ export function MapCanvas({
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
       });
-      walkAnchorsRef.current = buildStreetWalkAnchors(personas, streets);
-      walkStartRef.current = performance.now();
       map.addSource("personas", {
         type: "geojson",
-        data: personaCollection(personas, null, currentWalk()),
+        data: personaCollection(personas),
       });
 
       map.addLayer(
@@ -560,7 +550,7 @@ export function MapCanvas({
           "circle-color": [
             "interpolate",
             ["linear"],
-            ["get", "a"],
+            ["coalesce", ["feature-state", "a"], 0.5],
             0,
             ACCEPT_OPPOSE,
             0.5,
@@ -636,6 +626,12 @@ export function MapCanvas({
 
     map.on("mousemove", (e) => {
       if (!loadedRef.current) return;
+      const personaHits = map.queryRenderedFeatures(e.point, { layers: ["personas"] });
+      if (personaHits.length > 0) {
+        map.getCanvas().style.cursor = "pointer";
+        setTooltip(null);
+        return;
+      }
       const routeHits = map.queryRenderedFeatures(e.point, {
         layers: [
           "rail-line",
@@ -700,6 +696,51 @@ export function MapCanvas({
 
     map.on("click", (e) => {
       if (!loadedRef.current) return;
+
+      const personaHits = map.queryRenderedFeatures(e.point, { layers: ["personas"] });
+      if (personaHits[0]) {
+        const p = personaHits[0].properties as {
+          code: string;
+          ageBand: string | null;
+          gender: string | null;
+          education: string | null;
+          tenure: string | null;
+          commuteMode: string | null;
+          incomeBand: string | null;
+          profileText: string | null;
+        };
+        const featureId = personaHits[0].id;
+        const acceptanceState =
+          featureId !== undefined
+            ? (map.getFeatureState({ source: "personas", id: featureId }) as { a?: number })
+            : {};
+        const acceptance = acceptanceState.a ?? 0.5;
+        const nbhdName = nbhdByCode.get(p.code)?.name ?? p.code;
+
+        personaPopupRef.current?.remove();
+        personaPopupRef.current = new maplibregl.Popup({ closeButton: true, closeOnClick: true, maxWidth: "260px" })
+          .setLngLat(e.lngLat)
+          .setHTML(
+            p.profileText
+              ? `<div style="font-family:inherit;font-size:12px;line-height:1.5">
+                  <div style="font-weight:600;font-size:13px;margin-bottom:4px">${escapeHtml(nbhdName)}</div>
+                  <div style="opacity:0.7;margin-bottom:6px">
+                    ${escapeHtml(p.ageBand ?? "")}${p.gender ? ` &middot; ${escapeHtml(p.gender)}` : ""}${p.tenure ? ` &middot; ${escapeHtml(p.tenure)}` : ""}
+                  </div>
+                  <div style="margin-bottom:8px">${escapeHtml(p.profileText)}</div>
+                  ${p.commuteMode ? `<div>Commute: <b>${escapeHtml(p.commuteMode)}</b></div>` : ""}
+                  ${p.incomeBand ? `<div>Household income: <b>${escapeHtml(p.incomeBand)}</b></div>` : ""}
+                  ${p.education ? `<div>Education: <b>${escapeHtml(p.education)}</b></div>` : ""}
+                  <div style="margin-top:6px;opacity:0.7">Scenario acceptance: <b>${Math.round(acceptance * 100)}%</b></div>
+                </div>`
+              : `<div style="font-family:inherit;font-size:12px;line-height:1.5">
+                  <div style="font-weight:600;font-size:13px;margin-bottom:4px">${escapeHtml(nbhdName)}</div>
+                  <div style="opacity:0.7">Synthetic fallback dot (real persona data unavailable)</div>
+                </div>`,
+          )
+          .addTo(map);
+        return;
+      }
 
       const buildingLayers = buildingLayerIds(map);
       const buildingHits =
@@ -865,6 +906,12 @@ export function MapCanvas({
     const source = map.getSource<maplibregl.GeoJSONSource>("personas");
     if (!source) return;
 
+    const setPersonaAcceptance = (values: Float32Array) => {
+      for (let i = 0; i < values.length; i++) {
+        map.setFeatureState({ source: "personas", id: i }, { a: values[i] });
+      }
+    };
+
     const token = ++sweepToken.current;
     const target = result.acceptance;
     const sweep = result.sweepKm;
@@ -872,7 +919,7 @@ export function MapCanvas({
 
     if (reducedMotionRef.current) {
       current.set(target);
-      source.setData(personaCollection(personas, target, currentWalk()));
+      setPersonaAcceptance(current);
       return;
     }
 
@@ -892,7 +939,7 @@ export function MapCanvas({
         if (sweep[i] <= threshold) current[i] = target[i];
       }
       if (t >= 1) current.set(target);
-      source.setData(personaCollection(personas, current, currentWalk()));
+      setPersonaAcceptance(current);
       if (t < 1) {
         window.setTimeout(
           () => requestAnimationFrame(tick),
@@ -902,37 +949,6 @@ export function MapCanvas({
     };
     requestAnimationFrame(tick);
   }, [result, neighbourhoods, personas, ready]);
-
-  // ---- pedestrian wander: residents amble around their home block ---------
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !ready) return;
-    let rafId: number | undefined;
-    let cancelled = false;
-
-    // Runs every animation frame (cheap at 2k dots) so the wander reads as
-    // continuous motion rather than discrete hops.
-    const tick = () => {
-      if (cancelled) return;
-      if (!reducedMotionRef.current && layersRef.current.personas) {
-        const source = map.getSource<maplibregl.GeoJSONSource>("personas");
-        const walk = currentWalk();
-        if (source && walk) {
-          source.setData(personaCollection(personas, displayedA.current, walk));
-        }
-      }
-      rafId = requestAnimationFrame(tick);
-    };
-    rafId = requestAnimationFrame(tick);
-
-    return () => {
-      cancelled = true;
-      if (rafId !== undefined) cancelAnimationFrame(rafId);
-    };
-    // reducedMotion/layers are read live via refs so the loop doesn't restart
-    // on every toggle.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ready, personas]);
 
   // Agent camera fly / fit. A focus-only update changes the aspect without
   // replaying an old camera command, so the 2D control preserves user panning.

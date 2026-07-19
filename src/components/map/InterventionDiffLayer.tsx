@@ -4,14 +4,14 @@ import { useEffect } from "react";
 import type { GeoJSONSource, Map as MapLibreMap } from "maplibre-gl";
 import { getNetworkSnapshot } from "@/data/transit/network";
 import { LAYER_IDS, SOURCE_IDS } from "@/lib/map/layer-ids";
-import { useTwinTOStore } from "@/store/useTwinTOStore";
+import { useTechTOStore } from "@/store/useTechTOStore";
 
 /**
  * Highlights the active scenario station when a candidate is selected,
  * as a lightweight intervention-diff cue for the demo.
  */
 export function InterventionDiffLayer({ map }: { map: MapLibreMap | null }) {
-  const selectedCandidateId = useTwinTOStore((s) => s.selectedCandidateId);
+  const selectedCandidateId = useTechTOStore((s) => s.selectedCandidateId);
 
   useEffect(() => {
     if (!map) return;

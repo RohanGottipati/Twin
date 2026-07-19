@@ -1,7 +1,7 @@
 [project]
 name = "torontwin"
 version = "0.1.0"
-description = "ToronTwin: census-weighted LM-persona population conditioned on a Toronto digital twin, for planner decision support."
+description = "TechTO: census-weighted LM-persona population conditioned on a Toronto digital twin, for planner decision support."
 requires-python = ">=3.12"
 dependencies = [
     "geopandas>=1.0",

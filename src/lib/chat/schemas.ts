@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { mapChatContextSchema } from "@/lib/twinto/map-actions";
+import { mapChatContextSchema } from "@/lib/techto/map-actions";
 
 export const chatMessageSchema = z
   .object({

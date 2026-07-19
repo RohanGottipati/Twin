@@ -11,7 +11,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import wraps
 
 # match step size (16x8=128); keep many HTTP judges in flight
-DEFAULT_WORKERS = int(os.environ.get("TORONTWIN_REWARD_WORKERS", "32"))
+DEFAULT_WORKERS = int(os.environ.get("TECHTO_REWARD_WORKERS", "32"))
 
 _reward_pool: ThreadPoolExecutor | None = None
 

@@ -1,15 +1,15 @@
 import { errorMessage, jsonError } from "@/lib/backboard/route-helpers";
 import { createSseResponse, createSseStream } from "@/lib/backboard/sse";
 import {
-  openTwinTOChangeStream,
-  type TwinTOWatchCollection,
+  openTechTOChangeStream,
+  type TechTOWatchCollection,
 } from "@/lib/mongodb/change-streams";
 import { isMongoConfigured } from "@/lib/mongodb/env";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const ALLOWED: TwinTOWatchCollection[] = [
+const ALLOWED: TechTOWatchCollection[] = [
   "backboard_events",
   "simulation_runs",
   "policy_iterations",
@@ -17,7 +17,7 @@ const ALLOWED: TwinTOWatchCollection[] = [
 ];
 
 /**
- * SSE change-stream proxy for one TwinTO operational collection.
+ * SSE change-stream proxy for one TechTO operational collection.
  * Query: ?collection=backboard_events
  */
 export async function GET(request: Request) {
@@ -26,7 +26,7 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const collection = (url.searchParams.get("collection") ?? "backboard_events") as TwinTOWatchCollection;
+  const collection = (url.searchParams.get("collection") ?? "backboard_events") as TechTOWatchCollection;
   if (!ALLOWED.includes(collection)) {
     return jsonError(`Unsupported collection. Allowed: ${ALLOWED.join(", ")}`, 400);
   }
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
   const stream = createSseStream(async (writer) => {
     let closer: (() => Promise<void>) | null = null;
     try {
-      const handle = await openTwinTOChangeStream(
+      const handle = await openTechTOChangeStream(
         collection,
         (notice) => {
           if (closed || writer.closed) return;

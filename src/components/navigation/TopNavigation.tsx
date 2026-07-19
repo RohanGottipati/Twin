@@ -13,7 +13,7 @@ type TopNavigationProps = {
 };
 
 /**
- * Generic branding + status bar, deliberately store-agnostic: TwinTOAppShell
+ * Generic branding + status bar, deliberately store-agnostic: TechTOAppShell
  * supplies whatever it wants rendered in each slot rather than this
  * component reaching into any store itself, so it stays reusable.
  */
@@ -23,11 +23,11 @@ export function TopNavigation({ statusSlot, contextSlot, leadingSlot }: TopNavig
       <div className="flex items-center gap-3">
         {leadingSlot}
         <div className="leading-tight">
-          <p className="flex items-center gap-1.5 text-sm font-semibold tracking-wide text-twinto-text">
-            <span className="inline-block h-2 w-2 rounded-full bg-twinto-red" aria-hidden="true" />
-            TwinTO
+          <p className="flex items-center gap-1.5 text-sm font-semibold tracking-wide text-techto-text">
+            <span className="inline-block h-2 w-2 rounded-full bg-techto-red" aria-hidden="true" />
+            TechTO
           </p>
-          <p className="text-[10px] uppercase tracking-widest text-twinto-muted">
+          <p className="text-[10px] uppercase tracking-widest text-techto-muted">
             Toronto only · Transit Digital Twin
           </p>
         </div>

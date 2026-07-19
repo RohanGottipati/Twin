@@ -25,13 +25,13 @@ import { rankInterventions, type RankableIntervention } from "@/lib/transit/cand
 import { simulateTransit } from "@/lib/transit/simulator";
 import { stressTestIntervention, type StressTestOutcome } from "@/lib/transit/stress-tests";
 import { transitInterventionSchema, type TransitIntervention, type TransitSimulationResult } from "@/lib/transit/schemas";
-import { parseMapActions, type MapAction } from "@/lib/twinto/map-actions";
+import { parseMapActions, type MapAction } from "@/lib/techto/map-actions";
 import {
   actionToOverlay,
   findCollision,
   MAP_COLLISION_METERS,
   type AgentMapOverlay,
-} from "@/lib/twinto/map-overlays";
+} from "@/lib/techto/map-overlays";
 import { emptyTwinSnapshot, patchTwin, queryTwin, type TwinSnapshot } from "@/lib/planner/state";
 import { diffTwin } from "@/lib/planner/diff";
 import { parseScenarioPatch, parseScenarioPatches, type ScenarioPatch } from "@/lib/planner/scenario";
@@ -39,7 +39,7 @@ import { getPopulationProvider } from "@/lib/population/provider";
 import type { PopulationProvider } from "@/lib/population/provider";
 import { runAgentPython } from "@/lib/analysis/run-python";
 import { matchCannedAsk } from "@/lib/planner/canned";
-import { isTwinTOAssistantKey, ASSISTANT_ROSTER } from "@/lib/backboard/assistants";
+import { isTechTOAssistantKey, ASSISTANT_ROSTER } from "@/lib/backboard/assistants";
 import { getToolDefinitions } from "@/lib/backboard/tools";
 import {
   queryTorontoAreas,
@@ -1255,7 +1255,7 @@ async function executeTool(
         })
         .strict()
         .parse(args);
-      if (!isTwinTOAssistantKey(parsed.role)) {
+      if (!isTechTOAssistantKey(parsed.role)) {
         throw new ToolDispatchError(`Unknown assistant role "${parsed.role}"`);
       }
       if (parsed.role === "planning-orchestrator") {

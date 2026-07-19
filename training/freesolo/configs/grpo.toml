@@ -1,8 +1,8 @@
-# Placeholder FreeSolo GRPO config for TwinTO CitizenReactionLM.
+# Placeholder FreeSolo GRPO config for TechTO CitizenReactionLM.
 # Warm-start from SFT adapter. Freeze probe/discriminator. Split by policy/scenario.
 
 [model]
-alias = "twinto-citizen-reaction"
+alias = "techto-citizen-reaction"
 base = "qwen"
 
 [train]

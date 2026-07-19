@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 
-import { applyMapActions } from "@/lib/twinto/apply-map-actions";
+import { applyMapActions } from "@/lib/techto/apply-map-actions";
 import { useMapStore } from "@/store/useMapStore";
 
 describe("applyMapActions", () => {
@@ -76,6 +76,65 @@ describe("applyMapActions", () => {
       center: [-79.42, 43.68],
       zoom: 15,
       durationMs: 700,
+    });
+  });
+
+  it("keeps only the leading blue candidate marker and flies to it", () => {
+    applyMapActions([
+      {
+        type: "fit_bounds",
+        bounds: [-79.5, 43.6, -79.3, 43.75],
+        padding: 80,
+        durationMs: 1200,
+      },
+      {
+        type: "highlight_neighbourhoods",
+        neighbourhoodIds: ["024", "048", "072"],
+      },
+      {
+        type: "show_candidate_markers",
+        candidates: [
+          {
+            candidateId: "station-024",
+            coordinates: [-79.42, 43.68],
+            rank: 1,
+            label: "Wychwood",
+          },
+          {
+            candidateId: "station-048",
+            coordinates: [-79.35, 43.7],
+            rank: 2,
+            label: "Ionview",
+          },
+          {
+            candidateId: "station-072",
+            coordinates: [-79.3, 43.72],
+            rank: 3,
+            label: "Other",
+          },
+        ],
+      },
+    ]);
+
+    const state = useMapStore.getState();
+    expect(state.candidateMarkers).toEqual([
+      {
+        candidateId: "station-024",
+        coordinates: [-79.42, 43.68],
+        rank: 1,
+        label: "Wychwood",
+      },
+    ]);
+    expect(state.highlightedNeighbourhoodIds).toEqual(["024"]);
+    expect(state.boundsTarget).toBeNull();
+    expect(state.cameraTarget).toEqual({
+      center: [-79.42, 43.68],
+      zoom: 14,
+      durationMs: 1200,
+    });
+    expect(state.agent3DFocus).toEqual({
+      source: "highlights",
+      neighbourhoodIds: ["024"],
     });
   });
 });

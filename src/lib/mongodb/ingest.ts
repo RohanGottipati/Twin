@@ -28,7 +28,7 @@ export async function runOfflineIngestPipeline(): Promise<IngestPipelineResult> 
 
   const db = await getMongoDb();
 
-  const sourceName = "TwinTO demo fixtures (src/data/transit)";
+  const sourceName = "TechTO demo fixtures (src/data/transit)";
   const checksum = `fixture-bundle:${DEMO_PROVENANCE.transformationVersion}`;
 
   await db.collection(COLLECTIONS.rawIngestEvents).insertOne({

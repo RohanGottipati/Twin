@@ -11,8 +11,8 @@ import type { TorontoMapProps } from "@/components/map/TorontoMap";
 const TorontoMap = dynamic(() => import("@/components/map/TorontoMap").then((mod) => mod.TorontoMap), {
   ssr: false,
   loading: () => (
-    <div className="flex h-full w-full items-center justify-center bg-twinto-ink">
-      <p className="text-sm text-twinto-muted">Loading Toronto map…</p>
+    <div className="flex h-full w-full items-center justify-center bg-techto-ink">
+      <p className="text-sm text-techto-muted">Loading Toronto map…</p>
     </div>
   ),
 });

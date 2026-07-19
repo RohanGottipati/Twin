@@ -22,7 +22,7 @@ export async function getMongoClient(): Promise<MongoClient> {
 
   const uri = requireMongoUri();
   const client = new MongoClient(uri, {
-    appName: "TwinTO",
+    appName: "TechTO",
     maxPoolSize: 10,
     serverSelectionTimeoutMS: 10_000,
   });

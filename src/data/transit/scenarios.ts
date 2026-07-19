@@ -7,8 +7,8 @@ import {
 } from "@/lib/transit/schemas";
 
 /**
- * Synthetic transit scenario and stress overlay fixtures for the TwinTO
- * flagship demonstration (docs/twinto-implementation.md section 2). Every
+ * Synthetic transit scenario and stress overlay fixtures for the TechTO
+ * flagship demonstration (docs/techto-implementation.md section 2). Every
  * scenario and overlay is parsed through its zod schema at module load, so a
  * malformed fixture fails fast at build time rather than surfacing as a
  * confusing runtime error deep in the simulator.
@@ -125,7 +125,7 @@ export function requireScenario(scenarioId: string): TransitScenario {
 
 /**
  * The stress overlay for the flagship demo's extenuating-circumstances test
- * (docs/twinto-implementation.md section 2.5): a concert at Scotiabank
+ * (docs/techto-implementation.md section 2.5): a concert at Scotiabank
  * Arena, layered as a 25% arrival surge plus a closed Union entrance plus a
  * delayed departure plus a delayed connecting streetcar. Applied on top of
  * a candidate intervention by lib/transit/stress-tests.ts, never on its own.

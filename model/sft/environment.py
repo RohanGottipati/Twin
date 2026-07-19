@@ -1,4 +1,4 @@
-"""Flash SFT environment for ToronTwin persona opinions (AGENTS.md 5.1).
+"""Flash SFT environment for TechTO persona opinions (AGENTS.md 5.1).
 
 Rows: input = {persona_text, policy_text, spatial_features_text|null},
 output = real human opinion text (byte-for-byte).

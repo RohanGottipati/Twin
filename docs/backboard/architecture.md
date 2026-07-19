@@ -1,15 +1,15 @@
-# ToronTwin Backboard architecture
+# TechTO Backboard architecture
 
-ToronTwin uses a live Backboard planning department shared by the open-city
-dashboard and the TwinTO transit demonstration. The canonical roster is the
+TechTO uses a live Backboard planning department shared by the open-city
+dashboard and the TechTO transit demonstration. The canonical roster is the
 principled city-planning set of 11 roles, identified by `rosterVersion:
 principled-11` and manifest schema version 4.
 
-The root dashboard and TwinTO are related but distinct products:
+The root dashboard and TechTO are related but distinct products:
 
 - `/` is the open-city front door. `POST /api/planner/run` gives the Planning
   Orchestrator a free-form turn with optional tools and specialist calls.
-- `/twinto` is the transit demonstration. It adds a deterministic local transit
+- `/techto` is the transit demonstration. It adds a deterministic local transit
   simulator, a synthetic flagship scenario, and a separate staged planning run.
 
 GridTwin is archived under `docs/archive/gridtwin/`.
@@ -35,11 +35,11 @@ GridTwin is archived under `docs/archive/gridtwin/`.
 ## Provider requirements
 
 - Backboard is live only and requires `BACKBOARD_API_KEY`.
-- TwinTO citizen reactions are live FreeSolo only.
+- TechTO citizen reactions are live FreeSolo only.
 - The open-city `PopulationProvider` supports `synthetic` and `census` modes.
-- TwinTO repository reads support local labelled fixtures or MongoDB Atlas.
+- TechTO repository reads support local labelled fixtures or MongoDB Atlas.
 - Deterministic simulator output remains the numerical authority for the
-  TwinTO operational demonstration.
+  TechTO operational demonstration.
 
 There is no automatic mock Backboard mode and no mock citizen-reaction
 provider. Local fixture data remains allowed where it is visibly labelled
@@ -66,10 +66,10 @@ measured facts.
 | Path | Role |
 | --- | --- |
 | `src/lib/planner/orchestrator.ts` | Open-city free-form planning turn |
-| `src/lib/backboard/` | Live adapter, principled roster, tools, staged TwinTO orchestration |
+| `src/lib/backboard/` | Live adapter, principled roster, tools, staged TechTO orchestration |
 | `src/lib/population/` | Open-city population provider |
-| `src/lib/citizen-reaction/` | Live FreeSolo TwinTO citizen reactions |
-| `src/lib/transit/` | TwinTO simulator, metrics, ranking, repository |
+| `src/lib/citizen-reaction/` | Live FreeSolo TechTO citizen reactions |
+| `src/lib/transit/` | TechTO simulator, metrics, ranking, repository |
 | `src/lib/export/chat-report.ts` | Safe print-ready chat reports |
 | `src/components/chat/` | Main and selected-place chat UI |
 | `docs/backboard/knowledge/` | Indexed planning knowledge documents |

@@ -1,4 +1,4 @@
-# TwinTO Backboard roster consolidation baseline
+# TechTO Backboard roster consolidation baseline
 
 > Historical audit only. The current product uses the principled 11 role roster,
 > manifest schema version 4, and live providers as documented in `AGENTS.md` and
@@ -10,9 +10,9 @@ consolidated assistants. Branch: `backboard`. Main is untouched.
 ## Git state
 
 - Branch: `backboard`
-- Recent commits include the TwinTO migration (MapLibre, transit fixtures,
+- Recent commits include the TechTO migration (MapLibre, transit fixtures,
   54-assistant council, orchestration, citizen-reaction provider, UI, tests).
-- Working tree clean at audit time (prior uncommitted TwinTO UI/tests were
+- Working tree clean at audit time (prior uncommitted TechTO UI/tests were
   committed first so nothing was lost).
 
 ## Baseline checks (all passed)
@@ -25,7 +25,7 @@ npm run test         # 17 files, 163 tests pass
 npm run check        # lint + typecheck + test + build pass
 ```
 
-`npm run test:e2e:twinto` was not required to block this audit commit; it
+`npm run test:e2e:techto` was not required to block this audit commit; it
 will be re-run after the consolidated chat-first UI lands.
 
 ## Active roster (pre-consolidation)
@@ -33,10 +33,10 @@ will be re-run after the consolidated chat-first UI lands.
 | Metric | Value |
 | --- | --- |
 | Assistant definitions | 54 unique keys / 54 unique names |
-| Prefix | `TwinTO —` |
+| Prefix | `TechTO —` |
 | Scenario bundles | `CORE_SCHEDULE_BUNDLE` (19), `CONCERT_BUNDLE` (5), `WEATHER_BUNDLE` (5) |
 | Flagship activation | `selectAssistantBundle("departure-406-412")` ≈ 24 roles |
-| Manifest schema | v2, product `twinto` |
+| Manifest schema | v2, product `techto` |
 | Tools | 33 transit-oriented tools in `tools.ts` |
 | Knowledge docs | 12 under `docs/backboard/knowledge/` |
 | Citizen reactions | `MockCitizenReactionProvider` (labelled mock) |
@@ -52,7 +52,7 @@ will be re-run after the consolidated chat-first UI lands.
 4. No geospatial neighbourhood/station candidate tools yet.
 5. Manifest is schemaVersion 2 without `rosterVersion: consolidated-16`.
 6. Cleanup script only targets GridTwin names; no dry-run for obsolete
-   TwinTO-54 specialists.
+   TechTO-54 specialists.
 7. Agent Council UI enumerates the large specialist set.
 
 ## Consolidation plan (summary)
@@ -70,5 +70,5 @@ moves to manifest schemaVersion 3. A new
 - `src/lib/backboard/orchestrator.ts` / `mock-demo-run.ts`
 - `src/lib/backboard/manifest-schema.ts` / `assistant-manifest.ts`
 - `scripts/backboard-bootstrap.ts` / `status` / `smoke` / `cleanup-gridtwin`
-- `src/components/twinto/AgentCouncil.tsx` / `TwinTOAppShell.tsx`
+- `src/components/techto/AgentCouncil.tsx` / `TechTOAppShell.tsx`
 - `tests/backboard/assistants.test.ts` / `bundles.test.ts` / `orchestrator.test.ts`
