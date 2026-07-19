@@ -1,7 +1,7 @@
 import { getMongoDb } from "@/lib/mongodb/client";
 import { COLLECTIONS } from "@/lib/mongodb/collections";
 import { getOrGenerateOpinion } from "@/lib/citizen-reaction/opinion-cache";
-import { scoreOpinionWithEmbeddingProbe } from "@/lib/citizen-reaction/embedding-probe-score";
+import { scoreOpinionWithLLM } from "@/lib/citizen-reaction/llm-stance-score";
 import { runWithLimit } from "@/lib/citizen-reaction/concurrency";
 import type { Scenario } from "@/lib/sim/scenarios";
 
@@ -81,7 +81,7 @@ export async function computeRealNeighbourhoodAcceptance(
       (persona) =>
         async (): Promise<PersonaAcceptanceResult> => {
           const opinionText = await getOrGenerateOpinion(persona.persona_id, persona.text, policyText);
-          const acceptance = await scoreOpinionWithEmbeddingProbe(opinionText);
+          const acceptance = await scoreOpinionWithLLM(policyText, opinionText);
           const result: PersonaAcceptanceResult = { code, personaId: persona.persona_id, acceptance, opinionText };
           onPersonaDone?.(result);
           return result;

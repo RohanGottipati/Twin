@@ -12,7 +12,7 @@ import type {
 } from "@/lib/citizen-reaction/schemas";
 import { archetypeKey, samplePersonasForArchetype } from "@/lib/citizen-reaction/persona-sampler";
 import { getOrGenerateOpinion } from "@/lib/citizen-reaction/opinion-cache";
-import { scoreOpinionWithEmbeddingProbe } from "@/lib/citizen-reaction/embedding-probe-score";
+import { scoreOpinionWithLLM } from "@/lib/citizen-reaction/llm-stance-score";
 import { runWithLimit } from "@/lib/citizen-reaction/concurrency";
 
 /**
@@ -96,7 +96,7 @@ async function resolveArchetype(
     for (const opinion of opinions) {
       seenPersonaIds.add(opinion.personaId);
       texts.push(opinion.text);
-      scores.push(await scoreOpinionWithEmbeddingProbe(opinion.text));
+      scores.push(await scoreOpinionWithLLM(policyText, opinion.text));
     }
   }
 

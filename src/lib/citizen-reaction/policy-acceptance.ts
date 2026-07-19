@@ -1,7 +1,7 @@
 import { getMongoDb } from "@/lib/mongodb/client";
 import { COLLECTIONS } from "@/lib/mongodb/collections";
 import { getOrGenerateOpinion } from "@/lib/citizen-reaction/opinion-cache";
-import { scoreOpinionWithEmbeddingProbe } from "@/lib/citizen-reaction/embedding-probe-score";
+import { scoreOpinionWithLLM } from "@/lib/citizen-reaction/llm-stance-score";
 import { runWithLimit } from "@/lib/citizen-reaction/concurrency";
 import type { ScenarioPatch } from "@/lib/planner/scenario";
 
@@ -118,7 +118,7 @@ export async function scoreRealPolicyAcceptance(
     const batchScored = await runWithLimit(
       batch.map((persona) => async () => {
         const opinionText = await getOrGenerateOpinion(persona.persona_id, persona.text, policyText);
-        const acceptance = await scoreOpinionWithEmbeddingProbe(opinionText);
+        const acceptance = await scoreOpinionWithLLM(policyText, opinionText);
         onPersonaScored?.({
           personaId: persona.persona_id,
           code: persona.neighbourhood_code,
